@@ -305,8 +305,8 @@ int main(int argc, char **argv)
     PRM.coords[1] = PRM.me / PRM.px;
     PRM.coords[0] = PRM.me - PRM.coords[1] * PRM.px;
     printf("%d,%d,%d\n", PRM.me, PRM.coords[0], PRM.coords[1]);
-    MPI_Finalize();
-    return 0;
+//    MPI_Finalize();
+//    return 0;
     nnorth = PRM.me + PRM.px;
     nsouth = PRM.me - PRM.px;
     neast = PRM.me + 1;

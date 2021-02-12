@@ -1,0 +1,734 @@
+# -- org-startup-with-inline-images: nil --
+#+TITLE: Ondes3D
+#+AUTHOR: Assis, Nesi, Schnorr
+#+LATEX_HEADER: \usepackage[margin=2cm,a4paper]{geometry}
+#+STARTUP: overview indent noinlineimages
+#+TAGS: noexport(n) deprecated(d)
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+SEQ_TODO: TODO(t!) STARTED(s!) WAITING(w!) | DONE(d!) CANCELLED(c!) DEFERRED(f!)
+
+This document is in English.
+
+* Startup
+:PROPERTIES:
+:header-args: :results none :session :exports code
+:END:
+** Import libraries, and base configuration
+Disable crayon, load quietly tidyverse and cowplot.
+#+name: base_configuration
+#+begin_src R
+options(crayon.enabled=FALSE)
+suppressMessages(library(tidyverse))
+suppressMessages(library(cowplot))
+#+end_src
+
+** Topology
+#+name: topology
+#+header: :var dep0=base_configuration
+#+begin_src R
+topology <- function(PX, PY) {
+  tibble(Rank=0:(PX*PY - 1), PX = PX, PY = PY, X = Rank %% PX, Y = Rank %/% PY) %>%
+    mutate_all(as.integer) %>%
+    select(Rank, X, Y, PX, PY)
+}
+#+end_src
+
+** Call previous code blocks
+#+name: startup
+#+header: :var dep0=base_configuration
+#+header: :var dep1=topology
+#+begin_src R
+#+end_src
+
+* Introduction
+** Repository description
+
+You can clone this repository the following way:
+
+#+begin_src shell :results output
+git clone git@gitlab.inria.fr:schnorr/ondes3d.git
+#+end_src
+
+- The ~src~ directory contains the source code of Ondes3D as copied from
+  the original public repository by one of the developers (Fabrice
+  Dupros)
+  https://bitbucket.org/fdupros/ondes3d/src/master/
+- The ~parameters~ directory contains the three case studies which are
+  detailed below. For two of them, the contents are more voluminous
+  because of the realistic geology files.
+- The ~output~ directory tree is the one expected by the Ondes3D on
+  which all results will be written once the application reaches the
+  the end of the last iteration. It contains only placeholder
+  files.
+
+The Ondes3D application, once it gets compiled (see below), is
+expected to run in the root directory of this repository.
+
+** Case Studies
+
+There are three case studies: Ligurian (France/Italy), Chuetsu-Oki
+(Japan) - which is the only one with no geological model, and Sishuan
+(China). The following table gives the single-node memory requirements
+if the application is emulated with SMPI (SimGrid). In this
+repository, the ~prm~ file in the corresponding directory contains the
+details about each case study.
+
+| Case                | Single-node Memory Requirements |
+|---------------------+---------------------------------|
+| Sishuan (China)     | at least 53.4% of 64GBytes      |
+| Chuetsu-Oki (Japan) | at least 6.7% of 32GBytes       |
+| Ligurian (France)   | at least 11.3% of 32GBytes      |
+
+Parametrization of Ondes3D works in the following way. All source code
+files include an file called ~options.h~ that should contain a set of
+~const~ global variables with the main options. The more significant one
+is the PATH to the ~prm~ file that contains the configuration. Ondes3D
+will look for that specific file and parse it to instantiate the
+problem. To avoid editing by hand the ~options.h~ file, and automate any
+script capable of running all three case studies, we have created
+three "options.h" file with different names, one for each case
+study. So you have the following files in the ~src~ directory:
+
+#+begin_src shell :results output
+ls -l src | grep options- | grep -v lrwxrwxrwx
+#+end_src
+
+#+RESULTS:
+: -rw-r--r-- 1 schnorr schnorr   669 Jun 11  2018 options-chuetsuoki.h
+: -rw-r--r-- 1 schnorr schnorr   647 Jun 21  2018 options-ligurian.h
+: -rw-r--r-- 1 schnorr schnorr   612 Jun 11  2018 options-sishuan.h
+
+** Compilation
+*** Instructions per test case
+
+So, to compile the application, one need to create a symbolic link to
+onde of these files. The symbolic link must be named ~options.h~. The
+following instruction provides an example to compile the application
+to deploy the Sichuan case study. The commands are expected to be
+executed in the ~src~ directory.
+
+To change the test case, you need to make options.h point to another
+of the three options-*.h in the =src= directory (and recompile):
+
+**** Chuetsu-oki
+
+#+begin_src shell :results output :dir src
+rm -f options.h
+ln -s options-chuetsuoki.h options.h
+make clean
+make
+#+end_src
+
+#+RESULTS:
+#+begin_example
+rm -f *.o  *~ ../ondes3d
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c main.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c nrutil.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeVeloAndSource.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeStress.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeIntermediates.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c IO.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit_LayerModel.c
+mpicc     -o ../ondes3d main.o nrutil.o computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o -lm   
+#+end_example
+
+**** Ligurian
+
+#+begin_src shell :results output :dir src
+rm -f options.h
+ln -s options-ligurian.h options.h
+make clean
+make
+#+end_src
+
+#+RESULTS:
+#+begin_example
+rm -f *.o  *~ ../ondes3d
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c main.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c nrutil.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeVeloAndSource.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeStress.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeIntermediates.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c IO.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit_LayerModel.c
+mpicc     -o ../ondes3d main.o nrutil.o computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o -lm   
+#+end_example
+
+**** Sishuan
+
+Attention: this test case requires a lot of RAM memory. It will
+probably won't work in a single machine.
+
+#+begin_src shell :results output :dir src
+rm -f options.h
+ln -s options-sishuan.h options.h
+make clean
+make
+#+end_src
+
+#+RESULTS:
+#+begin_example
+rm -f *.o  *~ ../ondes3d
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c main.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c nrutil.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeVeloAndSource.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeStress.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeIntermediates.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c IO.c
+mpicc   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit_LayerModel.c
+mpicc     -o ../ondes3d main.o nrutil.o computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o -lm   
+#+end_example
+
+*** Binary location
+
+Even if compilation takes place in the ~src~ directory, the Makefile has
+been altered to place the ~ondes3D~ binary in the root directory of this
+repository. That way, you have this:
+
+#+begin_src shell :results output
+ls -l ./ondes3d
+ldd ./ondes3d
+#+end_src
+
+#+RESULTS:
+#+begin_example
+-rwxr-xr-x 1 schnorr schnorr 171216 Jul 22 10:08 ./ondes3d
+	linux-vdso.so.1 (0x00007fff77fa7000)
+	libm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007f5b01d9f000)
+	libmpi.so.40 => /usr/lib/x86_64-linux-gnu/libmpi.so.40 (0x00007f5b01c96000)
+	libpthread.so.0 => /lib/x86_64-linux-gnu/libpthread.so.0 (0x00007f5b01c75000)
+	libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f5b01ab4000)
+	/lib64/ld-linux-x86-64.so.2 (0x00007f5b01f7c000)
+	libdl.so.2 => /lib/x86_64-linux-gnu/libdl.so.2 (0x00007f5b01aaf000)
+	libopen-rte.so.40 => /usr/lib/x86_64-linux-gnu/libopen-rte.so.40 (0x00007f5b019f7000)
+	libopen-pal.so.40 => /usr/lib/x86_64-linux-gnu/libopen-pal.so.40 (0x00007f5b01948000)
+	librt.so.1 => /lib/x86_64-linux-gnu/librt.so.1 (0x00007f5b0193e000)
+	libutil.so.1 => /lib/x86_64-linux-gnu/libutil.so.1 (0x00007f5b01939000)
+	libz.so.1 => /lib/x86_64-linux-gnu/libz.so.1 (0x00007f5b0171b000)
+	libhwloc.so.5 => /usr/lib/x86_64-linux-gnu/libhwloc.so.5 (0x00007f5b016d9000)
+	libevent-2.1.so.6 => /usr/lib/x86_64-linux-gnu/libevent-2.1.so.6 (0x00007f5b01483000)
+	libevent_pthreads-2.1.so.6 => /usr/lib/x86_64-linux-gnu/libevent_pthreads-2.1.so.6 (0x00007f5b0127e000)
+	libnuma.so.1 => /usr/lib/x86_64-linux-gnu/libnuma.so.1 (0x00007f5b01270000)
+	libltdl.so.7 => /usr/lib/x86_64-linux-gnu/libltdl.so.7 (0x00007f5b01265000)
+#+end_example
+
+** Execution
+
+Before launching the application, one need to decide what will be the
+static partitioning of the problem domain. Ondes3D use a regular 2D
+grid on top of the 3D domain that is governed by a file called
+~topologie.in~ in coordination with the number of MPI processes launched
+with ~mpirun~. So, assuming one want to launch a 4\times4 grid, the ~mpirun~
+needs to instantiate 16 processes. For 12 processes, one might have
+two different 2D grids: 4\times3 or 3\times4. The ~topologie.in~ file is as simple
+as this (for 16 processes):
+
+#+begin_src shell :results output
+echo "4 4" > topologie.in
+cat topologie.in
+#+end_src
+
+#+RESULTS:
+: 4 4
+
+Then, assuming one have also a file called ~machinefile.txt~ with
+hostnames, the ~mpirun~ command looks like this (note that the options
+--bind-to core and --report-bindings are here to improve control over
+the experiment; the --bind-to core has been explicitely commented out
+to enable a local execution).
+
+#+begin_src shell :results output
+echo "localhost slots=16" > machinefile.txt
+#  --bind-to core \
+mpirun \
+  --report-bindings \
+  -np 16 \
+  --machinefile machinefile.txt \
+  ./ondes3d # using a single machine
+#+end_src
+
+#+RESULTS:
+
+#+begin_src shell :results output
+find src | grep options-
+#+end_src
+
+#+RESULTS:
+: src/options-chuetsuoki.h
+: src/options-sishuan.h
+: src/options-ligurian.h
+
+** Traces (Score-P and auxiliary tools)
+*** Install Score-P using Spack
+
+Find out more about spack:
+https://github.com/spack/spack
+
+Find out more about scorep
+http://www.score-p.org/
+
+The following commands install spack (git clone + source), and then
+install scorep with the MPI and PAPI options. The last command might
+take a while because spack compiles everything from scratch, including
+all the dependencies. Dynamic libraries PATH are hardcoded in the
+binaries, improving reproducibility.
+
+#+begin_src shell :results output :dir $HOME
+git clone https://github.com/spack/spack.git
+source $HOME/spack/share/spack/setup-env.sh 
+spack install scorep+mpi+papi
+#+end_src
+
+Add the ~scorep~ executable in your PATH
+
+#+begin_src shell :results output
+export PATH=$(spack location -i scorep+mpi+papi)/bin:$PATH
+#+end_src
+
+*** Use Score-P in Ondes3D compilation
+
+After installing scorep, you can now recompile Ondes3D with scorep to
+automatically instrument the source-code and get MPI traces in the
+OTF2 file format. The simplest way is to update the Makefile like
+this (put scorep before the call to ~mpicc~):
+
+#+begin_src shell :results output
+sed "s/\(mpicc\)/scorep --user \1/" src/Makefile
+#+end_src
+
+#+RESULTS:
+#+begin_example
+CC		=	scorep --user mpicc
+
+#List of Path to search sources files
+VPATH		= .:../src
+#Ansi conformity
+#TESTFLAGS	+= -Xs
+
+#######################################################
+## DEBUG PARAMETERS
+TESTFLAGS       += -DVERBOSE=0
+
+# lecture
+#TESTFLAGS	+= -DDEBUG_READ
+# allocation  
+#TESTFLAGS	+= -DDEBUG_ALLO
+# no velocity computation
+#TESTFLAGS      += -DNOVELOCITY
+# no stress computation
+#TESTFLAGS      += -DNOSTRESS
+# no intermediates computation
+#TESTFLAGS      += -DNOINTERMEDIATES
+# no absorbing condition computation
+#TESTFLAGS       += -DNOABS
+# no anelasticity computation
+#TESTFLAGS      += -DNOANELASTICITY
+###################################################
+
+####################################################
+#EXECUTION FLAGS
+TESTFLAGS	+= -DMPI
+MPI_FLAGS	=	
+TESTFLAGS	+= #-DOMP
+OMP_FLAGS	= #-fopenmp
+# COMM=1 : persistant / COMM=2 : blocking
+TESTFLAGS	+= -DCOMM=1
+# with MPI topologie file (topologie.in)
+#TESTFLAGS	+= -DTOPO_MPI
+#####################################################
+#ADIOS FLAGS
+TESTFLAGS       += -DPRINTSTEP # -DOUTSTD  -DPGV -DPRINTSTEP 
+
+
+#NETCDF_INC=-I/share/apps/netcdf-4.1/gcc/include 
+#NETCDF_LIB= -L//share/apps/netcdf-4.1/gcc/lib -lnetcdf
+
+#ADIOS_DIR=/home/dupros/Lib/adios-install
+#ADIOS_INC=-I/home/dupros/Lib/adios-install/include -I/home/dupros/Lib/hdf5-install/include
+#ADIOS_LIBW=-L/home/dupros/Lib/adios-install/lib -ladios -L/home/dupros/Lib/hdf5-install/lib -lm -lmxml -lhdf5_hl -lhdf5 -lz -libverbs -lz
+
+
+#ADIOS_DIR=/home/dupros/2016/adios-install
+#ADIOS_INC=-I/home/dupros/2016/adios-install/include
+#ADIOS_LIBW=-L/home/dupros/2016/adios-install/lib -ladios -lm -lmxml -lz -libverbs -lz  -L/home/dupros/2016/hdf5-install/lib  -lhdf5_hl -lhdf5 -lz -libverbs -lz
+
+
+#ADIOS_DIR=/home/dupros/Lib/adios-install-trunk
+#ADIOS_INC=-I/home/dupros/Lib/adios-install-trunk/include
+#ADIOS_LIBW=-L/home/dupros/Lib/adios-install-trunk/lib -ladios -lm -lmxml -lz -libverbs -lz  
+
+#ADIOS_DIR=/home/dupros/2016/LIB5/adios-install
+#ADIOS_INC=-I/home/dupros/2016/LIB5/adios-install/include
+#ADIOS_LIBW=-L/home/dupros/2016/LIB5/adios-install/lib -ladios -lm -lmxml -lz -libverbs -lz  -L/usr/lib64//lib64 -llustreapi
+
+
+
+
+####################################################
+#PROFILING FLAG
+
+# TIMER=1 : standard / TIMER = 2 : timer vith MPI barriers
+TESTFLAGS       += -DTIMER=1
+#TAU detailed profiling
+#TESTFLAGS	+= -DPROFILE1
+#TAU global profiling
+#TESTFLAGS       += -DPROFILE2
+#FLOPS based on top of PAPI library
+#TESTFLAGS       += -DFLOPS
+#PAPI counters (cache misses) using PAPI library
+#TESTFLAGS       += -DMISS
+
+#######################################################
+# OUTPUT
+#Write geological model
+#TESTFLAGS	+= -DOUT_HOGE
+
+########################################################
+
+
+
+#########################################################"
+## OPTIMISATION PARAMETERS
+OPTI 		+=  -O3 
+# -g -traceback
+###########################################################
+
+
+#MODEL parameters; default values are in options.h
+CFLAGS		=   $(TESTFLAGS)  $(OPTI)  $(MODEL) 
+PREFIX =../ondes3d
+OBJS = main.o nrutil.o  computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o
+HEADERS=struct.h inlineFunctions.h options.h
+
+
+all: $(PREFIX)
+$(PREFIX): $(OBJS)
+	$(CC)  $(MPI_FLAGS) $(OMP_FLAGS)  -o $@ $^ -lm $(ADIOS_LIBW)  $(NETCDF_LIB)
+
+%.o: %.c
+	$(CC) $(MPI_FLAGS) $(OMP_FLAGS) $(CFLAGS) $(ADIOS_INC) $(NETCDF_INC) -c $<
+
+clean:
+	rm -f *.o  *~ ../ondes3d
+#+end_example
+
+*** Compile and Run (for Chuetsu-oki example)
+
+#+begin_src shell :results output :dir src
+cp Makefile Makefile.scorep
+sed -i "s/\(mpicc\)/scorep --user \1 -DLUCAS_INSTRUMENTATION/" Makefile.scorep
+rm -f options.h
+ln -s options-chuetsuoki.h options.h
+make -f Makefile.scorep clean
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i scorep+mpi+papi)/bin:$PATH
+echo $(which scorep)
+make -f Makefile.scorep
+#+end_src
+
+#+RESULTS:
+#+begin_example
+rm -f *.o  *~ ../ondes3d
+/home/schnorr/spack/opt/spack/linux-debian10-x86_64/gcc-8.3.0/scorep-4.1-7vtzthnttgis3dz7ktdqqtvpxy7p4gl4/bin/scorep
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c main.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c nrutil.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeVeloAndSource.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeStress.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c computeIntermediates.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c IO.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION   -DVERBOSE=0 -DMPI  -DCOMM=1 -DPRINTSTEP  -DTIMER=1  -O3       -c alloAndInit_LayerModel.c
+scorep --user mpicc -DLUCAS_INSTRUMENTATION     -o ../ondes3d main.o nrutil.o computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o -lm   
+#+end_example
+
+*** Local run just to try out
+
+Change the ~tmax~ parameter
+#+BEGIN_EXAMPLE
+<tmax> 5 </tmax>                        number of time steps
+#+END_EXAMPLE
+to reduce the number of iterations.
+
+Remember to set some environment variables (example)
+
+Then run.
+
+#+begin_src shell :results output
+echo "2 2" > topologie.in
+echo "localhost slots=4" > machinefile.txt
+mpirun \
+    -x SCOREP_METRIC_PAPI_PER_PROCESS="PAPI_TOT_INS,PAPI_TOT_CYC" \
+    -x SCOREP_ENABLE_TRACING=true \
+    -np 4 --machinefile machinefile.txt ./ondes3d
+#+end_src
+
+By the end of the execution, you'll get a ~scorep-...~ directory with
+the trace and everything that has been measured by scorep. Let's DUMP
+with ~otf2-print~, just to confirm that the information is really there.
+
+#+begin_src shell :results output
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i otf2)/bin:$PATH
+otf2-print scorep-20190723_0045_65609680583656/traces.otf2 | head -n20
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+=== OTF2-PRINT ===
+=== Events =====================================================================
+Event                               Location            Timestamp  Attributes
+--------------------------------------------------------------------------------
+METRIC                                     3       65556551046911  Metric: 8, 1 Value: ("PAPI_TOT_INS" <8>; UINT64; 40453)
+METRIC                                     3       65556551046911  Metric: 9, 1 Value: ("PAPI_TOT_CYC" <9>; UINT64; 100208)
+ENTER                                      3       65556551046911  Region: "MPI_Init" <173>
+METRIC                                     2       65556551046962  Metric: 6, 1 Value: ("PAPI_TOT_INS" <8>; UINT64; 40452)
+METRIC                                     2       65556551046962  Metric: 7, 1 Value: ("PAPI_TOT_CYC" <9>; UINT64; 102105)
+ENTER                                      2       65556551046962  Region: "MPI_Init" <173>
+METRIC                                     0       65556551047081  Metric: 1, 1 Value: ("PAPI_TOT_INS" <8>; UINT64; 40453)
+METRIC                                     0       65556551047081  Metric: 3, 1 Value: ("PAPI_TOT_CYC" <9>; UINT64; 92920)
+ENTER                                      0       65556551047081  Region: "MPI_Init" <173>
+METRIC                                     1       65556551047084  Metric: 4, 1 Value: ("PAPI_TOT_INS" <8>; UINT64; 40453)
+METRIC                                     1       65556551047084  Metric: 5, 1 Value: ("PAPI_TOT_CYC" <9>; UINT64; 100765)
+ENTER                                      1       65556551047084  Region: "MPI_Init" <173>
+METRIC                                     1       65557883562300  Metric: 4, 1 Value: ("PAPI_TOT_INS" <8>; UINT64; 77581001)
+METRIC                                     1       65557883562300  Metric: 5, 1 Value: ("PAPI_TOT_CYC" <9>; UINT64; 75061821)
+LEAVE                                      1       65557883562300  Region: "MPI_Init" <173>
+#+end_example
+
+It works! HW counters from PAPI are collected in-between MPI calls!
+But still, the trace remains unclassified with regards to the three
+macro-phase of Ondes3D. This will come up shortly.
+
+#+begin_src shell :results output
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i otf2)/bin:$PATH
+otf2-print scorep-20190723_0045_65609680583656/traces.otf2 | grep -e stress -e iteration -e Moment -e velocity | grep "    2      " | head -n20
+#+end_src
+
+#+RESULTS:
+#+begin_example
+ENTER                                      2       65558882177647  Region: "iteration" <277>
+ENTER                                      2       65558882203989  Region: "seisMoment" <278>
+LEAVE                                      2       65558882265548  Region: "seisMoment" <278>
+ENTER                                      2       65560450907269  Region: "stress" <280>
+LEAVE                                      2       65560484474663  Region: "stress" <280>
+ENTER                                      2       65560484493749  Region: "stress" <280>
+LEAVE                                      2       65560561143665  Region: "stress" <280>
+ENTER                                      2       65560561166276  Region: "stress" <280>
+LEAVE                                      2       65560637326034  Region: "stress" <280>
+ENTER                                      2       65560637348766  Region: "stress" <280>
+LEAVE                                      2       65560671279209  Region: "stress" <280>
+ENTER                                      2       65560673522797  Region: "stress" <280>
+LEAVE                                      2       65564579611150  Region: "stress" <280>
+ENTER                                      2       65564790621657  Region: "velocity" <281>
+LEAVE                                      2       65564856381792  Region: "velocity" <281>
+ENTER                                      2       65564856408475  Region: "velocity" <281>
+LEAVE                                      2       65564924286329  Region: "velocity" <281>
+ENTER                                      2       65564924322147  Region: "velocity" <281>
+LEAVE                                      2       65564988710536  Region: "velocity" <281>
+ENTER                                      2       65564988741673  Region: "velocity" <281>
+#+end_example
+
+Great, we have ENTER and LEAVE events for rank 2!
+
+*** Understand this small trace                                    :ATTACH:
+:PROPERTIES:
+:Attachments: small_trace.csv
+:ID:       12445149-f54b-4436-b2da-e3bac9283895
+:END:
+
+Preliminaries
+
+#+begin_src shell :results output
+~/dev/akypuera/b/otf22paje scorep-20190723_0045_65609680583656/traces.otf2 | pj_dump | grep ^State > small_trace.csv
+wc -l small_trace.csv
+#+end_src
+
+#+RESULTS:
+: 834 small_trace.csv
+
+Start here
+
+#+name: read_small_trace
+#+begin_src R :results output :session :exports both
+library(tidyverse)
+FILE <- "data/12/445149-f54b-4436-b2da-e3bac9283895/small_trace.csv"
+read_csv(FILE, col_names=FALSE, col_types=cols()) %>%
+    select(-X1, -X3, -X7) %>%
+    mutate(Rank = as.integer(gsub("MPI Rank ", "", X2))) %>% select(-X2) %>%
+    mutate(Iteration = ifelse(X8 == "iteration", 1, NA)) %>%
+    fill(Iteration) %>%
+    filter(!is.na(Iteration)) %>%
+    filter(X8 != "iteration") %>%
+    rename(Start = X4, End = X5, Duration = X6) %>%
+    rename(Operation = X8) %>%
+    mutate(Type = ifelse(grepl("MPI", Operation), "MPI", "Application")) %>%
+    print -> df;
+#+end_src
+
+#+RESULTS: read_small_trace
+#+begin_example
+
+# A tibble: 798 x 7
+   Start   End Duration Operation      Rank Iteration Type       
+   <dbl> <dbl>    <dbl> <chr>         <int>     <dbl> <chr>      
+ 1 0.803 0.803 0.000014 seisMoment        3         1 Application
+ 2 0.803 0.810 0.00734  intermediates     3         1 Application
+ 3 0.810 0.825 0.0153   intermediates     3         1 Application
+ 4 0.825 0.833 0.00735  intermediates     3         1 Application
+ 5 0.833 0.848 0.0150   intermediates     3         1 Application
+ 6 0.848 1.31  0.459    intermediates     3         1 Application
+ 7 1.31  1.33  0.0264   stress            3         1 Application
+ 8 1.33  1.34  0.0114   stress            3         1 Application
+ 9 1.34  1.37  0.0258   stress            3         1 Application
+10 1.37  1.38  0.0116   stress            3         1 Application
+# … with 788 more rows
+#+end_example
+
+#+begin_src R :results output graphics :file img/small_trace.png :exports both :width 800 :height 200 :session
+df %>%
+    filter(Type == "Application") %>%
+    ggplot(aes(xmin=Start, xmax=End, ymin=Rank-0.4, ymax=Rank+0.4, fill=Operation)) +
+    geom_rect() +
+    facet_wrap(~Type) +
+    theme_bw(base_size=22)# +
+#    theme(legend.position="top")
+#+end_src
+
+#+RESULTS:
+[[file:img/small_trace.png]]
+
+** Traces                                                       :deprecated:
+*** (draco) Larger run in a small 3-node allocation            :deprecated:
+**** Preparation
+
+Recompile as in a local environment
+
+#+begin_src shell :results output :dir src
+cp Makefile Makefile.scorep
+sed -i "s/\(mpicc\)/scorep \1/" Makefile.scorep
+rm -f options.h
+ln -s options-sishuan.h options.h
+make -f Makefile.scorep clean
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i openmpi)/bin:$PATH
+export PATH=$(spack location -i scorep+mpi+papi)/bin:$PATH
+echo $(which scorep)
+make -f Makefile.scorep
+#+end_src
+
+**** Execution with 64 ranks
+
+Be mindfull to enable HW counters.
+
+#+begin_src shell :results output
+echo "8 8" > topologie.in
+echo "draco4 slots=32
+draco2 slots=32" > machinefile.txt
+#  --bind-to core \
+export SCOREP_ENABLE_PROFILING=False
+export SCOREP_ENABLE_TRACING=True
+export SCOREP_METRIC_PAPI_PER_PROCESS=PAPI_TOT_INS,PAPI_TOT_CYC
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i openmpi)/bin:$PATH
+mpirun \
+  --report-bindings \
+  -np 64 \
+  --machinefile machinefile.txt \
+  ./ondes3d
+#+end_src
+
+*** (knl) Larger run in a small 3-node allocation              :deprecated:
+**** Preparation
+
+Recompile as in a local environment
+
+#+begin_src shell :results output :dir src
+cp Makefile Makefile.scorep
+sed -i "s/\(mpicc\)/scorep \1/" Makefile.scorep
+rm -f options.h
+ln -s options-sishuan.h options.h
+make -f Makefile.scorep clean
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i openmpi)/bin:$PATH
+export PATH=$(spack location -i scorep+mpi+papi)/bin:$PATH
+echo $(which scorep)
+make -f Makefile.scorep
+#+end_src
+
+**** Execution with 272 ranks
+
+Be mindfull to enable 
+
+#+begin_src shell :results output
+echo "16 16" > topologie.in
+echo "knl4 slots=68
+knl3 slots=68
+knl2 slots=68
+knl1 slots=68" > machinefile_knl.txt
+#  --bind-to core \
+export SCOREP_ENABLE_PROFILING=False
+export SCOREP_ENABLE_TRACING=True
+export SCOREP_METRIC_PAPI_PER_PROCESS=PAPI_TOT_INS,PAPI_TOT_CYC
+source $HOME/spack/share/spack/setup-env.sh 
+export PATH=$(spack location -i openmpi)/bin:$PATH
+mpirun \
+  --report-bindings \
+  -np 272 \
+  --machinefile machinefile_knl.txt \
+  ./ondes3d
+#+end_src
+
+*** Even 121 ranks (topology 11 x 11)                          :deprecated:
+
+Compile
+
+#+begin_src shell :results output
+cd $HOME/ondes3d/
+source $HOME/spack/share/spack/setup-env.sh
+export PATH=$(spack location -i openmpi)/bin:$PATH
+export PATH=$(spack location -i scorep+mpi+papi)/bin:$PATH
+for case in chuetsuoki ligurian sishuan; do
+	pushd src	
+	cp Makefile Makefile.scorep
+	sed -i "s/\(mpicc\)/scorep --user --static \1 -DLUCAS_INSTRUMENTATION/" Makefile.scorep
+	sed -i "s/\(ondes3d\)$/\1-${case}/" Makefile.scorep
+	rm -f options.h
+	ln -s options-${case}.h options.h
+	make -f Makefile.scorep clean
+	make -f Makefile.scorep
+	popd
+done
+#+end_src
+
+Prepare
+
+#+begin_src shell :results output
+echo "11 11" > topologie.in
+echo "draco4 slots=32
+draco2 slots=32
+draco3 slots=32
+draco5 slots=32" > machinefile.txt
+#+end_src
+
+#+begin_src shell :results output
+source $HOME/spack/share/spack/setup-env.sh
+export PATH=$(spack location -i openmpi)/bin:$PATH
+for case in chuetsuoki ligurian sishuan; do
+	mpirun \
+	    -x SCOREP_METRIC_PAPI_PER_PROCESS="PAPI_TOT_INS,PAPI_TOT_CYC" \
+	    -x SCOREP_ENABLE_TRACING=true \
+	    -x SCOREP_TIMER=clock_gettime \
+	    --report-bindings \
+	    -np 121 \
+	    --machinefile machinefile.txt \
+	    ./ondes3d-${case}
+done  > log.txt
+#+end_src
+
+
