@@ -1,0 +1,29 @@
+##################
+# CPUs
+# maximum number of CPUs
+1
+###########
+# 1 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_impl_0
+# number of entries
+0
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+1.795251e+04   	2.411394e+05   	4.724628e+03   	6.996800e+04   	4.840721e-04   	8.584434e-01   	1400	4096           	33554432       
+# a		b		c
+nan            	nan            	nan            
+
+##################
+##################
+# CUDAs
+# number of CUDA architectures
+0
+##################
+# OPENCLs
+# number of OPENCL architectures
+0
+##################
+# GORDONs
+# number of GORDON architectures
+0

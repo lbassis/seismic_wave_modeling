@@ -1,0 +1,60 @@
+# les commentaires commencent par "# "
+# model dimensions
+NDIM = 4
+XMIN = -349
+XMAX = 350
+YMIN = -349
+YMAX = 350
+ZMIN = -79
+
+# number of time steps
+TIME_STEPS = 10
+
+# steps (DS & DT)
+DS = 100.
+DT = 0.005
+
+# dominant frequency
+DF = 1.0
+
+# dummy values ???
+I0 = 1
+J0 = 1
+
+# output directory (need to be created)
+OUTPUT_DIR = ./Aquila/
+
+# data files
+SOURCES = ./DATA/aquila.map
+SOURCE_TIME_FUNCTION = ./DATA/aquila.hist
+STATIONS = ./DATA/aquila.obs
+
+# model type (1D 3D)
+MODEL_TYPE = 3D
+
+
+# 1D model ################################################
+NB_LAYERS = 5
+
+# 1D model layers
+# layer		top depth	vp	vs	rho	q
+LAYER_1		1.		5080.	2670.	2560.	-1.
+LAYER_2		-3.		5750.	3030.	2650.	-1.
+LAYER_3		-5.		6000.	3160.	2800.	-1.
+LAYER_4		-7.		6250.	3300.	2800.	-1.
+LAYER_5		-15.		6500.	3420.	2800.	-1.
+
+
+# 3D model ################################################
+MODEL_FILE = ./DATA/3DVEL_ChuReg.txt
+IMAX = 23
+JMAX = 15
+KMAX = 11
+
+# rotation of 3D model
+THETA = 35.
+
+# origin of 3D model
+X0 = 20.19683
+Y0 = -21.338878
+

@@ -1,0 +1,65 @@
+##################
+# CPUs
+# maximum number of CPUs
+4
+###########
+# 1 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+a3d3725e	4096           	1.511420e+03   	1.088887e+03   	1.209136e+04   	2.776054e+07   	8
+
+##################
+###########
+# 2 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_2_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+a3d3725e	4096           	5.926890e+02   	1.523690e+02   	3.952051e+06   	2.497143e+09   	6668
+
+##################
+###########
+# 3 CPU(s) in parallel
+# number of implementations
+0
+###########
+# 4 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_4_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+a3d3725e	4096           	3.415945e+02   	2.217674e+02   	1.106766e+05   	5.374110e+07   	324
+
+##################
+##################
+# CUDAs
+# number of CUDA architectures
+0
+##################
+# OPENCLs
+# number of OPENCL architectures
+0
+##################
+# GORDONs
+# number of GORDON architectures
+0

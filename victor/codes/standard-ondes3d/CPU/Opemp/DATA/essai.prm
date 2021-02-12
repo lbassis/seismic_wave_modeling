@@ -1,0 +1,36 @@
+:::::::::::: main parameters ::::::::::::::::
+<dt> 0.008 </dt>			time step
+<ds> 100. </ds>				size of the cell
+
+<tmax> 100 </tmax>			number of time steps
+<xMin> -97 </xMin> <xMax> 100 </xMax>	number of cells in each direction
+<yMin> -100 </yMin> <yMax> 100 </yMax>
+<zMin> -100 </zMin> <zMax> 1 </zMax>
+
+<fd0> 1. </fd0>				CPML main frequency
+
+:::::::::::: output description :::::::::::::
+<dir>./Essai/</dir>		 	directory of results
+# snapshots #
+<i0> -19 </i0>				index coordinates of the output planes
+<j0> 1 </j0>
+<k0> 1 </k0>
+
+# seismogramms #
+<fstatMap>./DATA/station.map</fstatMap>	stations coordinates
+
+:::::::::::: source description :::::::::::::
+<fsrcMap>./DATA/essai.map</fsrcMap>		sources coordinates
+<fsrcHist>./DATA/essai.hist</fsrcHist>	sources history file
+
+:::::::::::: geology description ::::::::::::
+<nlayer> 1 </nlayer>
+<layer1>
+	= necessary =
+	<rho> 2700. </rho> density
+	<vp> 6000. </vp> pressure waves velocity
+	<vs> 3460. </vs> shear waves velocity
+
+	= layer representation =
+	<depth> 15.0 </depth> roof of the layer in kilometers
+</layer1>

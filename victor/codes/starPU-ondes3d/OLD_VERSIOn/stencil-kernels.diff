@@ -1,0 +1,1266 @@
+148a149,160
+> float time_spent_veloc_xp[STARPU_NMAXWORKERS];
+> float time_spent_veloc_xm[STARPU_NMAXWORKERS];
+> float time_spent_veloc_yp[STARPU_NMAXWORKERS];
+> float time_spent_veloc_ym[STARPU_NMAXWORKERS];
+> float time_spent_stress_xp[STARPU_NMAXWORKERS];
+> float time_spent_stress_xm[STARPU_NMAXWORKERS];
+> float time_spent_stress_yp[STARPU_NMAXWORKERS];
+> float time_spent_stress_ym[STARPU_NMAXWORKERS];
+> 
+> float time_spent_veloc_update[STARPU_NMAXWORKERS];
+> float time_spent_stress_update[STARPU_NMAXWORKERS];
+> 
+191a204
+> 	  INFO( "CHECK : dir : %i, block : %ix%ix%i, boundary : %ix%ix%i\n", dir, block->nx, block->ny, block->nz, boundary->nx, boundary->ny, boundary->nz);
+195,198c208,212
+< 			case XM :	STARPU_ASSERT(boundary->nx == K);
+< 							STARPU_ASSERT(block->ny == boundary->ny);
+< 							STARPU_ASSERT(block->nz == boundary->nz);
+< 							break;
+---
+> 			case XM :	
+> 								STARPU_ASSERT(boundary->nx == K);
+> 								STARPU_ASSERT(block->ny == boundary->ny);
+> 								STARPU_ASSERT(block->nz == boundary->nz);
+> 								break;
+201,203c215,217
+< 							STARPU_ASSERT(block->nx == boundary->nx);
+< 							STARPU_ASSERT(block->nz == boundary->nz);
+< 							break;
+---
+> 								STARPU_ASSERT(block->nx == boundary->nx);
+> 								STARPU_ASSERT(block->nz == boundary->nz);
+> 								break;
+223c237
+< 		unsigned offset, slice_size;
+---
+> 		unsigned offset, nb_block_per_slice;
+238a253
+> 		if (descr->bx==0 && descr->by==1 && direction==2) DGN_DBG
+243,247c258,263
+< 			case XM :	slice_size = K*block->ldy*block->elemsize;
+< 							for (int iz=0; iz<block->nz; iz++) {
+< 								memcpy(&block_data[offset], &boundary_data[offset_b], slice_size);
+< 								offset += block->ldz;
+< 								offset_b += slice_size;
+---
+> 			case XM :	nb_block_per_slice = K;
+> 						for (int iz=0; iz<block->nz; iz++) {
+> 							for (int iy=0; iy<block->ny; iy++) {
+> 								memcpy(&block_data[offset], &boundary_data[offset_b], nb_block_per_slice*block->elemsize);
+> 								offset += block->ldy;
+> 								offset_b += nb_block_per_slice;
+249c265,266
+< 							break;
+---
+> 						}
+> 						break;
+251,259c268,283
+< 			case YM :	slice_size = K*block->elemsize;
+< 							for (int iz=0; iz<block->nz; iz++) {
+< 								for (int iy=0; iy<block->ny; iy++) {
+< 									memcpy(&block_data[offset], &boundary_data[offset_b], slice_size);
+< 									offset += block->ldy;
+< 									offset_b += slice_size;
+< 								}
+< 							}
+< 							break;
+---
+> 			case YM :	nb_block_per_slice = K*block->ldy;
+> /*		if (descr->bx==0 && descr->by==1 && direction==3) {
+> 						printf("slice size = %d, block strides : %d, %d\n", nb_block_per_slice,  block->ldy, block->ldz);fflush(stdout);
+> 		}*/
+> 						for (int iz=0; iz<block->nz; iz++) {
+> /*		if (descr->bx==0 && descr->by==1 && direction==2) {
+> 						printf("z = %d/%d\n", iz+1, block->nz);
+> 						printf("%f\n", block_data[offset]);
+> 						printf("%f\n", boundary_data[offset_b]);
+> 		}*/
+> 							memcpy(&block_data[offset], &boundary_data[offset_b], nb_block_per_slice*block->elemsize);
+> 							offset += block->ldz;
+> 							offset_b += nb_block_per_slice;
+> 						}
+> 						break;
+> 
+262a287
+> 		if (descr->bx==0 && descr->by==1 && direction==3) DGN_DBG
+280c305
+< 		unsigned offset, slice_size;
+---
+> 		unsigned offset, nb_block_per_slice;
+300,304c325,330
+< 			case XM :	slice_size = K*block->ldy*block->elemsize;
+< 							for (int iz=0; iz<block->nz; iz++) {
+< 								cudaMemcpyAsync(&block_data[offset], &boundary_data[offset_b], slice_size, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+< 								offset += block->ldz;
+< 								offset_b += slice_size;
+---
+> 			case XM :	nb_block_per_slice = K;
+> 						for (int iz=0; iz<block->nz; iz++) {
+> 							for (int iy=0; iy<block->ny; iy++) {
+> 								cudaMemcpyAsync(&block_data[offset], &boundary_data[offset_b], nb_block_per_slice*block->elemsize, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+> 								offset += block->ldy;
+> 								offset_b += nb_block_per_slice;
+306c332,334
+< 							break;
+---
+> 						}
+> 						break;
+> 
+308,316c336,342
+< 			case YM :	slice_size = K*block->elemsize;
+< 							for (int iz=0; iz<block->nz; iz++) {
+< 								for (int iy=0; iy<block->ny; iy++) {
+< 									cudaMemcpyAsync(&block_data[offset], &boundary_data[offset_b], slice_size, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+< 									offset += block->ldy;
+< 									offset_b += slice_size;
+< 								}
+< 							}
+< 							break;
+---
+> 			case YM :	nb_block_per_slice = K*block->ldy;
+> 						for (int iz=0; iz<block->nz; iz++) {
+> 							cudaMemcpyAsync(&block_data[offset], &boundary_data[offset_b], nb_block_per_slice*block->elemsize, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+> 							offset += block->ldz;
+> 							offset_b += nb_block_per_slice;
+> 						}
+> 						break;
+328a355
+> 					DGN_DBG
+331,335c358,362
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 		if (block->bx == 0 && block->by == 0)
+< 	fprintf(stderr,"!!! DO compute_veloc_cuda block{%d, %d} CUDA%d !!!\n", block->bx, block->by, workerid);
+< 		else
+< 		DEBUG( "!!! DO compute_veloc_cuda block{%d, %d} CUDA%d !!!\n", block->bx, block->by, workerid);
+---
+> 		block->iter++;
+> 		// if (block->bx == 0 && block->by == 0)
+> 		// 	fprintf(stderr,"!!! DO compute_veloc_cuda block{%d, %d} CUDA%d !!!\n", block->bx, block->by, workerid);
+> 		// else
+> 		INFO( "!!! DO compute_veloc_cuda it=%d, block{%d, %d} CUDA%d !!!\n", block->iter, block->bx, block->by, workerid);
+341c368
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+---
+> 		
+346a374
+> 
+349c377,378
+< #if 1 /*already done in record_seismo*/
+---
+> #if 0
+> 		/*already done in record_seismo*/
+484a514,516
+> 
+> 		DGN_DBG
+> 		clock_t start = clock();
+486c518
+< 		DEBUG("launch compute veloc cuda kernel\n");
+---
+> 		DEBUG(">>> compute veloc cuda kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+496c528
+< 		DEBUG("compute veloc cuda kernel done\n");
+---
+> 
+499a532,535
+> 		else
+> 			time_spent_veloc_update[starpu_worker_get_id()] += (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 		DEBUG("<<< compute veloc cuda kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+> 		DGN_DBG
+511,515c547,551
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 		if (block->bx == 0 && block->by == 0)
+< 	fprintf(stderr,"!!! DO compute_stress_cuda block{%d, %d} CUDA%d !!!\n", block->bx, block->by, workerid);
+< 		else
+< 		DEBUG( "!!! DO compute_stress_cuda block{%d, %d} CUDA%d !!!\n", block->bx, block->by, workerid);
+---
+> 		
+> 	// 	if (block->bx == 0 && block->by == 0)
+> 	// fprintf(stderr,"!!! DO compute_stress_cuda block{%d, %d} CUDA%d !!!\n", block->bx, block->by, workerid);
+> 	// 	else
+> 		INFO( "!!! DO compute_stress_cuda it=%d, block{%d, %d} CUDA%d !!!\n", block->iter, block->bx, block->by, workerid);
+521c557
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+---
+> 		
+532d567
+< 		
+535,537c570,572
+< 			load_subblock_from_buffer_cpu(descr[0], descr[9], XP, block);
+< 			load_subblock_from_buffer_cpu(descr[1], descr[10], XP, block);
+< 			load_subblock_from_buffer_cpu(descr[2], descr[11], XP, block);
+---
+> 			load_subblock_from_buffer_cuda(descr[0], descr[9], XP, block);
+> 			load_subblock_from_buffer_cuda(descr[1], descr[10], XP, block);
+> 			load_subblock_from_buffer_cuda(descr[2], descr[11], XP, block);
+542,544c577,579
+< 			load_subblock_from_buffer_cpu(descr[0], descr[12], XM, block);
+< 			load_subblock_from_buffer_cpu(descr[1], descr[13], XM, block);
+< 			load_subblock_from_buffer_cpu(descr[2], descr[14], XM, block);
+---
+> 			load_subblock_from_buffer_cuda(descr[0], descr[12], XM, block);
+> 			load_subblock_from_buffer_cuda(descr[1], descr[13], XM, block);
+> 			load_subblock_from_buffer_cuda(descr[2], descr[14], XM, block);
+550,552c585,587
+< 			load_subblock_from_buffer_cpu(descr[0], descr[15], YP, block);
+< 			load_subblock_from_buffer_cpu(descr[1], descr[16], YP, block);
+< 			load_subblock_from_buffer_cpu(descr[2], descr[17], YP, block);
+---
+> 			load_subblock_from_buffer_cuda(descr[0], descr[15], YP, block);
+> 			load_subblock_from_buffer_cuda(descr[1], descr[16], YP, block);
+> 			load_subblock_from_buffer_cuda(descr[2], descr[17], YP, block);
+558,560c593,595
+< 			load_subblock_from_buffer_cpu(descr[0], descr[18], YM, block);
+< 			load_subblock_from_buffer_cpu(descr[1], descr[19], YM, block);
+< 			load_subblock_from_buffer_cpu(descr[2], descr[20], YM, block);
+---
+> 			load_subblock_from_buffer_cuda(descr[0], descr[18], YM, block);
+> 			load_subblock_from_buffer_cuda(descr[1], descr[19], YM, block);
+> 			load_subblock_from_buffer_cuda(descr[2], descr[20], YM, block);
+646c681,682
+< 		DEBUG("launch compute stress cuda kernel\n");
+---
+> 		clock_t start =clock();
+> 		DEBUG(">>> compute stress cuda kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+656c692,693
+< 		DEBUG("compute stress cuda kernel done\n");
+---
+> 		DEBUG("<<< compute stress cuda kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+> 
+659a697,698
+> 		else
+> 			time_spent_stress_update[workerid] += (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+675,679c714,718
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 		if (block->bx == 0 && block->by == 0)
+< 	fprintf(stderr,"!!! DO compute_veloc_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+< 		else
+< 		DEBUG("!!! DO compute_veloc_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+---
+> 		block->iter++;	
+> 	// 	if (block->bx == 0 && block->by == 0)
+> 	// fprintf(stderr,"!!! DO compute_veloc_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+> 	// 	else
+> 		INFO("!!! DO compute_veloc_cpu it=%d, block{%d, %d} CPU%d !!!\n", block->iter, block->bx, block->by, workerid);
+685c724
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+---
+> 		
+696c735
+< #if 1
+---
+> #if 0
+701c740
+< 			DEBUG("load_subblock_from_buffer_cpu XP\n");
+---
+> 			// DEBUG("load_subblock_from_buffer_cpu XP\n");
+713c752
+< 			DEBUG("load_subblock_from_buffer_cpu XM\n");
+---
+> 			// DEBUG("load_subblock_from_buffer_cpu XM\n");
+725c764
+< 			DEBUG("load_subblock_from_buffer_cpu YP\n");
+---
+> 			// DEBUG("load_subblock_from_buffer_cpu YP\n");
+737c776
+< 			DEBUG("load_subblock_from_buffer_cpu YM\n");
+---
+> 			// DEBUG("load_subblock_from_buffer_cpu YM\n");
+830c869,872
+< 		DEBUG("launch compute veloc cpu kernel\n");
+---
+> 
+> 		clock_t start =clock();
+> 
+> 		DEBUG(">>> compute veloc cpu kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+841c883,885
+< 		DEBUG("compute veloc cpu done\n");
+---
+> 		clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 		time_spent_veloc_update[starpu_worker_get_id()] += duration;
+> 		DEBUG("<<< compute veloc cpu kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+850a895
+> 		DGN_DBG
+853,857c898,902
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 		if (block->bx == 0 && block->by == 0)
+< 	fprintf(stderr,"!!! DO compute_stress_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+< 		else
+< 		DEBUG("!!! DO compute_stress_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+---
+> 		
+> 		// if (block->bx == 0 && block->by == 0)
+> 		// 	fprintf(stderr,"!!! DO compute_stress_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+> 		// else
+> 		INFO("!!! DO compute_stress_cpu it=%d, block{%d, %d} CPU%d !!!\n", block->iter, block->bx, block->by, workerid);
+863c908
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+---
+> 		
+988c1033,1035
+< 		DEBUG("launch compute stress cpu kernel\n");
+---
+> 		clock_t start =clock();
+> 
+> 		DEBUG(">>> compute stress cpu kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+996c1043
+< 									ixe_min, ixs_max, iye_min, iys_max, dump0, kappa0, alpha0
+---
+> 									ixe_min, ixs_max, iye_min, iys_max, dump0, kappa0, alpha0, block->iter
+998c1045,1047
+< 		DEBUG("compute stress cpu done\n");
+---
+> 		DEBUG("<<< compute stress cpu kernel\tit=%d\t{%d, %d}\tCPU %d\n", block->iter, block->bx, block->by, workerid);
+> 		clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 		time_spent_stress_update[starpu_worker_get_id()] += duration;
+1021c1070
+< 			STARPU_CUDA|
+---
+> 			STARPU_CUDA |
+1023,1024c1072,1073
+< 			STARPU_CPU,
+< 		.cpu_funcs = {compute_veloc_func_cpu, NULL},
+---
+> 		 	STARPU_CPU,
+> 		 .cpu_funcs = {compute_veloc_func_cpu, NULL},
+1047c1096
+< 			STARPU_CUDA|
+---
+> 			STARPU_CUDA |
+1049,1050c1098,1099
+< 			STARPU_CPU,
+< 		.cpu_funcs = {compute_stress_func_cpu, NULL},
+---
+> 		 	STARPU_CPU,
+> 		 .cpu_funcs = {compute_stress_func_cpu, NULL},
+1082c1131
+< 		unsigned offset, slice_size;
+---
+> 		unsigned offset, nb_block_per_slice;
+1087c1136
+< 			case XP :	offset = aligned()? block->ldy-descr->padding-K:block->ldy-K;
+---
+> 			case XP :	offset = aligned()? block->ldy-descr->padding-2*K:block->ldy-2*K;
+1089c1138
+< 			case XM :	offset = aligned()?(ALIGN-K):0;
+---
+> 			case XM :	offset = aligned()?ALIGN:K;
+1091c1140
+< 			case YP :	offset = block->ldz - K*block->ldy;
+---
+> 			case YP :	offset = block->ldz - 2*K*block->ldy;
+1093c1142
+< 			case YM :	offset = 0;
+---
+> 			case YM :	offset = K*block->ldy;
+1101,1108d1149
+< 			case XP :	
+< 			case XM :	slice_size = K*block->ldy*block->elemsize;
+< 							for (int iz=0; iz<block->nz; iz++) {
+< 								memcpy(&boundary_data[offset_b], &block_data[offset], slice_size);
+< 								offset += block->ldz;
+< 								offset_b += slice_size;
+< 							}
+< 							break;
+1110,1116c1151,1164
+< 			case YM :	slice_size = K*block->elemsize;
+< 							for (int iz=0; iz<block->nz; iz++) {
+< 								for (int iy=0; iy<block->ny; iy++) {
+< 									memcpy(&boundary_data[offset_b], &block_data[offset], slice_size);
+< 									offset += block->ldy;
+< 									offset_b += slice_size;
+< 								}
+---
+> 			case YM :	nb_block_per_slice = K*block->ldy;
+> 						for (int iz=0; iz<block->nz; iz++) {
+> 							memcpy(&boundary_data[offset_b], &block_data[offset], nb_block_per_slice*block->elemsize);
+> 							offset += block->ldz;
+> 							offset_b += nb_block_per_slice;
+> 						}
+> 						break;
+> 			case XP :	
+> 			case XM :	nb_block_per_slice = K;
+> 						for (int iz=0; iz<block->nz; iz++) {
+> 							for (int iy=0; iy<block->ny; iy++) {
+> 								memcpy(&boundary_data[offset_b], &block_data[offset], nb_block_per_slice*block->elemsize);
+> 								offset += block->ldy;
+> 								offset_b += nb_block_per_slice;
+1118c1166,1167
+< 							break;
+---
+> 						}
+> 						break;
+1136c1185
+< 		unsigned offset, slice_size;
+---
+> 		unsigned offset, nb_block_per_slice;
+1141c1190
+< 			case XP :	offset = aligned()? block->ldy-descr->padding-K:block->ldy-K;
+---
+> 			case XP :	offset = aligned()? block->ldy-descr->padding-2*K:block->ldy-2*K;
+1143c1192
+< 			case XM :	offset = aligned()?(ALIGN-K):0;
+---
+> 			case XM :	offset = aligned()?ALIGN:K;
+1145c1194
+< 			case YP :	offset = block->ldz - K*block->ldy;
+---
+> 			case YP :	offset = block->ldz - 2*K*block->ldy;
+1147c1196
+< 			case YM :	offset = 0;
+---
+> 			case YM :	offset = K*block->ldy;
+1156,1157c1205,1206
+< 			case XP :	
+< 			case XM :	slice_size = K*block->ldy*block->elemsize;
+---
+> 			case YP :	
+> 			case YM :	nb_block_per_slice = K*block->ldy;
+1159c1208
+< 								cudaMemcpyAsync(&boundary_data[offset_b], &block_data[offset], slice_size, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+---
+> 								cudaMemcpyAsync(&boundary_data[offset_b], &block_data[offset], nb_block_per_slice*block->elemsize, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+1161c1210
+< 								offset_b += slice_size;
+---
+> 								offset_b += nb_block_per_slice;
+1164,1165c1213,1214
+< 			case YP :	
+< 			case YM :	slice_size = K*block->elemsize;
+---
+> 			case XP :	
+> 			case XM :	nb_block_per_slice = K;
+1168c1217
+< 									cudaMemcpyAsync(&boundary_data[offset_b], &block_data[offset], slice_size, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+---
+> 									cudaMemcpyAsync(&boundary_data[offset_b], &block_data[offset], nb_block_per_slice*block->elemsize, cudaMemcpyDeviceToDevice, starpu_cuda_get_local_stream());
+1170c1219
+< 									offset_b += slice_size;
+---
+> 									offset_b += nb_block_per_slice;
+1196c1245,1246
+< 			DEBUG( "DO SAVE veloc xp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc xp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1201c1251,1253
+< 			DEBUG( "DO SAVE veloc xp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc xp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_xp[starpu_worker_get_id()] += duration;
+1211c1263,1264
+< 			DEBUG( "DO SAVE veloc xm block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc xm block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1216c1269,1271
+< 			DEBUG( "DO SAVE veloc xm block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_xm[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE veloc xm block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+1226c1281,1282
+< 			DEBUG( "DO SAVE veloc yp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc yp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1231c1287,1289
+< 			DEBUG( "DO SAVE veloc yp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_yp[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE veloc yp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+1241c1299,1300
+< 			DEBUG( "DO SAVE veloc ym block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc ym block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1246c1305,1307
+< 			DEBUG( "DO SAVE veloc ym block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc ym block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_ym[starpu_worker_get_id()] += duration;
+1264c1325,1326
+< 			DEBUG( "DO SAVE stress xp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress xp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1272c1334,1336
+< 			DEBUG( "DO SAVE stress xp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_xp[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress xp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+1282c1346,1347
+< 			DEBUG( "DO SAVE stress xm block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress xm block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1290c1355,1357
+< 			DEBUG( "DO SAVE stress xm block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_xm[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress xm block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+1300c1367,1368
+< 			DEBUG( "DO SAVE stress yp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress yp block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1308c1376,1378
+< 			DEBUG( "DO SAVE stress yp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_yp[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress yp block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+1318c1388,1389
+< 			DEBUG( "DO SAVE stress ym block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress ym block {%d, %d} CPU %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1326c1397,1399
+< 			DEBUG( "DO SAVE stress ym block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_ym[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress ym block {%d, %d} CPU %d\tDONE\n", block->bx, block->by, workerid);
+1341c1414,1415
+< 			DEBUG( "DO SAVE veloc xp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc xp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1347c1421,1423
+< 			DEBUG( "DO SAVE veloc xp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_xp[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE veloc xp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+1357,1358c1433,1434
+< 			DEBUG( "DO SAVE veloc xm block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+< 
+---
+> 			// DEBUG( "DO SAVE veloc xm block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1363c1439,1441
+< 			DEBUG( "DO SAVE veloc xm block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_xm[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE veloc xm block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+1373,1374c1451,1452
+< 			DEBUG( "DO SAVE veloc yp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+< 
+---
+> 			// DEBUG( "DO SAVE veloc yp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1379c1457,1459
+< 			DEBUG( "DO SAVE veloc yp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc yp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_yp[starpu_worker_get_id()] += duration;
+1388,1389c1468,1469
+< 
+< 			DEBUG( "DO SAVE veloc ym block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+---
+> 			clock_t start =clock();
+> 			// DEBUG( "DO SAVE veloc ym block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+1395c1475,1477
+< 			DEBUG( "DO SAVE veloc ym block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE veloc ym block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_veloc_ym[starpu_worker_get_id()] += duration;
+1407c1489,1490
+< 			DEBUG( "DO SAVE stress xp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress xp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1416c1499,1501
+< 			DEBUG( "DO SAVE stress xp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_xp[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress xp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+1426c1511,1512
+< 			DEBUG( "DO SAVE stress xm block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress xm block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1435c1521,1523
+< 			DEBUG( "DO SAVE stress xm block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_xm[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress xm block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+1445c1533,1534
+< 			DEBUG( "DO SAVE stress yp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress yp block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1454c1543,1545
+< 			DEBUG( "DO SAVE stress yp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_yp[starpu_worker_get_id()] += duration;
+> 			// DEBUG( "DO SAVE stress yp block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+1464c1555,1556
+< 			DEBUG( "DO SAVE stress ym block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress ym block {%d, %d} CUDA %d\n", block->bx, block->by, workerid);
+> 			clock_t start =clock();
+1473c1565,1567
+< 			DEBUG( "DO SAVE stress ym block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+---
+> 			// DEBUG( "DO SAVE stress ym block {%d, %d} CUDA %d\tDONE\n", block->bx, block->by, workerid);
+> 			clock_t duration = (clock()-start)/(float)(CLOCKS_PER_SEC/1000.);
+> 			time_spent_stress_ym[starpu_worker_get_id()] += duration;
+1666a1761
+> 					DGN_DBG
+1670a1766,1769
+> 		// first ietration (increment is in compute_veloc because all chunks do'nt have sources)
+> 		if (iter<0) iter=0;
+> 
+> 
+1672,1676c1771,1775
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 		if (block->bx == 0 && block->by == 0)
+< 	fprintf(stderr,"!!! DO update_sources_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+< 		else
+< 		DEBUG("!!! DO update_sources_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+---
+> 		
+> 	// 	if (block->bx == 0 && block->by == 0)
+> 	// fprintf(stderr,"!!! DO update_sources_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+> 	// 	else
+> 		INFO("!!! DO update_sources_cpu it=%d, block{%d, %d} CPU%d !!!\n", block->iter, block->bx, block->by, workerid);
+1682c1781
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+---
+> 		
+1802a1902
+> 					DGN_DBG
+1827a1928,1942
+> int test_access(int i, int j, int k,struct block_description* block)
+> {
+> 	unsigned maxsize = block->pitchx * block->pitchy * block->pitchz;
+> 
+> 	if (ACCESS(block,i,j,k) > maxsize || ACCESS(block,i,j,k)<0 || ACCESS(block,i+1,j+1,k+1) > maxsize || ACCESS(block,i+1,j+1,k+1)<0) {
+> 		INFO("ijk : %d,%d,%d\nsizex: %d\nsizey: %d\nsizez: %d\n", i,j,k,block->sizex, block->sizey, block->sizez);
+> 
+> 
+> 		return 0;	
+> 	}
+> 
+> 	return 1;
+> }
+> 
+> 
+1830a1946
+> 
+1833a1950
+> 		free(arg);
+1836,1840c1953,1961
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 		if (block->bx == 0 && block->by == 0)
+< 	fprintf(stderr,"!!! DO record_seismo_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+< 		else
+< 		DEBUG("!!! DO record_seismo_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+---
+> 		// 
+> 	// 	if (block->bx == 0 && block->by == 0)
+> 	// fprintf(stderr,"!!! DO record_seismo_cpu block{%d, %d} CPU%d !!!\n", block->bx, block->by, workerid);
+> 	// 	else
+> 
+> 		// DGN ici : acces à block
+> 
+> 		INFO("!!! DO record_seismo_cpu it=%d, block{%d, %d} CPU%d !!!\n", block->iter, block->bx, block->by, workerid);
+> 		// INFO("!!! DO record_seismo_cpu\n");
+1846,1874d1966
+< 		DEBUG( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+< 
+< 
+< 		/*
+< 		 *	Load neighbours' boundaries :
+< 		 */
+< 		 /*XP*/
+< 		load_subblock_from_buffer_cpu(descr[3], descr[9], XP, block);
+< 		load_subblock_from_buffer_cpu(descr[4], descr[10], XP, block);
+< 		load_subblock_from_buffer_cpu(descr[5], descr[11], XP, block);
+< 		load_subblock_from_buffer_cpu(descr[6], descr[12], XP, block);
+< 		load_subblock_from_buffer_cpu(descr[7], descr[13], XP, block);
+< 		load_subblock_from_buffer_cpu(descr[8], descr[14], XP, block);
+< 
+< 		 /*XM*/
+< 		load_subblock_from_buffer_cpu(descr[3], descr[15], XM, block);
+< 		load_subblock_from_buffer_cpu(descr[4], descr[16], XM, block);
+< 		load_subblock_from_buffer_cpu(descr[5], descr[17], XM, block);
+< 		load_subblock_from_buffer_cpu(descr[6], descr[18], XM, block);
+< 		load_subblock_from_buffer_cpu(descr[7], descr[19], XM, block);
+< 		load_subblock_from_buffer_cpu(descr[8], descr[20], XM, block);
+< 
+< 		 /*YP*/
+< 		load_subblock_from_buffer_cpu(descr[3], descr[21], YP, block);
+< 		load_subblock_from_buffer_cpu(descr[4], descr[22], YP, block);
+< 		load_subblock_from_buffer_cpu(descr[5], descr[23], YP, block);
+< 		load_subblock_from_buffer_cpu(descr[6], descr[24], YP, block);
+< 		load_subblock_from_buffer_cpu(descr[7], descr[25], YP, block);
+< 		load_subblock_from_buffer_cpu(descr[8], descr[26], YP, block);
+1876,1894d1967
+< 		/*YM*/
+< 		load_subblock_from_buffer_cpu(descr[3], descr[27], YM, block);
+< 		load_subblock_from_buffer_cpu(descr[4], descr[28], YM, block);
+< 		load_subblock_from_buffer_cpu(descr[5], descr[29], YM, block);
+< 		load_subblock_from_buffer_cpu(descr[6], descr[30], YM, block);
+< 		load_subblock_from_buffer_cpu(descr[7], descr[31], YM, block);
+< 		load_subblock_from_buffer_cpu(descr[8], descr[32], YM, block);
+< 
+< 		// get Data pointers
+< 		struct starpu_block_interface *b_vx = (struct starpu_block_interface *)descr[0];
+< 		struct starpu_block_interface *b_vy = (struct starpu_block_interface *)descr[1];
+< 		struct starpu_block_interface *b_vz = (struct starpu_block_interface *)descr[2];
+< 
+< 		struct starpu_block_interface *b_txx = (struct starpu_block_interface *)descr[3];
+< 		struct starpu_block_interface *b_tyy = (struct starpu_block_interface *)descr[4];
+< 		struct starpu_block_interface *b_tzz = (struct starpu_block_interface *)descr[5];
+< 		struct starpu_block_interface *b_txy = (struct starpu_block_interface *)descr[6];
+< 		struct starpu_block_interface *b_txz = (struct starpu_block_interface *)descr[7];
+< 		struct starpu_block_interface *b_tyz = (struct starpu_block_interface *)descr[8];
+1896,1928c1969
+< 		struct starpu_block_interface *b_seisx = (struct starpu_block_interface *)descr[33];
+< 		struct starpu_block_interface *b_seisy = (struct starpu_block_interface *)descr[34];
+< 		struct starpu_block_interface *b_seisz = (struct starpu_block_interface *)descr[35];
+< 
+< 		struct starpu_block_interface *b_seisxx = (struct starpu_block_interface *)descr[36];
+< 		struct starpu_block_interface *b_seisyy = (struct starpu_block_interface *)descr[37];
+< 		struct starpu_block_interface *b_seiszz = (struct starpu_block_interface *)descr[38];
+< 		struct starpu_block_interface *b_seisxy = (struct starpu_block_interface *)descr[39];
+< 		struct starpu_block_interface *b_seisxz = (struct starpu_block_interface *)descr[40];
+< 		struct starpu_block_interface *b_seisyz = (struct starpu_block_interface *)descr[41];
+< 
+< 
+< 		float *vx = (float *)b_vx->ptr;
+< 		float *vy = (float *)b_vy->ptr;
+< 		float *vz = (float *)b_vz->ptr;
+< 
+< 		float *txx = (float *)b_txx->ptr;
+< 		float *tyy = (float *)b_tyy->ptr;
+< 		float *tzz = (float *)b_tzz->ptr;
+< 		float *txy = (float *)b_txy->ptr;
+< 		float *txz = (float *)b_txz->ptr;
+< 		float *tyz = (float *)b_tyz->ptr;
+< 
+< 		float *seisx = (float *)b_seisx->ptr;
+< 		float *seisy = (float *)b_seisy->ptr;
+< 		float *seisz = (float *)b_seisz->ptr;
+< 
+< 		float *seisxx = (float *)b_seisxx->ptr;
+< 		float *seisyy = (float *)b_seisyy->ptr;
+< 		float *seiszz = (float *)b_seiszz->ptr;
+< 		float *seisxy = (float *)b_seisxy->ptr;
+< 		float *seisxz = (float *)b_seisxz->ptr;
+< 		float *seisyz = (float *)b_seisyz->ptr;
+---
+> 		if (iter < get_niter()) {
+1930c1971,1980
+< 		ondes3d_params* par = block->params;
+---
+> 			/*XP*/
+> 			if (block->bx < get_nbx()-1) {
+> 				// DEBUG("load_subblock_from_buffer_cpu XP\n");
+> 				load_subblock_from_buffer_cpu(descr[3], descr[9], XP, block);
+> 				load_subblock_from_buffer_cpu(descr[4], descr[10], XP, block);
+> 				load_subblock_from_buffer_cpu(descr[5], descr[11], XP, block);
+> 				load_subblock_from_buffer_cpu(descr[6], descr[12], XP, block);
+> 				load_subblock_from_buffer_cpu(descr[7], descr[13], XP, block);
+> 				load_subblock_from_buffer_cpu(descr[8], descr[14], XP, block);
+> 			}
+1931a1982,1991
+> 			 /*XM*/
+> 			if (block->bx > 0) {
+> 				// DEBUG("load_subblock_from_buffer_cpu XM\n");
+> 				load_subblock_from_buffer_cpu(descr[3], descr[15], XM, block);
+> 				load_subblock_from_buffer_cpu(descr[4], descr[16], XM, block);
+> 				load_subblock_from_buffer_cpu(descr[5], descr[17], XM, block);
+> 				load_subblock_from_buffer_cpu(descr[6], descr[18], XM, block);
+> 				load_subblock_from_buffer_cpu(descr[7], descr[19], XM, block);
+> 				load_subblock_from_buffer_cpu(descr[8], descr[20], XM, block);
+> 			}
+1933,1978c1993,2013
+< 		// CALCULATION OF THE SEISMOGRAMS
+< 		unsigned loc_sta = -1;
+< 		float w1, w2, w3;
+< 		int i,j,k;
+< 
+< 		for ( int ir = 0; ir < par->iobs; ir++ ){
+< 			if(block->ista[ir]){
+< 
+< 				loc_sta++;
+< 				// DGN : ATTENTION, FAUX !!!
+< 				// DGN : convertir ça en indices locaux !!!
+< 				/* Vx component */
+< 				i = par->ixobs[ir];
+< 				w1 = par->xobswt[ir];
+< 				j = par->iyobs[ir];
+< 				w2 = par->yobswt[ir];
+< 				k = par->izobs[ir];
+< 				w3 = par->zobswt[ir];
+< 
+< 				// seisx[ir][l-1] = (1-w3)*(
+< 				STARPU_ASSERT(loc_sta<block->nb_sta);
+< 
+< 				unsigned index = iter*block->nb_sta+loc_sta;
+< 
+< 				seisx[index] =	(1-w3)*(
+< 																(1-w2)*( (1-w1)*vx[ACCESS(block,i,j,k+0)]     + w1*vx[ACCESS(block,i,j,k+1)] )
+< 																+ w2*( (1-w1)*vx[ACCESS(block,i,j+1,k+0)]   + w1*vx[ACCESS(block,i,j+1,k+1)] ) )
+< 																+ w3*( (1-w2)*( (1-w1)*vx[ACCESS(block,i+1,j,k+0)]   + w1*vx[ACCESS(block,i+1,j,k+1)] )
+< 																+ w2*( (1-w1)*vx[ACCESS(block,i+1,j+1,k+0)] + w1*vx[ACCESS(block,i+1,j+1,k+1)] ) );
+< 				/* Vy component */
+< 				if(par->xobswt[ir] >= 0.5){
+< 					w1 = par->xobswt[ir] - 0.5;
+< 					i = par->ixobs[ir];
+< 				} else {
+< 					w1 = par->xobswt[ir] + 0.5;
+< 					i = par->ixobs[ir]-1;
+< 				}
+< 				if(par->yobswt[ir] >= 0.5){
+< 					w2 = par->yobswt[ir] - 0.5;
+< 					j = par->iyobs[ir];
+< 				} else {
+< 					w2 = par->yobswt[ir] + 0.5;
+< 					j = par->iyobs[ir]-1;
+< 				}
+< 				k = par->izobs[ir];
+< 				w3 = par->zobswt[ir];
+---
+> 			 /*YP*/
+> 			if (block->by < get_nby()-1) {
+> 				// DEBUG("load_subblock_from_buffer_cpu YP\n");
+> 				load_subblock_from_buffer_cpu(descr[3], descr[21], YP, block);
+> 				load_subblock_from_buffer_cpu(descr[4], descr[22], YP, block);
+> 				load_subblock_from_buffer_cpu(descr[5], descr[23], YP, block);
+> 				load_subblock_from_buffer_cpu(descr[6], descr[24], YP, block);
+> 				load_subblock_from_buffer_cpu(descr[7], descr[25], YP, block);
+> 				load_subblock_from_buffer_cpu(descr[8], descr[26], YP, block);
+> 			}
+> 			
+> 			/*YM*/
+> 			if (block->by > 0) {
+> 				// DEBUG("load_subblock_from_buffer_cpu YM\n");
+> 				load_subblock_from_buffer_cpu(descr[3], descr[27], YM, block);
+> 				load_subblock_from_buffer_cpu(descr[4], descr[28], YM, block);
+> 				load_subblock_from_buffer_cpu(descr[5], descr[29], YM, block);
+> 				load_subblock_from_buffer_cpu(descr[6], descr[30], YM, block);
+> 				load_subblock_from_buffer_cpu(descr[7], descr[31], YM, block);
+> 				load_subblock_from_buffer_cpu(descr[8], descr[32], YM, block);
+> 			}
+1980,1997c2015,2079
+< 				seisy[index] =	(1-w3)*(
+< 										(1-w1)*( (1-w2)*vy[ACCESS(block,i,j,k)]     + w2*vy[ACCESS(block,i,j+1,k)])
+< 										+ w1*( (1-w2)*vy[ACCESS(block,i,j,k+1)]   + w2*vy[ACCESS(block,i,j+1,k+1)] ) )
+< 										+ w3*( (1-w1)*( (1-w2)*vy[ACCESS(block,i+1,j,k)]   + w2*vy[ACCESS(block,i+1,j+1,k)] )
+< 										+ w1*( (1-w2)*vy[ACCESS(block,i+1,j,k+1)] + w2*vy[ACCESS(block,i+1,j+1,k+1)] ) );
+< 
+< 				/* Vz component */
+< 				if(par->xobswt[ir] >= 0.5){
+< 					w1 = par->xobswt[ir] - 0.5;
+< 					i = par->ixobs[ir];
+< 				} else {
+< 					w1 = par->xobswt[ir] + 0.5;
+< 					i = par->ixobs[ir]-1;
+< 				}
+< 				j = par->iyobs[ir];
+< 				w2 = par->yobswt[ir];
+< 				if(par->zobswt[ir] >= 0.5){
+< 					w3 = par->zobswt[ir] - 0.5;
+---
+> 			// get Data pointers
+> 			struct starpu_block_interface *b_vx = (struct starpu_block_interface *)descr[0];
+> 			struct starpu_block_interface *b_vy = (struct starpu_block_interface *)descr[1];
+> 			struct starpu_block_interface *b_vz = (struct starpu_block_interface *)descr[2];
+> 
+> 			struct starpu_block_interface *b_txx = (struct starpu_block_interface *)descr[3];
+> 			struct starpu_block_interface *b_tyy = (struct starpu_block_interface *)descr[4];
+> 			struct starpu_block_interface *b_tzz = (struct starpu_block_interface *)descr[5];
+> 			struct starpu_block_interface *b_txy = (struct starpu_block_interface *)descr[6];
+> 			struct starpu_block_interface *b_txz = (struct starpu_block_interface *)descr[7];
+> 			struct starpu_block_interface *b_tyz = (struct starpu_block_interface *)descr[8];
+> 
+> 			struct starpu_block_interface *b_seisx = (struct starpu_block_interface *)descr[33];
+> 			struct starpu_block_interface *b_seisy = (struct starpu_block_interface *)descr[34];
+> 			struct starpu_block_interface *b_seisz = (struct starpu_block_interface *)descr[35];
+> 
+> 			struct starpu_block_interface *b_seisxx = (struct starpu_block_interface *)descr[36];
+> 			struct starpu_block_interface *b_seisyy = (struct starpu_block_interface *)descr[37];
+> 			struct starpu_block_interface *b_seiszz = (struct starpu_block_interface *)descr[38];
+> 			struct starpu_block_interface *b_seisxy = (struct starpu_block_interface *)descr[39];
+> 			struct starpu_block_interface *b_seisxz = (struct starpu_block_interface *)descr[40];
+> 			struct starpu_block_interface *b_seisyz = (struct starpu_block_interface *)descr[41];
+> 
+> 
+> 			float *vx = (float *)b_vx->ptr;
+> 			float *vy = (float *)b_vy->ptr;
+> 			float *vz = (float *)b_vz->ptr;
+> 
+> 			float *txx = (float *)b_txx->ptr;
+> 			float *tyy = (float *)b_tyy->ptr;
+> 			float *tzz = (float *)b_tzz->ptr;
+> 			float *txy = (float *)b_txy->ptr;
+> 			float *txz = (float *)b_txz->ptr;
+> 			float *tyz = (float *)b_tyz->ptr;
+> 
+> 			float *seisx = (float *)b_seisx->ptr;
+> 			float *seisy = (float *)b_seisy->ptr;
+> 			float *seisz = (float *)b_seisz->ptr;
+> 
+> 			float *seisxx = (float *)b_seisxx->ptr;
+> 			float *seisyy = (float *)b_seisyy->ptr;
+> 			float *seiszz = (float *)b_seiszz->ptr;
+> 			float *seisxy = (float *)b_seisxy->ptr;
+> 			float *seisxz = (float *)b_seisxz->ptr;
+> 			float *seisyz = (float *)b_seisyz->ptr;
+> 
+> 			ondes3d_params* par = block->params;
+> 
+> 
+> 			// CALCULATION OF THE SEISMOGRAMS
+> 			unsigned loc_sta = -1;
+> 			float w1, w2, w3;
+> 			int i,j,k;
+> 
+> 			for ( int ir = 0; ir < par->iobs; ir++ ){
+> 				if(block->ista[ir]){
+> 
+> 					loc_sta++;
+> 					// DGN : ATTENTION, FAUX !!!
+> 					// DGN : convertir ça en indices locaux !!!
+> 					/* Vx component */
+> 					i = par->ixobs[ir]  - block->xshift;
+> 					w1 = par->xobswt[ir];
+> 					j = par->iyobs[ir]  - block->yshift;
+> 					w2 = par->yobswt[ir];
+1999,2006c2081
+< 				} else {
+< 					w3 = par->zobswt[ir] + 0.5;
+< 					k = par->izobs[ir]-1;
+< 				}
+< 				if( par->izobs[ir] == 1 ){
+< 					w3 = 0.0;
+< 					k = 0;
+< 				}
+---
+> 					w3 = par->zobswt[ir];
+2008c2083,2084
+< 				w1 = w2 = w3 = 0.;
+---
+> 					// seisx[ir][l-1] = (1-w3)*(
+> 					STARPU_ASSERT(loc_sta<block->nb_sta);
+2010,2057d2085
+< 				seisz[index] =	(1-w3)*(
+< 										(1-w1)*( (1-w2)*vz[ACCESS(block,i,j,k)]     + w2*vz[ACCESS(block,i,j+1,k)] )
+< 										+ w1*( (1-w2)*vz[ACCESS(block,i,j,k+1)]   + w2*vz[ACCESS(block,i,j+1,k+1)] ) )
+< 										+ w3*( (1-w1)*( (1-w2)*vz[ACCESS(block,i+1,j,k)]   + w2*vz[ACCESS(block,i+1,j+1,k)] )
+< 										+ w1*( (1-w2)*vz[ACCESS(block,i+1,j,k+1)] + w2*vz[ACCESS(block,i+1,j+1,k+1)] ) );
+< 
+< 				/* Tii component */
+< 
+< 				if(par->xobswt[ir] >= 0.5){
+< 					w1 = par->xobswt[ir] - 0.5;
+< 					i = par->ixobs[ir];
+< 				} else {
+< 					w1 = par->xobswt[ir] + 0.5;
+< 					i = par->ixobs[ir]-1;
+< 				}
+< 				j = par->iyobs[ir];
+< 				w2 = par->yobswt[ir];
+< 				k = par->izobs[ir];
+< 				w3 = par->zobswt[ir];
+< 
+< 				seisxx[index] = (1-w3)*(
+< 						(1-w1)*( (1-w2)*txx[ACCESS(block,i,j,k)]     + w2*txx[ACCESS(block,i,j+1,k)])
+< 						+ w1*( (1-w2)*txx[ACCESS(block,i,j,k+1)]   + w2*txx[ACCESS(block,i,j+1,k+1)] ) )
+< 					+ w3*( (1-w1)*( (1-w2)*txx[ACCESS(block,i+1,j,k)]   + w2*txx[ACCESS(block,i+1,j+1,k)] )
+< 							+ w1*( (1-w2)*txx[ACCESS(block,i+1,j,k+1)] + w2*txx[ACCESS(block,i+1,j+1,k+1)] ) );
+< 				seisyy[index] = (1-w3)*(
+< 						(1-w1)*( (1-w2)*tyy[ACCESS(block,i,j,k)]     + w2*tyy[ACCESS(block,i,j+1,k)] )
+< 						+ w1*( (1-w2)*tyy[ACCESS(block,i,j,k+1)]   + w2*tyy[ACCESS(block,i,j+1,k+1)] ) )
+< 					+ w3*( (1-w1)*( (1-w2)*tyy[ACCESS(block,i+1,j,k)]   + w2*tyy[ACCESS(block,i+1,j+1,k)] )
+< 							+ w1*( (1-w2)*tyy[ACCESS(block,i+1,j,k+1)] + w2*tyy[ACCESS(block,i+1,j+1,k+1)] ) );
+< 				seiszz[index] = (1-w3)*(
+< 						(1-w1)*( (1-w2)*tzz[ACCESS(block,i,j,k)]     + w2*tzz[ACCESS(block,i,j+1,k)] )
+< 						+ w1*( (1-w2)*tzz[ACCESS(block,i,j,k+1)]   + w2*tzz[ACCESS(block,i,j+1,k+1)] ) )
+< 					+ w3*( (1-w1)*( (1-w2)*tzz[ACCESS(block,i+1,j,k)]   + w2*tzz[ACCESS(block,i+1,j+1,k)] )
+< 							+ w1*( (1-w2)*tzz[ACCESS(block,i+1,j,k+1)] + w2*tzz[ACCESS(block,i+1,j+1,k+1)] ) );
+< 
+< 				/* Txy component */
+< 				i = par->ixobs[ir];
+< 				w1 = par->xobswt[ir];
+< 				if(par->yobswt[ir] >= 0.5){
+< 					w2 = par->yobswt[ir] - 0.5;
+< 					j = par->iyobs[ir];
+< 				} else {
+< 					w2 = par->yobswt[ir] + 0.5;
+< 					j = par->iyobs[ir]-1;
+< 				}
+< 				k = par->izobs[ir];
+< 				w3 = par->zobswt[ir];
+2059,2080c2087
+< 				seisxy[index] = (1-w3)*(
+< 						(1-w1)*( (1-w2)*txy[ACCESS(block,i,j,k)]     + w2*txy[ACCESS(block,i,j+1,k)] )
+< 						+ w1*( (1-w2)*txy[ACCESS(block,i,j,k+1)]   + w2*txy[ACCESS(block,i,j+1,k+1)] ) )
+< 					+ w3*( (1-w1)*( (1-w2)*txy[ACCESS(block,i+1,j,k)]   + w2*txy[ACCESS(block,i+1,j+1,k)] )
+< 							+ w1*( (1-w2)*txy[ACCESS(block,i+1,j,k+1)] + w2*txy[ACCESS(block,i+1,j+1,k+1)] ) );
+< 
+< 				/* Txz component */
+< 				i = par->ixobs[ir];
+< 				w1 = par->xobswt[ir];
+< 				j = par->iyobs[ir];
+< 				w2 = par->yobswt[ir];
+< 				if(par->zobswt[ir] >= 0.5){
+< 					w3 = par->zobswt[ir] - 0.5;
+< 					k = par->izobs[ir];
+< 				} else {
+< 					w3 = par->zobswt[ir] + 0.5;
+< 					k = par->izobs[ir]-1;
+< 				}
+< 				if( par->izobs[ir] == 1 ){
+< 					w3 = 0.0;
+< 					k = 0;
+< 				}
+---
+> 					unsigned index = iter*block->nb_sta+loc_sta;
+2082,2104c2089,2110
+< 				seisxz[index] = (1-w3)*(
+< 						(1-w1)*( (1-w2)*txz[ACCESS(block,i,j,k)]     + w2*txz[ACCESS(block,i,j+1,k)] )
+< 						+ w1*( (1-w2)*txz[ACCESS(block,i,j,k+1)]   + w2*txz[ACCESS(block,i,j+1,k+1)] ) )
+< 					+ w3*( (1-w1)*( (1-w2)*txz[ACCESS(block,i+1,j,k)]   + w2*txz[ACCESS(block,i+1,j+1,k)] )
+< 							+ w1*( (1-w2)*txz[ACCESS(block,i+1,j,k+1)] + w2*txz[ACCESS(block,i+1,j+1,k+1)] ) );
+< 
+< 				/* Tyz component */
+< 				if(par->xobswt[ir] >= 0.5){
+< 					w1 = par->xobswt[ir] - 0.5;
+< 					i = par->ixobs[ir];
+< 				} else {
+< 					w1 = par->xobswt[ir] + 0.5;
+< 					i = par->ixobs[ir]-1;
+< 				}
+< 				if(par->yobswt[ir] >= 0.5){
+< 					w2 = par->yobswt[ir] - 0.5;
+< 					j = par->iyobs[ir];
+< 				} else {
+< 					w2 = par->yobswt[ir] + 0.5;
+< 					j = par->iyobs[ir]-1;
+< 				}
+< 				if(par->zobswt[ir] >= 0.5){
+< 					w3 = par->zobswt[ir] - 0.5;
+---
+> 					// INFO("i=%d, j=%d, k=%d\n",i,j,k);			
+> 					STARPU_ASSERT(test_access(i,j,k,block));
+> 					seisx[index] =	(1-w3)*(
+> 																	(1-w2)*( (1-w1)*vx[ACCESS(block,i,j,k+0)]     + w1*vx[ACCESS(block,i,j,k+1)] )
+> 																	+ w2*( (1-w1)*vx[ACCESS(block,i,j+1,k+0)]   + w1*vx[ACCESS(block,i,j+1,k+1)] ) )
+> 																	+ w3*( (1-w2)*( (1-w1)*vx[ACCESS(block,i+1,j,k+0)]   + w1*vx[ACCESS(block,i+1,j,k+1)] )
+> 																	+ w2*( (1-w1)*vx[ACCESS(block,i+1,j+1,k+0)] + w1*vx[ACCESS(block,i+1,j+1,k+1)] ) );
+> 					/* Vy component */
+> 					if(par->xobswt[ir] >= 0.5){
+> 						w1 = par->xobswt[ir] - 0.5;
+> 						i = par->ixobs[ir] - block->xshift;
+> 					} else {
+> 						w1 = par->xobswt[ir] + 0.5;
+> 						i = par->ixobs[ir]-1 - block->xshift;
+> 					}
+> 					if(par->yobswt[ir] >= 0.5){
+> 						w2 = par->yobswt[ir] - 0.5;
+> 						j = par->iyobs[ir]  - block->yshift;
+> 					} else {
+> 						w2 = par->yobswt[ir] + 0.5;
+> 						j = par->iyobs[ir]-1 - block->yshift;
+> 					}
+2106,2112c2112,2274
+< 				} else {
+< 					w3 = par->zobswt[ir] + 0.5;
+< 					k = par->izobs[ir]-1;
+< 				}
+< 				if( par->izobs[ir] == 1 ){
+< 					w3 = 0.0;
+< 					k = 0;
+---
+> 					w3 = par->zobswt[ir];
+> 		
+> 					// STARPU_ASSERT(i>=0 && i<block->sizex-1);
+> 					// STARPU_ASSERT(j>=0 && j<block->sizey-1);
+> 					// STARPU_ASSERT(k>=0 && k<block->sizez-1);
+> 
+> 					seisy[index] =	(1-w3)*(
+> 											(1-w1)*( (1-w2)*vy[ACCESS(block,i,j,k)]     + w2*vy[ACCESS(block,i,j+1,k)])
+> 											+ w1*( (1-w2)*vy[ACCESS(block,i,j,k+1)]   + w2*vy[ACCESS(block,i,j+1,k+1)] ) )
+> 											+ w3*( (1-w1)*( (1-w2)*vy[ACCESS(block,i+1,j,k)]   + w2*vy[ACCESS(block,i+1,j+1,k)] )
+> 											+ w1*( (1-w2)*vy[ACCESS(block,i+1,j,k+1)] + w2*vy[ACCESS(block,i+1,j+1,k+1)] ) );
+> 
+> 					/* Vz component */
+> 					if(par->xobswt[ir] >= 0.5){
+> 						w1 = par->xobswt[ir] - 0.5;
+> 						i = par->ixobs[ir]  - block->xshift;
+> 					} else {
+> 						w1 = par->xobswt[ir] + 0.5;
+> 						i = par->ixobs[ir]-1 - block->xshift;
+> 					}
+> 					j = par->iyobs[ir] - block->yshift;
+> 					w2 = par->yobswt[ir];
+> 					if(par->zobswt[ir] >= 0.5){
+> 						w3 = par->zobswt[ir] - 0.5;
+> 						k = par->izobs[ir];
+> 					} else {
+> 						w3 = par->zobswt[ir] + 0.5;
+> 						k = par->izobs[ir]-1;
+> 					}
+> 					if( par->izobs[ir] == 1 ){
+> 						w3 = 0.0;
+> 						k = 0;
+> 					}
+> 					// STARPU_ASSERT(i>=0 && i<block->sizex-1);
+> 					// STARPU_ASSERT(j>=0 && j<block->sizey-1);
+> 					// STARPU_ASSERT(k>=0 && k<block->sizez-1);
+> 
+> 					w1 = w2 = w3 = 0.;
+> 
+> 					seisz[index] =	(1-w3)*(
+> 											(1-w1)*( (1-w2)*vz[ACCESS(block,i,j,k)]     + w2*vz[ACCESS(block,i,j+1,k)] )
+> 											+ w1*( (1-w2)*vz[ACCESS(block,i,j,k+1)]   + w2*vz[ACCESS(block,i,j+1,k+1)] ) )
+> 											+ w3*( (1-w1)*( (1-w2)*vz[ACCESS(block,i+1,j,k)]   + w2*vz[ACCESS(block,i+1,j+1,k)] )
+> 											+ w1*( (1-w2)*vz[ACCESS(block,i+1,j,k+1)] + w2*vz[ACCESS(block,i+1,j+1,k+1)] ) );
+> 
+> 	#if 0
+> 					/* Tii component */
+> 
+> 					if(par->xobswt[ir] >= 0.5){
+> 						w1 = par->xobswt[ir] - 0.5;
+> 						i = par->ixobs[ir] - block->xshift;
+> 					} else {
+> 						w1 = par->xobswt[ir] + 0.5;
+> 						i = par->ixobs[ir]-1 - block->xshift;
+> 					}
+> 					j = par->iyobs[ir] - block->yshift;
+> 					w2 = par->yobswt[ir];
+> 					k = par->izobs[ir];
+> 					w3 = par->zobswt[ir];
+> 					STARPU_ASSERT(i>=0 && i<block->sizex);
+> 					STARPU_ASSERT(j>=0 && j<block->sizey);
+> 					STARPU_ASSERT(k>=0 && k<block->sizez);
+> 
+> 					seisxx[index] = (1-w3)*(
+> 							(1-w1)*( (1-w2)*txx[ACCESS(block,i,j,k)]     + w2*txx[ACCESS(block,i,j+1,k)])
+> 							+ w1*( (1-w2)*txx[ACCESS(block,i,j,k+1)]   + w2*txx[ACCESS(block,i,j+1,k+1)] ) )
+> 						+ w3*( (1-w1)*( (1-w2)*txx[ACCESS(block,i+1,j,k)]   + w2*txx[ACCESS(block,i+1,j+1,k)] )
+> 								+ w1*( (1-w2)*txx[ACCESS(block,i+1,j,k+1)] + w2*txx[ACCESS(block,i+1,j+1,k+1)] ) );
+> 					seisyy[index] = (1-w3)*(
+> 							(1-w1)*( (1-w2)*tyy[ACCESS(block,i,j,k)]     + w2*tyy[ACCESS(block,i,j+1,k)] )
+> 							+ w1*( (1-w2)*tyy[ACCESS(block,i,j,k+1)]   + w2*tyy[ACCESS(block,i,j+1,k+1)] ) )
+> 						+ w3*( (1-w1)*( (1-w2)*tyy[ACCESS(block,i+1,j,k)]   + w2*tyy[ACCESS(block,i+1,j+1,k)] )
+> 								+ w1*( (1-w2)*tyy[ACCESS(block,i+1,j,k+1)] + w2*tyy[ACCESS(block,i+1,j+1,k+1)] ) );
+> 					seiszz[index] = (1-w3)*(
+> 							(1-w1)*( (1-w2)*tzz[ACCESS(block,i,j,k)]     + w2*tzz[ACCESS(block,i,j+1,k)] )
+> 							+ w1*( (1-w2)*tzz[ACCESS(block,i,j,k+1)]   + w2*tzz[ACCESS(block,i,j+1,k+1)] ) )
+> 						+ w3*( (1-w1)*( (1-w2)*tzz[ACCESS(block,i+1,j,k)]   + w2*tzz[ACCESS(block,i+1,j+1,k)] )
+> 								+ w1*( (1-w2)*tzz[ACCESS(block,i+1,j,k+1)] + w2*tzz[ACCESS(block,i+1,j+1,k+1)] ) );
+> 
+> 					/* Txy component */
+> 					i = par->ixobs[ir] - block->xshift;
+> 					w1 = par->xobswt[ir];
+> 					if(par->yobswt[ir] >= 0.5){
+> 						w2 = par->yobswt[ir] - 0.5;
+> 						j = par->iyobs[ir] - block->yshift;
+> 					} else {
+> 						w2 = par->yobswt[ir] + 0.5;
+> 						j = par->iyobs[ir]-1 - block->yshift;
+> 					}
+> 					k = par->izobs[ir];
+> 					w3 = par->zobswt[ir];
+> 					STARPU_ASSERT(i>=0 && i<block->sizex);
+> 					STARPU_ASSERT(j>=0 && j<block->sizey);
+> 					STARPU_ASSERT(k>=0 && k<block->sizez);
+> 
+> 					seisxy[index] = (1-w3)*(
+> 							(1-w1)*( (1-w2)*txy[ACCESS(block,i,j,k)]     + w2*txy[ACCESS(block,i,j+1,k)] )
+> 							+ w1*( (1-w2)*txy[ACCESS(block,i,j,k+1)]   + w2*txy[ACCESS(block,i,j+1,k+1)] ) )
+> 						+ w3*( (1-w1)*( (1-w2)*txy[ACCESS(block,i+1,j,k)]   + w2*txy[ACCESS(block,i+1,j+1,k)] )
+> 								+ w1*( (1-w2)*txy[ACCESS(block,i+1,j,k+1)] + w2*txy[ACCESS(block,i+1,j+1,k+1)] ) );
+> 
+> 					/* Txz component */
+> 					i = par->ixobs[ir] - block->xshift;
+> 					w1 = par->xobswt[ir];
+> 					j = par->iyobs[ir] - block->yshift;
+> 					w2 = par->yobswt[ir];
+> 					if(par->zobswt[ir] >= 0.5){
+> 						w3 = par->zobswt[ir] - 0.5;
+> 						k = par->izobs[ir];
+> 					} else {
+> 						w3 = par->zobswt[ir] + 0.5;
+> 						k = par->izobs[ir]-1;
+> 					}
+> 					if( par->izobs[ir] == 1 ){
+> 						w3 = 0.0;
+> 						k = 0;
+> 					}
+> 					STARPU_ASSERT(i>=0 && i<block->sizex);
+> 					STARPU_ASSERT(j>=0 && j<block->sizey);
+> 					STARPU_ASSERT(k>=0 && k<block->sizez);
+> 
+> 					seisxz[index] = (1-w3)*(
+> 							(1-w1)*( (1-w2)*txz[ACCESS(block,i,j,k)]     + w2*txz[ACCESS(block,i,j+1,k)] )
+> 							+ w1*( (1-w2)*txz[ACCESS(block,i,j,k+1)]   + w2*txz[ACCESS(block,i,j+1,k+1)] ) )
+> 						+ w3*( (1-w1)*( (1-w2)*txz[ACCESS(block,i+1,j,k)]   + w2*txz[ACCESS(block,i+1,j+1,k)] )
+> 								+ w1*( (1-w2)*txz[ACCESS(block,i+1,j,k+1)] + w2*txz[ACCESS(block,i+1,j+1,k+1)] ) );
+> 
+> 					/* Tyz component */
+> 					if(par->xobswt[ir] >= 0.5){
+> 						w1 = par->xobswt[ir] - 0.5;
+> 						i = par->ixobs[ir] - block->xshift;
+> 					} else {
+> 						w1 = par->xobswt[ir] + 0.5;
+> 						i = par->ixobs[ir]-1 - block->xshift;
+> 					}
+> 					if(par->yobswt[ir] >= 0.5){
+> 						w2 = par->yobswt[ir] - 0.5;
+> 						j = par->iyobs[ir] - block->yshift;
+> 					} else {
+> 						w2 = par->yobswt[ir] + 0.5;
+> 						j = par->iyobs[ir]-1 - block->yshift;
+> 					}
+> 					if(par->zobswt[ir] >= 0.5){
+> 						w3 = par->zobswt[ir] - 0.5;
+> 						k = par->izobs[ir];
+> 					} else {
+> 						w3 = par->zobswt[ir] + 0.5;
+> 						k = par->izobs[ir]-1;
+> 					}
+> 					if( par->izobs[ir] == 1 ){
+> 						w3 = 0.0;
+> 						k = 0;
+> 					}
+> 					STARPU_ASSERT(i>=0 && i<block->sizex);
+> 					STARPU_ASSERT(j>=0 && j<block->sizey);
+> 					STARPU_ASSERT(k>=0 && k<block->sizez);
+> 
+> 					seisyz[index] = (1-w3)*(
+> 							(1-w1)*( (1-w2)*tyz[ACCESS(block,i,j,k)]     + w2*tyz[ACCESS(block,i,j+1,k)] )
+> 							+ w1*( (1-w2)*tyz[ACCESS(block,i,j,k+1)]   + w2*tyz[ACCESS(block,i,j+1,k+1)] ) )
+> 						+ w3*( (1-w1)*( (1-w2)*tyz[ACCESS(block,i+1,j,k)]   + w2*tyz[ACCESS(block,i+1,j+1,k)] )
+> 								+ w1*( (1-w2)*tyz[ACCESS(block,i+1,j,k+1)] + w2*tyz[ACCESS(block,i+1,j+1,k+1)] ) );
+> 	#endif
+2114,2119d2275
+< 
+< 				seisyz[index] = (1-w3)*(
+< 						(1-w1)*( (1-w2)*tyz[ACCESS(block,i,j,k)]     + w2*tyz[ACCESS(block,i,j+1,k)] )
+< 						+ w1*( (1-w2)*tyz[ACCESS(block,i,j,k+1)]   + w2*tyz[ACCESS(block,i,j+1,k+1)] ) )
+< 					+ w3*( (1-w1)*( (1-w2)*tyz[ACCESS(block,i+1,j,k)]   + w2*tyz[ACCESS(block,i+1,j+1,k)] )
+< 							+ w1*( (1-w2)*tyz[ACCESS(block,i+1,j,k+1)] + w2*tyz[ACCESS(block,i+1,j+1,k+1)] ) );
+2155c2311
+< // }}}
+\ No newline at end of file
+---
+> // }}}

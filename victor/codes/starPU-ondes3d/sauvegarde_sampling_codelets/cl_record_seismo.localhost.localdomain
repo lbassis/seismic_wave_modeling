@@ -1,0 +1,39 @@
+##################
+# CPUs
+# maximum number of CPUs
+1
+###########
+# 1 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_impl_0
+# number of entries
+9
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+7626180e	38249400       	2.317900e+01   	0.000000e+00   	2.317900e+01   	5.372660e+02   	1
+a162e3f0	38249400       	1.960800e+01   	0.000000e+00   	1.960800e+01   	3.844737e+02   	1
+d6059a17	39289032       	2.290500e+01   	0.000000e+00   	2.290500e+01   	5.246390e+02   	1
+244a2466	38249400       	2.213900e+01   	0.000000e+00   	2.213900e+01   	4.901353e+02   	1
+5b501bca	38559456       	1.955300e+01   	0.000000e+00   	1.955300e+01   	3.823198e+02   	1
+7e5b5e45	38978976       	2.890600e+01   	0.000000e+00   	2.890600e+01   	8.355568e+02   	1
+10485396	38993304       	8.681806e+02   	1.567544e+02   	2.864996e+04   	2.568421e+07   	33
+774ff82e	38602584       	1.349101e+03   	2.702261e+02   	4.452034e+04   	6.247217e+07   	33
+4a5929b5	38263728       	7.457976e+02   	1.414489e+02   	2.461132e+04   	1.901532e+07   	33
+
+##################
+##################
+# CUDAs
+# number of CUDA architectures
+0
+##################
+# OPENCLs
+# number of OPENCL architectures
+0
+##################
+# GORDONs
+# number of GORDON architectures
+0

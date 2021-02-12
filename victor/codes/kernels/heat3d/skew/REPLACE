@@ -1,0 +1,2 @@
+sed -i -e "s/double/float/g" *.c
+sed -i -e "s/double/float/g" *.h

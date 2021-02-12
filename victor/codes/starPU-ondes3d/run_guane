@@ -1,0 +1,25 @@
+#!/bin/bash
+export nc=4
+export ng=8
+
+export STARPU_NCPU=$nc
+export STARPU_NCUDA=$ng
+export AQUILA=160
+
+#for sch in "eager" "prio" "random" "dm" "dmda" "dmdar" "dmdas" "pheft" "peager"
+for sch in "dmdar"
+do
+   export STARPU_SCHED=$sch
+   for decoupage in 256
+   do
+      printenv | grep STARPU
+      #export decoupage=32
+      echo "Time measures (ms) for $decoupage" >> output-guane-async-$sch-$nc-$ng-$AQUILA.txt 
+      for i in {1..15}
+      do
+         ./ondes3d-starpu -fixed -bsizex $decoupage -bsizey $decoupage -align -param ./DATA/aquila_$AQUILA.prm >> output-guane-async-$sch-$nc-$ng-$AQUILA.txt
+      done
+   done
+   cat output-guane-async-$sch-$nc-$ng-$AQUILA.txt | grep ms >> time-guane-async-$sch-$nc-$ng-$AQUILA.csv
+done
+

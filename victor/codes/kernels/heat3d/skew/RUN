@@ -1,0 +1,27 @@
+#!/bin/bash
+#module purge
+#module load gcc/4.8
+#module load pgi
+#module load intel
+#make clean && make
+#export GOMP_CPU_AFFINITY="0-15"
+export KMP_AFFINITY=compact
+export MAX_THREADS=`grep processor /proc/cpuinfo | wc -l`
+for thr in  $(seq 8 8 $MAX_THREADS)
+do
+  echo "Number of threads:$thr"
+  for schd in static guided dynamic
+  do
+    echo "Scheduling:$schd"
+    for ch in 8 32 64 128 256 512
+    do
+      export OMP_SCHEDULE=$schd,$ch
+      export OMP_NUM_THREADS=$thr
+      echo "Execution for chunk:$ch"
+      for d in 2 4 8
+      do
+        ./probe 256 256 256 $d 0 64
+      done
+    done
+  done
+done

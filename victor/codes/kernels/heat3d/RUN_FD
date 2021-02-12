@@ -1,0 +1,28 @@
+dim1=512
+dim2=512
+dim3=512
+steps=20
+zflag=0
+reuse=4
+
+
+for i in 4 16
+do
+###########################"
+export OMP_NUM_THREADS=$i
+######################
+cd naive
+make clean && make
+./probe $dim1 $dim2 $dim3 $steps
+cd ..
+##############################
+cd naive-blocking
+make clean && make
+./probe $dim1 $dim2 $dim3 16 16 128 $steps
+cd ..
+#########################################"
+cd skew
+make clean && make
+./probe $dim1 $dim2 $dim3 $reuse $zflag $steps
+cd ..
+done

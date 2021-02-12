@@ -1,0 +1,15 @@
+#!/bin/bash
+export KMP_AFFINITY=granularity=core,scatter
+export OMP_NUM_THREADS=4
+export OMP_SCHEDULE=static
+
+for i in {1..30}
+do
+	./naive/probe 512 512 512  192
+	./naive-blocking//probe 512 512 512  16 16 512 192
+	./skew/probe 512 512 512  2 0 192
+	./skew/probe 512 512 512  3 0 192
+	./skew/probe 512 512 512  4 0 192
+	./skew/probe 512 512 512  6 0 192
+	./skew/probe 512 512 512  8 0 192
+done

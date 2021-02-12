@@ -1,0 +1,16 @@
+##################
+# CPUs
+# maximum number of CPUs
+0
+##################
+# CUDAs
+# number of CUDA architectures
+0
+##################
+# OPENCLs
+# number of OPENCL architectures
+0
+##################
+# GORDONs
+# number of GORDON architectures
+0

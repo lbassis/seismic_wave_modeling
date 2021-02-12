@@ -1,0 +1,35 @@
+#!/bin/bash
+#more dim3d.h
+export n=10
+export SCOREP_TOTAL_MEMORY=16384000000
+export SCOREP_ENABLE_PROFILING=false
+export SCOREP_ENABLE_TRACING=true
+export SCOREP_FILTERING_FILE=./filter-probe.filt
+export KMP_AFFINITY=granularity=core,scatter
+export OMP_SCHEDULE=static
+export MAX_NUM_THREADS=`grep processor /proc/cpuinfo | wc -l`
+#export i=8
+for k in {1..2}
+do
+	if [ $k -eq 1 ]
+	then
+		make clean && make
+		export OUTPUT_FILE=cm-time-no-traces
+		echo Running without traces
+	else
+		make clean && make COMPSCOREP=scorep
+		export OUTPUT_FILE=cm-time-traces
+		echo Running with traces
+	fi
+	
+	for i in $(seq 1 3 $MAX_NUM_THREADS)
+	do
+		export OMP_NUM_THREADS=$i
+		for j in $(seq 1 1 $n)
+		do
+			export SCOREP_EXPERIMENT_DIRECTORY=traces/traces-$i-threads-$j
+			echo "execution $j/$n for $i/$MAX_NUM_THREADS"
+			./probe 512 512 512 192 >> csv/$OUTPUT_FILE-$i.csv
+		done
+	done
+done

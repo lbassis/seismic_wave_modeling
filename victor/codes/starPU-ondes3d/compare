@@ -1,0 +1,8 @@
+#!/bin/bash
+DATAR=`/bin/ls vx*`
+echo ${#DATAR[*]}
+for i in $DATAR
+do
+echo "Comparando con $i"
+#diff vx-cpu-1369045773.csv $i
+done

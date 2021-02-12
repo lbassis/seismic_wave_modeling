@@ -1,0 +1,13 @@
+#!/bin/bash
+#	F.Dupros
+#	BRGM - 22/02/2009
+################################
+
+source /etc/profile.d/modulepath.sh
+source /etc/profile.d/module.sh
+cp  $OAR_FILE_NODES machine
+module use -a /share/apps/Libraries
+module load $3 
+mpirun -machinefile machine -np $2 $1
+module unload $3
+

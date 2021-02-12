@@ -1,0 +1,76 @@
+##################
+# CPUs
+# maximum number of CPUs
+4
+###########
+# 1 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+6530e077	8192000        	6.037876e+05   	3.296042e+03   	6.037876e+06   	3.645703e+12   	10
+
+##################
+###########
+# 2 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_2_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+6530e077	8192000        	3.012751e+05   	2.010489e+02   	3.012751e+06   	9.076673e+11   	10
+
+##################
+###########
+# 3 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_3_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+6530e077	8192000        	2.009396e+05   	2.275568e+02   	2.009396e+06   	4.037679e+11   	10
+
+##################
+###########
+# 4 CPU(s) in parallel
+# number of implementations
+1
+# Model for cpu_4_impl_0
+# number of entries
+1
+# sumlnx	sumlnx2		sumlny		sumlnxlny	alpha		beta		n	minx		maxx
+0.000000e+00   	0.000000e+00   	0.000000e+00   	0.000000e+00   	nan            	nan            	0	0              	0              
+# a		b		c
+nan            	nan            	nan            
+# hash		size		mean		dev		sum		sum2		n
+6530e077	8192000        	1.507868e+05   	6.236050e+02   	1.055508e+07   	1.591593e+12   	70
+
+##################
+##################
+# CUDAs
+# number of CUDA architectures
+0
+##################
+# OPENCLs
+# number of OPENCL architectures
+0
+##################
+# GORDONs
+# number of GORDON architectures
+0

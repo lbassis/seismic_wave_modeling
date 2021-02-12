@@ -1,0 +1,10 @@
+#!/bin/bash
+more dim3d.h
+#make clean && make
+export KMP_AFFINITY=granularity=core,scatter
+export OMP_NUM_THREADS=4
+export OMP_SCHEDULE=static
+for i in {1..30}
+do
+./probe 512 512 512  16 16 512 192 >> cm-naive-blocking.csv
+done

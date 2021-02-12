@@ -1,0 +1,49 @@
+#!/bin/bash
+export KMP_AFFINITY=granularity=core,scatter
+export n_it=64
+export b_size=16
+export z_size=128
+export reuse=16
+export flag_z=0
+export MAX_NUM_THREADS=`grep processor /proc/cpuinfo | wc -l`
+
+#for num_tr in 2 4
+for num_tr in 2 8 16 32 64
+do
+#	export num_tr=32
+#	echo "Threads: $num_tr "
+	export OMP_NUM_THREADS=$num_tr
+	for ch_size in 32 128 256 512
+#	for ch_size in 128 256 512
+	do
+#		export ch_size=32
+#		echo "Chunk: $ch_size "
+		for sch in static dynamic guided
+#		for sch in dynamic guided
+		do
+#			export sch=static
+#			echo "Scheduling $sch"
+			export OMP_SCHEDULE=$sch,$ch_size
+			for p_size in 128 256 512
+#			for p_size in 128 256
+			do
+#				export p_size=512
+				for method in parallel task
+				do
+#					export method=parallel
+					for i in {1..15}
+#					for i in {10..15}
+					do
+						echo -n "threads: $num_tr, chunk: $ch_size, schedule: $sch, size: $p_size, method: $method, iteration: $i"
+						./$method/naive/probe $p_size $p_size $p_size $n_it >> naive-$num_tr-$ch_size-$sch-$p_size-$method.csv
+						echo -n " Naive OK / "
+						./$method/naive-blocking/probe $p_size $p_size $p_size $b_size $b_size $z_size $n_it >> blocking-$num_tr-$ch_size-$sch-$p_size-$method.csv
+						echo -n "Naive-blocking OK / "
+						./$method/skew/probe $p_size $p_size $p_size $reuse $flag_z $n_it >> skew-$num_tr-$ch_size-$sch-$p_size-$method.csv
+						echo "Skew OK"
+					done
+				done
+			done
+		done
+	done
+done

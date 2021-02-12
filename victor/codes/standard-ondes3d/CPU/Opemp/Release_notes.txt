@@ -1,0 +1,9 @@
+version 1.01
+- ajout flag MPI pour une version sequentielle
+- ajout flag OMP pour une version OpenMP
+-- computestress
+-- computeintermediates
+-- computevelocity
+- ajout flag DNOABSORB -- modification whereaim en considérant que les points PML sont REGULAR (A priori pas de probleme de out-of-bound)	
+- Userguide en pdf
+- ajout adresse du dépot svn : https://forge.brgm.fr/svnrepository/ondes3d-cpu/Ondes3d-1.0

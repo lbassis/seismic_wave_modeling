@@ -1,0 +1,15 @@
+#!/bin/bash
+#       F.Dupros
+#       BRGM - 22/02/2009
+#	Soumission Ondes3D
+################################
+
+
+EXE_NAME=./EXE-ONDES-mpi4
+node=2
+core=8
+cpu_O3D=$(expr $node \* $core )
+#module=MPI-MX-INTEL
+module=OPENMPI-MX-GNU
+exec_time=1:00:00
+oarsub -p "cluster='malm' AND not network_address like 'compute-3-22.%'" -l nodes=$node/cpuset=$core,walltime=$exec_time "./RUN-MALM-ONDES3D $EXE_NAME $cpu_O3D $module"

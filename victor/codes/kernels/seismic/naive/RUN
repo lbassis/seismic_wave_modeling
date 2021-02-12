@@ -1,0 +1,5 @@
+make clean && make
+#export KMP_AFFINITY=granularity=core,scatter
+export OMP_NUM_THREADS=12
+export OMP_SCHEDULE=static
+./probe 256 256 256 128

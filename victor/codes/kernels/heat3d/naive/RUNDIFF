@@ -1,0 +1,18 @@
+NUMTH=24
+DX=128
+DY=128
+DZ=128
+DT=48
+
+make clean && make
+export OMP_NUM_THREADS=$NUMTH
+./probe $DX $DY $DZ $DT
+echo " "
+cd ../naive-task
+make clean && make
+export OMP_NUM_THREADS=$NUMTH
+./probe $DX $DY $DZ $DT
+echo " "
+cd ../naive
+sdiff -s output-naive-final ../naive-task/output-naive-final > diff_file.out
+tail -n 5 diff_file.out

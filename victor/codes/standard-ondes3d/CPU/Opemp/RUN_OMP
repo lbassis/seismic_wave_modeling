@@ -1,0 +1,2 @@
+export OMP_SCHEDULE=static
+./ondes3d 2
