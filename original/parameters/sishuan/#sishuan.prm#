@@ -1,0 +1,67 @@
+:::::::::::: main parameters ::::::::::::::::
+<dt> 0.0200 </dt>			time step
+<ds> 500.00 </ds>				size of the cell
+
+<tmax> 1000 </tmax>			number of time steps
+<xMin> -800 </xMin> <xMax> 500 </xMax>	number of cells in each direction
+<yMin> -1000 </yMin> <yMax> 1000 </yMax>
+<zMin> -100 </zMin> <zMax> 1 </zMax>
+
+<fd0> 1. </fd0>				CPML main frequency
+
+:::::::::::: output description :::::::::::::
+<dir>./output/sishuan </dir>		 	directory of results
+# snapshots #
+<i0> -19 </i0>				index coordinates of the output planes
+<j0> 1 </j0>
+<k0> 1 </k0>
+
+# seismogramms #
+<fstatMap>./parameters/sishuan/station5.map </fstatMap>	stations coordinates
+
+:::::::::::: source description :::::::::::::
+<fsrcMap> ./parameters/sishuan/sishuan.map </fsrcMap>		sources coordinates
+<fsrcHist> ./parameters/sishuan/sishuan.hist </fsrcHist>	sources history file
+
+:::::::::::: geology description ::::::::::::
+<nlayer> 4 </nlayer>
+<layer1>
+	= necessary =
+	<rho> 2300. </rho> densityy
+	<vp> 5500. </vp> pressure waves velocity
+	<vs> 3140. </vs> shear waves velocity
+
+	= layer representation =
+	<depth> 0.0 </depth> roof of the layer in kilometers
+	<q0> 600 </q0> quality factor
+</layer1>
+<layer2>
+        = necessary =
+        <rho> 2400. </rho> density
+        <vp> 6000. </vp> pressure waves velocity
+        <vs> 3550. </vs> shear waves velocity
+
+        = layer representation =
+        <depth> -3.0 </depth> roof of the layer in kilometers
+	<q0> 600 </q0> quality factor
+</layer2>
+<layer3>
+        = necessary =
+        <rho> 2800. </rho> density
+        <vp> 6700. </vp> pressure waves velocity
+        <vs> 3830. </vs> shear waves velocity
+
+        = layer representation =
+        <depth> -18.0 </depth> roof of the layer in kilometers
+	<q0> 600 </q0> quality factor
+</layer3>
+<layer4>
+        = necessary =
+        <rho> 3200. </rho> density
+        <vp> 7800. </vp> pressure waves velocity
+        <vs> 4460. </vs> shear waves velocity
+
+        = layer representation =
+        <depth> -33.0 </depth> roof of the layer in kilometers
+	<q0> 600 </q0> quality factor
+</layer4>
