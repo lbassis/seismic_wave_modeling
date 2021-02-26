@@ -1,16 +1,17 @@
 STARPU_VERSION=1.3
 CPPFLAGS += $(shell pkg-config --cflags starpu-$(STARPU_VERSION))
+CPPFLAGS += -g
 LDLIBS += $(shell pkg-config --libs starpu-$(STARPU_VERSION))
 LDLIBS += -Wl,-rpath -Wl,$(shell pkg-config --variable=libdir starpu-$(STARPU_VERSION))
 
-stencil.o: stencil.c
+starpu_stencil.o: starpu_stencil.c
 	gcc $(CPPFLAGS) $< -c -o $@ $(LDLIBS)
 
-stencil: stencil.o
-	gcc stencil.o $(LDLIBS) -o demo		
+all: starpu_stencil.o
+	gcc $< $(LDLIBS) -o demo		
 
 clean:
-	rm -f *.o  *~
+	rm -f *.o  *~ demo
 
 #CC      = mpicc
 #CFLAGS += -Wall -g -O4
