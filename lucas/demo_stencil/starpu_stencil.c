@@ -1,11 +1,14 @@
+// para quinta 4/03 14h
+// reservar tupis
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
 #include <starpu.h>
 
-#define SIZE 5
-//#define BLOCK_SIZE 3
+#define SIZE 9
+#define BLOCK_SIZE 3
 #define EPSILON 0.001
 #define STENCIL_MAX_STEPS 10000
 
@@ -38,6 +41,33 @@ static void stencil_init(float **prev_vector, float **next_vector) {
   }
 }
 
+static void vector_to_blocks(float *vector, float ***blocks) {
+
+  int n_blocks = (SIZE/BLOCK_SIZE)*(SIZE/BLOCK_SIZE);
+  *blocks = malloc(n_blocks*sizeof(float*));
+
+  for (int i = 0; i < SIZE; i++) {
+    (*blocks)[i] = malloc(BLOCK_SIZE*BLOCK_SIZE*sizeof(float));
+  }
+
+  for (int i = 0; i < SIZE; i++) {
+    for (int j = 0; j < SIZE; j++) {
+
+      int target_block_row = i/BLOCK_SIZE;
+      int target_block_col = j/BLOCK_SIZE;
+      int target_block_index = target_block_row*(SIZE/BLOCK_SIZE)+target_block_col;
+
+      int block_i = i%BLOCK_SIZE;
+      int block_j = j%BLOCK_SIZE;
+      printf("%f elemento %d,%d da matriz original vai pro bloco %d na posicao %d,%d (%d)\n", vector[i*SIZE+j],
+	     i, j, target_block_index, block_i, block_j, block_i*(SIZE/BLOCK_SIZE)+block_j);
+
+      (*blocks)[target_block_index][block_i*(SIZE/BLOCK_SIZE)+block_j] = vector[i*SIZE+j];
+    }
+  }
+}
+
+// da pra por o teste dentro da task usando um int como booleano pra dizer se convergiu
 /** return 1 if computation has converged */
 static int stencil_test_convergence(int current_buffer, float *prev_vector, float *next_vector) {
   int i, j;
@@ -125,6 +155,20 @@ int main(int argc, char**argv) {
   stencil_init(&prev_vector, &next_vector);
   stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
 
+  float **prev_blocks;
+  vector_to_blocks(prev_vector, &prev_blocks);
+  for (int b = 0; b < 9; b++) {
+    printf("bloco %d\n", b);
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+	printf("%f ", prev_blocks[b][i*3+j]);
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
+	
+  return 0;
  
   starpu_vector_data_register(&prev_vector_handle, 0, (uintptr_t)prev_vector, SIZE*SIZE, sizeof(prev_vector[0]));
   starpu_vector_data_register(&next_vector_handle, 0, (uintptr_t)next_vector, SIZE*SIZE, sizeof(next_vector[0]));
@@ -152,14 +196,16 @@ int main(int argc, char**argv) {
     }
 
       starpu_task_wait_for_all();
-      if(stencil_test_convergence(current_buffer, prev_vector, next_vector)) {
+      // precisa usar os handles!!!
+      if (stencil_test_convergence(current_buffer, prev_vector, next_vector)) {
       	  printf("# steps = %d\n", s);
       	  break;
       }
 
       current_buffer = next_buffer;
   }
-  
+
+  //acquire e release pra ler/escrever
   starpu_data_unregister(prev_vector_handle);
   starpu_data_unregister(next_vector_handle);
 
