@@ -1,4 +1,4 @@
-// para quinta 4/03 14h
+// para quinta 11/03 14h
 // reservar tupis
 
 #include <stdio.h>
@@ -48,10 +48,10 @@ int main(int argc, char**argv) {
   //stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
 
   for (int i = 0; i < N_BLOCKS; i++) {
-      starpu_vector_data_register(&prev_vector_handles[i], 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
-      starpu_vector_data_register(&next_vector_handles[i], 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
+    starpu_vector_data_register(&prev_vector_handles[i], 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
+    starpu_vector_data_register(&next_vector_handles[i], 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
+    printf("registrou %p e %p (%d %d)\n", &prev_vector_handles[i], &next_vector_handles[i]);
   }
-
   for(int s = 0; s < STENCIL_MAX_STEPS; s++) {
   
     int prev_buffer = current_buffer;
@@ -61,14 +61,14 @@ int main(int argc, char**argv) {
     for (int i = 0; i < N_BLOCKS; i++) {
       for (int j = 0; j < N_BLOCKS; j++) {
 	if (current_buffer == 0) {
-	  currently_reading = prev_vector_handles;//[i*N_BLOCKS+j];
-	  currently_writing = next_vector_handles;//[i*N_BLOCKS+j];
+	  currently_reading = prev_vector_handles;
+	  currently_writing = next_vector_handles;
 	}
 	else {
-	  currently_reading = next_vector_handles;//[i*N_BLOCKS+j];
-	  currently_writing = prev_vector_handles;//[i*N_BLOCKS+j];
+	  currently_reading = next_vector_handles;
+	  currently_writing = prev_vector_handles;
 	}
-
+	printf("vai inserir\n");
 	insert_block_task(i, j, N_BLOCKS, currently_reading, currently_writing, alpha);
       }
     }
@@ -86,7 +86,7 @@ int main(int argc, char**argv) {
   //starpu_data_unregister(prev_vector_handles);
   //starpu_data_unregister(next_vector_handles);
   
-  starpu_shutdown();
+  //starpu_shutdown();
   
   //printf("result:\n");
   //if (current_buffer == 0) {
@@ -102,6 +102,16 @@ int main(int argc, char**argv) {
 /* =========================== */
 /* --- StarPU functions --- */
 /* =========================== */
+
+typedef struct {
+  int position;
+  float alpha;
+} params;
+
+enum starpu_data_access_mode modes[STARPU_NMAXBUFS+1] =
+{
+ STARPU_R, STARPU_W, STARPU_R, STARPU_R, STARPU_R, STARPU_R
+};
 
 void step_func(void *buffers[], void *cl_arg) {
   //struct starpu_vector_interface *prev_vector_handle = buffers[0];
@@ -125,13 +135,16 @@ void step_func(void *buffers[], void *cl_arg) {
   //	(1.0 - 4.0 * alpha) * prev_vector[i*SIZE+j];
   //  }
   //}
+  params *params = cl_arg;
+  printf("veio %d e %f\n", params->position, params->alpha);
 }
 
 struct starpu_codelet stencil_step = {
 				      .cpu_funcs = {step_func},
 				      .nbuffers = 6,
-				      .modes = {STARPU_R, STARPU_W, STARPU_R, STARPU_R, STARPU_R, STARPU_R},
+				      .dyn_modes = modes,
 };
+
 /* =========================== */
 /* --- Auxiliary functions --- */
 /* =========================== */
@@ -213,131 +226,47 @@ static void stencil_display(float *vector, int x0, int x1, int y0, int y1) {
     printf("\n");
   }
 }
-
-void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha) {
-  if (i == 0) {
-    // primeira linha e primeira coluna -> vizinho a leste e sul
-    if (j == 0) {
-      starpu_insert_task(&stencil_step,
-			 STARPU_R, currently_reading[i*n_blocks+j],
-			 STARPU_W, currently_writing[i*n_blocks+j],
-			 STARPU_R, NULL, // sera que isso funciona?     // norte
-			 STARPU_R, currently_reading[i*n_blocks+j+1],   // leste
-			 STARPU_R, currently_reading[(i+1)*n_blocks+j], // sul
-			 STARPU_R, NULL,                                // oeste
-			 STARPU_VALUE, &alpha, sizeof(alpha),
-			 0);
-    }
-    // primeira linha e ultima coluna -> vizinho a oeste e sul
-    else {
-      if (j == n_blocks) {
-	starpu_insert_task(&stencil_step,
-			   STARPU_R, currently_reading[i*n_blocks+j],
-			   STARPU_W, currently_writing[i*n_blocks+j],
-			   STARPU_R, NULL, // sera que isso funciona?     // norte
-			   STARPU_R, NULL,                                // leste
-			   STARPU_R, currently_reading[(i+1)*n_blocks+j], // sul
-			   STARPU_R, currently_reading[i*n_blocks+j-1],  // oeste
-			   STARPU_VALUE, &alpha, sizeof(alpha),
-			   0);
-      }
-      // primeira linha e coluna central
-      else {
-	starpu_insert_task(&stencil_step,
-			   STARPU_R, currently_reading[i*n_blocks+j],
-			   STARPU_W, currently_writing[i*n_blocks+j],
-			   STARPU_R, NULL, // sera que isso funciona?     // norte
-			   STARPU_R, currently_reading[i*n_blocks+j+1],    // leste
-			   STARPU_R, currently_reading[(i+1)*n_blocks+j], // sul
-			   STARPU_R, currently_reading[i*n_blocks+j-1],  // oeste
-			   STARPU_VALUE, &alpha, sizeof(alpha),
-			   0);
-      }
-    }
-    return;
-  }
-
-  if (i == n_blocks) {
-    // ultima linha e primeira coluna -> vizinho a leste e norte
-    if (j == 0) {
-      starpu_insert_task(&stencil_step,
-			 STARPU_R, currently_reading[i*n_blocks+j],
-			 STARPU_W, currently_writing[i*n_blocks+j],
-			 STARPU_R, currently_reading[(i-1)*n_blocks+j], // norte
-			 STARPU_R, currently_reading[i*n_blocks+j+1],   // leste
-			 STARPU_R, NULL,                                // sul
-			 STARPU_R, NULL,                                // oeste
-			 STARPU_VALUE, &alpha, sizeof(alpha),
-			 0);
-    }
-    // ultima linha e ultima coluna -> vizinho a oeste e norte
-    else {
-      if (j == n_blocks) {
-	starpu_insert_task(&stencil_step,
-			   STARPU_R, currently_reading[i*n_blocks+j],
-			   STARPU_W, currently_writing[i*n_blocks+j],
-			   STARPU_R, currently_reading[(i-1)*n_blocks+j], // norte
-			   STARPU_R, NULL,                                // leste
-			   STARPU_R, NULL, // sul
-			   STARPU_R, currently_reading[i*n_blocks+j-1],  // oeste
-			   STARPU_VALUE, &alpha, sizeof(alpha),
-			   0);
-      }
-      // ultima linha e coluna central
-      else {
-	starpu_insert_task(&stencil_step,
-			   STARPU_R, currently_reading[i*n_blocks+j],
-			   STARPU_W, currently_writing[i*n_blocks+j],
-			   STARPU_R, currently_reading[(i-1)*n_blocks+j],  // norte
-			   STARPU_R, currently_reading[i*n_blocks+j+1],    // leste
-			   STARPU_R, NULL, // sul
-			   STARPU_R, currently_reading[i*n_blocks+j-1],  // oeste
-			   STARPU_VALUE, &alpha, sizeof(alpha),
-			   0);
-      }
-    }
-    return;
-  }
-
-  // linha central
   
-  // linha central e primeira coluna
-  if (j == 0) {
-      starpu_insert_task(&stencil_step,
-			 STARPU_R, currently_reading[i*n_blocks+j],
-			 STARPU_W, currently_writing[i*n_blocks+j],
-			 STARPU_R, currently_reading[(i-1)*n_blocks+j], // norte
-			 STARPU_R, currently_reading[i*n_blocks+j+1],   // leste
-			 STARPU_R, currently_reading[i*n_blocks+j+1],   // sul
-			 STARPU_R, NULL,                                // oeste
-			 STARPU_VALUE, &alpha, sizeof(alpha),
-			 0);
-    }
-    // linha central e ultima coluna -> vizinho a oeste e norte
-    else {
-      if (j == n_blocks) {
-	starpu_insert_task(&stencil_step,
-			   STARPU_R, currently_reading[i*n_blocks+j],
-			   STARPU_W, currently_writing[i*n_blocks+j],
-			   STARPU_R, currently_reading[(i-1)*n_blocks+j], // norte
-			   STARPU_R, NULL,                                // leste
-			   STARPU_R, currently_reading[i*n_blocks+j+1], // sul
-			   STARPU_R, currently_reading[i*n_blocks+j-1],  // oeste
-			   STARPU_VALUE, &alpha, sizeof(alpha),
-			   0);
-      }
-      // linha central e coluna central
-      else {
-	starpu_insert_task(&stencil_step,
-			   STARPU_R, currently_reading[i*n_blocks+j],
-			   STARPU_W, currently_writing[i*n_blocks+j],
-			   STARPU_R, currently_reading[(i-1)*n_blocks+j],  // norte
-			   STARPU_R, currently_reading[i*n_blocks+j+1],    // leste
-			   STARPU_R, currently_reading[i*n_blocks+j+1], // sul
-			   STARPU_R, currently_reading[i*n_blocks+j-1],  // oeste
-			   STARPU_VALUE, &alpha, sizeof(alpha),
-			   0);
-      }
-    }
-    return;
+void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha) {
+  starpu_data_handle_t **neighborhood = malloc(sizeof(starpu_data_handle_t)*4);
+  struct starpu_task *task = starpu_task_create();
+  params params;
+  int neighboors = 0;
+
+  params.position = 1;
+  params.alpha = alpha;
+
+  if (i != 0) {
+    printf("adiciona o %p\n", &(currently_reading[(i-1)*n_blocks+j]));
+    neighborhood[neighboors] = &(currently_reading[(i-1)*n_blocks+j]);
+    neighboors++;
+  }
+  if (j != n_blocks) {
+    printf("adiciona o %p\n",  &(currently_reading[i*n_blocks+j+1]));
+    neighborhood[neighboors] = &(currently_reading[i*n_blocks+j+1]);
+    neighboors++;
+  }
+  if (i != n_blocks) {
+    neighborhood[neighboors] = &(currently_reading[(i+1)*n_blocks+j]);
+    neighboors++;
+  }
+  if (j != 0) {
+    neighborhood[neighboors] = &(currently_reading[i*n_blocks+j-1]);
+    neighboors++;
+  }
+
+  task->cl = &stencil_step;
+  task->cl_arg = &params;
+  task->cl_arg_size = sizeof(params);
+  task->cl->nbuffers = 2 + neighboors;
+  task->dyn_handles = malloc(task->cl->nbuffers * sizeof(starpu_data_handle_t));
+  
+  task->dyn_handles[0] = currently_reading[i*n_blocks+j];
+  task->dyn_handles[1] = currently_writing[i*n_blocks+j];
+
+  for (int k = 0; k < neighboors; k++) {
+    task->dyn_handles[k+2] = *(neighborhood[k]);
+  }
+
+  starpu_task_submit(task);
 }
