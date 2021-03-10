@@ -12,7 +12,7 @@
 #define BLOCK_SIZE 3
 #define N_BLOCKS (SIZE/BLOCK_SIZE)*(SIZE/BLOCK_SIZE)
 #define EPSILON 0.001
-#define STENCIL_MAX_STEPS 10000
+#define STENCIL_MAX_STEPS 1//0000
 
 void step_func(void *buffers[], void *cl_arg);
 static void stencil_init(float **prev_vector, float **next_vector);
@@ -45,39 +45,41 @@ int main(int argc, char**argv) {
   stencil_init(&prev_vector, &next_vector);
   vector_to_blocks(prev_vector, &prev_blocks);
   vector_to_blocks(next_vector, &next_blocks);
-  //stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
+  stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
 
   for (int i = 0; i < N_BLOCKS; i++) {
-    starpu_vector_data_register(&prev_vector_handles[i], 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
-    starpu_vector_data_register(&next_vector_handles[i], 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
-    printf("registrou %p e %p (%d %d)\n", &prev_vector_handles[i], &next_vector_handles[i]);
+    starpu_vector_data_register(&(prev_vector_handles[i]), 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
+    starpu_vector_data_register(&(next_vector_handles[i]), 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
+    printf("registrou %p e %p (%d)\n", prev_vector_handles[i], next_vector_handles[i], i);
   }
+
+  printf("o prev eh %p e o next eh %p\n", prev_vector_handles, next_vector_handles);
   for(int s = 0; s < STENCIL_MAX_STEPS; s++) {
   
     int prev_buffer = current_buffer;
     int next_buffer = (current_buffer + 1) % 2;
   
     // the handles will depend on the current buffer
-    for (int i = 0; i < N_BLOCKS; i++) {
-      for (int j = 0; j < N_BLOCKS; j++) {
+    for (int i = 0; i < SIZE/BLOCK_SIZE; i++) {
+      for (int j = 0; j < SIZE/BLOCK_SIZE; j++) {
 	if (current_buffer == 0) {
 	  currently_reading = prev_vector_handles;
 	  currently_writing = next_vector_handles;
+	  //printf("o reading eh %p e o writing eh %p\n", currently_reading, currently_writing);
 	}
 	else {
 	  currently_reading = next_vector_handles;
 	  currently_writing = prev_vector_handles;
 	}
-	printf("vai inserir\n");
-	insert_block_task(i, j, N_BLOCKS, currently_reading, currently_writing, alpha);
+	insert_block_task(i, j, SIZE/BLOCK_SIZE, currently_reading, currently_writing, alpha);
       }
     }
     starpu_task_wait_for_all();
     // precisa usar os handles!!!
-    if (stencil_test_convergence(current_buffer, prev_vector, next_vector)) {
-      printf("# steps = %d\n", s);
-      break;
-    }
+    //if (stencil_test_convergence(current_buffer, prev_vector, next_vector)) {
+    //  printf("# steps = %d\n", s);
+    //  break;
+    //}
   
     current_buffer = next_buffer;     
   }
@@ -104,18 +106,34 @@ int main(int argc, char**argv) {
 /* =========================== */
 
 typedef struct {
-  int position;
+  int i;
+  int j;
+  int neighboors;
   float alpha;
-} params;
+} params_t;
 
-enum starpu_data_access_mode modes[STARPU_NMAXBUFS+1] =
-{
- STARPU_R, STARPU_W, STARPU_R, STARPU_R, STARPU_R, STARPU_R
-};
 
 void step_func(void *buffers[], void *cl_arg) {
-  //struct starpu_vector_interface *prev_vector_handle = buffers[0];
-  //struct starpu_vector_interface *next_vector_handle = buffers[1];
+  struct starpu_vector_interface *prev_vector_handle = buffers[0];
+  struct starpu_vector_interface *next_vector_handle = buffers[1];
+  struct starpu_vector_interface *temp_handle;
+  float *prev_vector, *next_vector, **neighborhood;
+  params_t *params;
+  int i, j;
+
+  prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
+  next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
+
+  params = (params_t*) cl_arg;
+  neighborhood = malloc(sizeof(float*)*params->neighboors);
+  i = params->i;
+  j = params->j;
+
+  for (int k = 0; k < params->neighboors; k++) {
+    temp_handle = buffers[2+k];
+    neighborhood[k] = (float *)STARPU_VECTOR_GET_PTR(temp_handle);
+  }
+
   //
   ////unsigned n = STARPU_VECTOR_GET_NX(prev_vector_handle);
   //
@@ -135,14 +153,13 @@ void step_func(void *buffers[], void *cl_arg) {
   //	(1.0 - 4.0 * alpha) * prev_vector[i*SIZE+j];
   //  }
   //}
-  params *params = cl_arg;
-  printf("veio %d e %f\n", params->position, params->alpha);
+  //params *params = cl_arg;
+  //printf("veio %d e %f\n", params->position, params->alpha);
 }
 
 struct starpu_codelet stencil_step = {
 				      .cpu_funcs = {step_func},
-				      .nbuffers = 6,
-				      .dyn_modes = modes,
+				      .nbuffers = STARPU_VARIABLE_NBUFFERS,
 };
 
 /* =========================== */
@@ -190,6 +207,7 @@ static void vector_to_blocks(float *vector, float ***blocks) {
       int block_i = i%BLOCK_SIZE;
       int block_j = j%BLOCK_SIZE;
 
+      //printf("pegando a posicao %d do original que eh %f e botandn oa posicao %d do block %d\n", i*SIZE+j, vector[i*SIZE+j], block_i*(SIZE/BLOCK_SIZE)+block_j, target_block_index);
       (*blocks)[target_block_index][block_i*(SIZE/BLOCK_SIZE)+block_j] = vector[i*SIZE+j];
     }
   }
@@ -221,7 +239,7 @@ static void stencil_display(float *vector, int x0, int x1, int y0, int y1) {
   int i, j;
   for(i = y0; i <= y1; i++) {
     for(j = x0; j <= x1; j++) {
-      printf("%8.5g ", vector[i*SIZE+j]);
+      printf("%8.5g ", vector[i*(x1-x0+1)+j]);
     }
     printf("\n");
   }
@@ -230,23 +248,19 @@ static void stencil_display(float *vector, int x0, int x1, int y0, int y1) {
 void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha) {
   starpu_data_handle_t **neighborhood = malloc(sizeof(starpu_data_handle_t)*4);
   struct starpu_task *task = starpu_task_create();
-  params params;
+  params_t *params = malloc(sizeof(params_t));
   int neighboors = 0;
 
-  params.position = 1;
-  params.alpha = alpha;
 
   if (i != 0) {
-    printf("adiciona o %p\n", &(currently_reading[(i-1)*n_blocks+j]));
     neighborhood[neighboors] = &(currently_reading[(i-1)*n_blocks+j]);
     neighboors++;
   }
-  if (j != n_blocks) {
-    printf("adiciona o %p\n",  &(currently_reading[i*n_blocks+j+1]));
+  if (j != n_blocks-1) {
     neighborhood[neighboors] = &(currently_reading[i*n_blocks+j+1]);
     neighboors++;
   }
-  if (i != n_blocks) {
+  if (i != n_blocks-1) {
     neighborhood[neighboors] = &(currently_reading[(i+1)*n_blocks+j]);
     neighboors++;
   }
@@ -255,18 +269,38 @@ void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *current
     neighboors++;
   }
 
+  starpu_data_handle_t *handles = malloc(neighboors * sizeof(starpu_data_handle_t));
+  for (int k = 0; k < neighboors; k++) {
+    handles[i] = (*neighborhood)[k];
+  }
+
+  params->i = i;
+  params->j = j;
+  params->neighboors = neighboors;
+  params->alpha = alpha;
+
   task->cl = &stencil_step;
-  task->cl_arg = &params;
-  task->cl_arg_size = sizeof(params);
-  task->cl->nbuffers = 2 + neighboors;
-  task->dyn_handles = malloc(task->cl->nbuffers * sizeof(starpu_data_handle_t));
+  task->cl_arg = (void*) params;
+  //printf("o endereco da task eh %p e dos args eh %p\n", task, &params);
+  task->cl_arg_size = sizeof(*params);
+  task->nbuffers = neighboors + 2;
+
+  task->dyn_modes = malloc(task->nbuffers * sizeof(starpu_data_handle_t));
+  task->dyn_handles = malloc(task->nbuffers * sizeof(starpu_data_handle_t));
   
   task->dyn_handles[0] = currently_reading[i*n_blocks+j];
   task->dyn_handles[1] = currently_writing[i*n_blocks+j];
 
-  for (int k = 0; k < neighboors; k++) {
-    task->dyn_handles[k+2] = *(neighborhood[k]);
-  }
+  task->dyn_modes[0] = STARPU_R;
+  task->dyn_modes[1] = STARPU_W;
+  //printf("lendo %p e escrevendo %p\n", currently_reading[i*n_blocks+j], currently_writing[i*n_blocks+j]);
 
+  for (int k = 0; k < neighboors; k++) {
+    //printf("inserindo %p\n", *(neighborhood[k]));
+    task->dyn_handles[k+2] = *(neighborhood[k]);
+    task->dyn_modes[k+2] = STARPU_R;
+  } 
+  
   starpu_task_submit(task);
+
 }
