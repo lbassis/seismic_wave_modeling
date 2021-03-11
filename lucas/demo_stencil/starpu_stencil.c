@@ -22,7 +22,6 @@
 void step_func(void *buffers[], void *cl_arg);
 static void stencil_init(float **prev_vector, float **next_vector);
 static void vector_to_blocks(float *vector, float ***blocks);
-static int stencil_test_convergence(int current_buffer, float *prev_vector, float *next_vector);
 static void stencil_display(float *vector, int x0, int x1, int y0, int y1);
 void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha);
 
@@ -73,7 +72,8 @@ int main(int argc, char**argv) {
 	  currently_reading = next_vector_handles;
 	  currently_writing = prev_vector_handles;
 	}
-	insert_block_task(i, j, SIZE/BLOCK_SIZE, currently_reading, currently_writing, alpha);
+	insert_block_task(2, 2, SIZE/BLOCK_SIZE, currently_reading, currently_writing, alpha);
+	
       }
     }
     starpu_task_wait_for_all();
@@ -154,17 +154,17 @@ void step_func(void *buffers[], void *cl_arg) {
 
   if (i > 0) { // it has a northern neighboor
     for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[k] = neighborhood[last_neighboor][k-1];
+      full_vector[k] = neighborhood[last_neighboor][BLOCK_SIZE*(BLOCK_SIZE-1)+k-1];
     }
     last_neighboor++;
   }
   if (j < (SIZE/BLOCK_SIZE)-1) { // it has a eastern neighboor
     for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][k-1];
+      full_vector[(BLOCK_SIZE+2)*k+BLOCK_SIZE+1] = neighborhood[last_neighboor][BLOCK_SIZE*(k-1)];
     }
     last_neighboor++;
   }
-  if (i < (SIZE/BLOCK_SIZE)-1) { // it has a northern neighboor
+  if (i < (SIZE/BLOCK_SIZE)-1) { // it has a southern neighboor
     for (int k = 1; k < BLOCK_SIZE+1; k++) {
       full_vector[(BLOCK_SIZE+2)*(BLOCK_SIZE+1)+k] = neighborhood[last_neighboor][k-1];
     }
@@ -172,14 +172,21 @@ void step_func(void *buffers[], void *cl_arg) {
   }
   if (j > 0) { // it has a western neighboor
     for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][k-1];
+      full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][(k-1)*BLOCK_SIZE+BLOCK_SIZE-1];
     }
+  }
+
+  printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
+  for (int k = 0; k < 5; k++) {
+    for (int l = 0; l < 5; l++) {
+      printf("%f ", full_vector[k*5+l]);
+    }
+    printf("\n");
   }
 
   // calculate the stencil 
   for (int k = 1; k < BLOCK_SIZE+1; k++) {
     for (int l = 1; l < BLOCK_SIZE+1; l++) {
-      printf("calculando aqui\n");
       next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2] +
 	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] +
 	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-3] +
@@ -189,8 +196,11 @@ void step_func(void *buffers[], void *cl_arg) {
   }
 
   printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
-  for (int z = 0; z < 9; z++) {
-    printf("%f ", next_vector[z]);
+  for (int k = 0; k < 3; k++) {
+    for (int l = 0; l < 3; l++) {
+      printf("%f ", next_vector[k*3+l]);
+    }
+    printf("\n");
   }
 
   // checks if it converges
@@ -260,27 +270,6 @@ static void vector_to_blocks(float *vector, float ***blocks) {
       (*blocks)[target_block_index][block_i*(SIZE/BLOCK_SIZE)+block_j] = vector[i*SIZE+j];
     }
   }
-}
-
-// da pra por o teste dentro da task usando um int como booleano pra dizer se convergiu
-/** return 1 if computation has converged */
-static int stencil_test_convergence(int current_buffer, float *prev_vector, float *next_vector) {
-  int i, j;
-  for(i = 1; i < SIZE-1; i++) {
-    for(j = 1; j < SIZE-1; j++) {
-      if (current_buffer == 0) {
-	if(fabs(prev_vector[i*SIZE+j] - next_vector[i*SIZE+j]) > EPSILON) {
-	  return 0;
-	}
-      }
-      else {
-	if(fabs(next_vector[i*SIZE+j] - prev_vector[i*SIZE+j]) > EPSILON) {
-	  return 0;
-	}		
-      }
-    }
-  }
-  return 1;
 }
 
 /** display a part of the stencil values */
