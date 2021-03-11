@@ -1,6 +1,11 @@
 // para quinta 11/03 14h
 // reservar tupis
 
+// gdb pra achar a diferenca entre task->nbuffers e task->cl->nbuffers
+// malloc pros parametros nao serem sempre os mesmos
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -50,10 +55,8 @@ int main(int argc, char**argv) {
   for (int i = 0; i < N_BLOCKS; i++) {
     starpu_vector_data_register(&(prev_vector_handles[i]), 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
     starpu_vector_data_register(&(next_vector_handles[i]), 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
-    printf("registrou %p e %p (%d)\n", prev_vector_handles[i], next_vector_handles[i], i);
   }
 
-  printf("o prev eh %p e o next eh %p\n", prev_vector_handles, next_vector_handles);
   for(int s = 0; s < STENCIL_MAX_STEPS; s++) {
   
     int prev_buffer = current_buffer;
@@ -65,7 +68,6 @@ int main(int argc, char**argv) {
 	if (current_buffer == 0) {
 	  currently_reading = prev_vector_handles;
 	  currently_writing = next_vector_handles;
-	  //printf("o reading eh %p e o writing eh %p\n", currently_reading, currently_writing);
 	}
 	else {
 	  currently_reading = next_vector_handles;
@@ -75,28 +77,34 @@ int main(int argc, char**argv) {
       }
     }
     starpu_task_wait_for_all();
-    // precisa usar os handles!!!
-    //if (stencil_test_convergence(current_buffer, prev_vector, next_vector)) {
-    //  printf("# steps = %d\n", s);
-    //  break;
-    //}
+    // check if everyone converged
   
     current_buffer = next_buffer;     
   }
+
+  for (int i = 0; i < N_BLOCKS; i++) {
+    starpu_data_unregister(prev_vector_handles[i]);
+    starpu_data_unregister(next_vector_handles[i]);
+  }
+
+  starpu_shutdown();
   
-  //acquire e release pra ler/escrever
-  //starpu_data_unregister(prev_vector_handles);
-  //starpu_data_unregister(next_vector_handles);
-  
-  //starpu_shutdown();
-  
-  //printf("result:\n");
-  //if (current_buffer == 0) {
-  //    stencil_display(next_vector, 0, SIZE-1, 0, SIZE-1);
-  //}
-  //else {
-  //  stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
-  //}
+  printf("result:\n");
+  if (current_buffer == 1) {
+    for (int k = 0; k < N_BLOCKS; k++) {
+      printf("block %d\n", k);
+      stencil_display(next_blocks[k], 0, BLOCK_SIZE-1, 0, BLOCK_SIZE-1);
+      printf("\n");
+    }
+  }
+  else {
+    for (int k = 0; k < N_BLOCKS; k++) {
+      printf("block %d\n", k);
+      stencil_display(prev_blocks[k], 0, BLOCK_SIZE-1, 0, BLOCK_SIZE-1);
+      printf("\n");
+    }
+
+  }
 
   return 0;
 }
@@ -117,9 +125,10 @@ void step_func(void *buffers[], void *cl_arg) {
   struct starpu_vector_interface *prev_vector_handle = buffers[0];
   struct starpu_vector_interface *next_vector_handle = buffers[1];
   struct starpu_vector_interface *temp_handle;
-  float *prev_vector, *next_vector, **neighborhood;
+  float *prev_vector, *next_vector, **neighborhood, alpha;
   params_t *params;
-  int i, j;
+  int i, j, last_neighboor = 0;
+  float *full_vector = calloc((BLOCK_SIZE+2)*(BLOCK_SIZE+2), sizeof(float));
 
   prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
   next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
@@ -128,33 +137,73 @@ void step_func(void *buffers[], void *cl_arg) {
   neighborhood = malloc(sizeof(float*)*params->neighboors);
   i = params->i;
   j = params->j;
+  alpha = params->alpha;
 
   for (int k = 0; k < params->neighboors; k++) {
     temp_handle = buffers[2+k];
     neighborhood[k] = (float *)STARPU_VECTOR_GET_PTR(temp_handle);
   }
 
-  //
-  ////unsigned n = STARPU_VECTOR_GET_NX(prev_vector_handle);
-  //
-  //float *prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
-  //float *next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
-  //float alpha;
-  //
-  //starpu_codelet_unpack_args(cl_arg, &alpha);
-  //
-  //for (int i = 1; i < SIZE-1; i++) {
-  //  for (int j = 1; j < SIZE-1; j++) {
-  //  next_vector[i*SIZE+j] =
-  //	alpha * prev_vector[(i-1)*SIZE+j] +
-  //	alpha * prev_vector[(i+1)*SIZE+j] +
-  //	alpha * prev_vector[i*SIZE+j-1] +
-  //	alpha * prev_vector[i*SIZE+j+1] +
-  //	(1.0 - 4.0 * alpha) * prev_vector[i*SIZE+j];
-  //  }
-  //}
-  //params *params = cl_arg;
-  //printf("veio %d e %f\n", params->position, params->alpha);
+
+  // fill a bigger block with all the necessary info
+  for (int k = 1; k < BLOCK_SIZE+1; k++) {
+    for (int l = 1; l < BLOCK_SIZE+1; l++) {
+      full_vector[k*(BLOCK_SIZE+2)+l] = prev_vector[(k-1)*BLOCK_SIZE+l-1];
+    }
+  }
+
+  if (i > 0) { // it has a northern neighboor
+    for (int k = 1; k < BLOCK_SIZE+1; k++) {
+      full_vector[k] = neighborhood[last_neighboor][k-1];
+    }
+    last_neighboor++;
+  }
+  if (j < (SIZE/BLOCK_SIZE)-1) { // it has a eastern neighboor
+    for (int k = 1; k < BLOCK_SIZE+1; k++) {
+      full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][k-1];
+    }
+    last_neighboor++;
+  }
+  if (i < (SIZE/BLOCK_SIZE)-1) { // it has a northern neighboor
+    for (int k = 1; k < BLOCK_SIZE+1; k++) {
+      full_vector[(BLOCK_SIZE+2)*(BLOCK_SIZE+1)+k] = neighborhood[last_neighboor][k-1];
+    }
+    last_neighboor++;
+  }
+  if (j > 0) { // it has a western neighboor
+    for (int k = 1; k < BLOCK_SIZE+1; k++) {
+      full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][k-1];
+    }
+  }
+
+  // calculate the stencil 
+  for (int k = 1; k < BLOCK_SIZE+1; k++) {
+    for (int l = 1; l < BLOCK_SIZE+1; l++) {
+      printf("calculando aqui\n");
+      next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2] +
+	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] +
+	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-3] +
+	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l] +
+	(1.0 - 4.0 * alpha) * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2];
+    } 
+  }
+
+  printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
+  for (int z = 0; z < 9; z++) {
+    printf("%f ", next_vector[z]);
+  }
+
+  // checks if it converges
+  int converges = 1;
+  for (int k = 1; k < BLOCK_SIZE-1; k++) {
+    for (int l = 1; l < BLOCK_SIZE-1; l++) {
+      if(fabs(next_vector[k*BLOCK_SIZE+l] - prev_vector[k*BLOCK_SIZE+l]) > EPSILON) {
+	converges = 0;
+      }
+    }
+  }
+
+  // return converges
 }
 
 struct starpu_codelet stencil_step = {
