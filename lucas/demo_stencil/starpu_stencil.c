@@ -1,9 +1,7 @@
-// para quinta 11/03 14h
+// para quinta 25/03 14h
 // reservar tupis
 
-// gdb pra achar a diferenca entre task->nbuffers e task->cl->nbuffers
-// malloc pros parametros nao serem sempre os mesmos
-
+// comparar resultados com as outras versoes
 
 
 #include <stdio.h>
@@ -72,7 +70,7 @@ int main(int argc, char**argv) {
 	  currently_reading = next_vector_handles;
 	  currently_writing = prev_vector_handles;
 	}
-	insert_block_task(2, 2, SIZE/BLOCK_SIZE, currently_reading, currently_writing, alpha);
+	insert_block_task(i, j, SIZE/BLOCK_SIZE, currently_reading, currently_writing, alpha);
 	
       }
     }
@@ -125,33 +123,30 @@ void step_func(void *buffers[], void *cl_arg) {
   struct starpu_vector_interface *prev_vector_handle = buffers[0];
   struct starpu_vector_interface *next_vector_handle = buffers[1];
   struct starpu_vector_interface *temp_handle;
-  float *prev_vector, *next_vector, **neighborhood, alpha;
-  params_t *params;
-  int i, j, last_neighboor = 0;
-  float *full_vector = calloc((BLOCK_SIZE+2)*(BLOCK_SIZE+2), sizeof(float));
+  float *prev_vector, *next_vector, *full_vector, **neighborhood, alpha;
+  int i, j, neighboors, last_neighboor = 0;
 
+  starpu_codelet_unpack_args(cl_arg, &i, &j, &neighboors, &alpha);
+
+  full_vector = calloc((BLOCK_SIZE+2)*(BLOCK_SIZE+2), sizeof(float));
   prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
   next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
+  
+  neighborhood = malloc(neighboors*sizeof(float));
 
-  params = (params_t*) cl_arg;
-  neighborhood = malloc(sizeof(float*)*params->neighboors);
-  i = params->i;
-  j = params->j;
-  alpha = params->alpha;
-
-  for (int k = 0; k < params->neighboors; k++) {
+  for (int k = 0; k < neighboors; k++) {
     temp_handle = buffers[2+k];
     neighborhood[k] = (float *)STARPU_VECTOR_GET_PTR(temp_handle);
   }
-
-
+  
+  
   // fill a bigger block with all the necessary info
   for (int k = 1; k < BLOCK_SIZE+1; k++) {
     for (int l = 1; l < BLOCK_SIZE+1; l++) {
       full_vector[k*(BLOCK_SIZE+2)+l] = prev_vector[(k-1)*BLOCK_SIZE+l-1];
     }
   }
-
+  
   if (i > 0) { // it has a northern neighboor
     for (int k = 1; k < BLOCK_SIZE+1; k++) {
       full_vector[k] = neighborhood[last_neighboor][BLOCK_SIZE*(BLOCK_SIZE-1)+k-1];
@@ -175,7 +170,7 @@ void step_func(void *buffers[], void *cl_arg) {
       full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][(k-1)*BLOCK_SIZE+BLOCK_SIZE-1];
     }
   }
-
+  
   printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
   for (int k = 0; k < 5; k++) {
     for (int l = 0; l < 5; l++) {
@@ -183,18 +178,18 @@ void step_func(void *buffers[], void *cl_arg) {
     }
     printf("\n");
   }
-
+  
   // calculate the stencil 
   for (int k = 1; k < BLOCK_SIZE+1; k++) {
     for (int l = 1; l < BLOCK_SIZE+1; l++) {
       next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2] +
-	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] +
-	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-3] +
-	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l] +
-	(1.0 - 4.0 * alpha) * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2];
+  	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] +
+  	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-3] +
+  	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l] +
+  	(1.0 - 4.0 * alpha) * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2];
     } 
   }
-
+  
   printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
   for (int k = 0; k < 3; k++) {
     for (int l = 0; l < 3; l++) {
@@ -202,19 +197,22 @@ void step_func(void *buffers[], void *cl_arg) {
     }
     printf("\n");
   }
-
+  
   // checks if it converges
   int converges = 1;
-  for (int k = 1; k < BLOCK_SIZE-1; k++) {
-    for (int l = 1; l < BLOCK_SIZE-1; l++) {
+  for (int k = 0; k < BLOCK_SIZE; k++) {
+    for (int l = 0; l < BLOCK_SIZE; l++) {
       if(fabs(next_vector[k*BLOCK_SIZE+l] - prev_vector[k*BLOCK_SIZE+l]) > EPSILON) {
-	converges = 0;
+  	converges = 0;
       }
     }
   }
-
-  // return converges
+  
+  free(full_vector);
+  //return converges
 }
+
+enum starpu_data_access_mode modes[STARPU_NMAXBUFS+1] = {STARPU_R, STARPU_W, STARPU_R, STARPU_R, STARPU_R, STARPU_R};
 
 struct starpu_codelet stencil_step = {
 				      .cpu_funcs = {step_func},
@@ -284,11 +282,9 @@ static void stencil_display(float *vector, int x0, int x1, int y0, int y1) {
 }
   
 void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha) {
+  struct starpu_data_descr *descriptors;
   starpu_data_handle_t **neighborhood = malloc(sizeof(starpu_data_handle_t)*4);
-  struct starpu_task *task = starpu_task_create();
-  params_t *params = malloc(sizeof(params_t));
   int neighboors = 0;
-
 
   if (i != 0) {
     neighborhood[neighboors] = &(currently_reading[(i-1)*n_blocks+j]);
@@ -307,38 +303,23 @@ void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *current
     neighboors++;
   }
 
-  starpu_data_handle_t *handles = malloc(neighboors * sizeof(starpu_data_handle_t));
-  for (int k = 0; k < neighboors; k++) {
-    handles[i] = (*neighborhood)[k];
+  descriptors = malloc((2+neighboors) * sizeof(struct starpu_data_descr));
+
+  descriptors[0].handle = currently_reading[i*n_blocks+j];
+  descriptors[0].mode = STARPU_R;
+  descriptors[1].handle = currently_writing[i*n_blocks+j];
+  descriptors[1].mode = STARPU_W;
+  for (int k = 2; k < neighboors+2; k++) {
+    descriptors[k].handle = (*neighborhood)[k];
+    descriptors[k].mode = STARPU_R;
   }
 
-  params->i = i;
-  params->j = j;
-  params->neighboors = neighboors;
-  params->alpha = alpha;
-
-  task->cl = &stencil_step;
-  task->cl_arg = (void*) params;
-  //printf("o endereco da task eh %p e dos args eh %p\n", task, &params);
-  task->cl_arg_size = sizeof(*params);
-  task->nbuffers = neighboors + 2;
-
-  task->dyn_modes = malloc(task->nbuffers * sizeof(starpu_data_handle_t));
-  task->dyn_handles = malloc(task->nbuffers * sizeof(starpu_data_handle_t));
-  
-  task->dyn_handles[0] = currently_reading[i*n_blocks+j];
-  task->dyn_handles[1] = currently_writing[i*n_blocks+j];
-
-  task->dyn_modes[0] = STARPU_R;
-  task->dyn_modes[1] = STARPU_W;
-  //printf("lendo %p e escrevendo %p\n", currently_reading[i*n_blocks+j], currently_writing[i*n_blocks+j]);
-
-  for (int k = 0; k < neighboors; k++) {
-    //printf("inserindo %p\n", *(neighborhood[k]));
-    task->dyn_handles[k+2] = *(neighborhood[k]);
-    task->dyn_modes[k+2] = STARPU_R;
-  } 
-  
-  starpu_task_submit(task);
+  starpu_task_insert(&stencil_step,
+		     STARPU_VALUE, &i, sizeof(i),
+		     STARPU_VALUE, &j, sizeof(j),
+		     STARPU_VALUE, &neighboors, sizeof(neighboors),
+		     STARPU_VALUE, &alpha, sizeof(alpha),
+		     STARPU_DATA_MODE_ARRAY, descriptors, neighboors+2,
+		     0);
 
 }
