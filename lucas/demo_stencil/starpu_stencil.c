@@ -52,6 +52,15 @@ int main(int argc, char**argv) {
   for (int i = 0; i < N_BLOCKS; i++) {
     starpu_vector_data_register(&(prev_vector_handles[i]), 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
     starpu_vector_data_register(&(next_vector_handles[i]), 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
+
+    //printf("bloco %d:\n", i);
+    //for (int l = 0; l < BLOCK_SIZE; l++) {
+    //  for (int m = 0; m < BLOCK_SIZE; m++) {
+    //	printf("%f ", prev_blocks[i][l*BLOCK_SIZE+m]);
+    //  }
+    //  printf("\n");
+    //}
+	
   }
 
   for(int s = 0; s < STENCIL_MAX_STEPS; s++) {
@@ -86,7 +95,7 @@ int main(int argc, char**argv) {
   }
 
   starpu_shutdown();
-  
+
   printf("result:\n");
   if (current_buffer == 1) {
     for (int k = 0; k < N_BLOCKS; k++) {
@@ -103,7 +112,6 @@ int main(int argc, char**argv) {
     }
 
   }
-
   return 0;
 }
 
@@ -131,12 +139,20 @@ void step_func(void *buffers[], void *cl_arg) {
   full_vector = calloc((BLOCK_SIZE+2)*(BLOCK_SIZE+2), sizeof(float));
   prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
   next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
-  
+
   neighborhood = malloc(neighboors*sizeof(float));
 
   for (int k = 0; k < neighboors; k++) {
     temp_handle = buffers[2+k];
     neighborhood[k] = (float *)STARPU_VECTOR_GET_PTR(temp_handle);
+
+    //printf("vizinho %d\n", k);
+    //for (int l = 0; l < BLOCK_SIZE; l++) {
+    //  for (int m = 0; m < BLOCK_SIZE; m++) {
+    //	printf("%f ", neighborhood[k][l*BLOCK_SIZE+m]);
+    //  }
+    //  printf("\n");
+    //}
   }
   
   
@@ -171,42 +187,36 @@ void step_func(void *buffers[], void *cl_arg) {
     }
   }
   
-  printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
-  for (int k = 0; k < 5; k++) {
-    for (int l = 0; l < 5; l++) {
-      printf("%f ", full_vector[k*5+l]);
-    }
-    printf("\n");
-  }
-  
+  //printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
+  //for (int k = 0; k < 5; k++) {
+  //  for (int l = 0; l < 5; l++) {
+  //    printf("%f ", full_vector[k*5+l]);
+  //  }
+  //  printf("\n");
+  //}
+
+
+  // o 0 (next) tem que pegar as posicoes 1, 7, 11, 5 e 6 do full vector
   // calculate the stencil 
   for (int k = 1; k < BLOCK_SIZE+1; k++) {
     for (int l = 1; l < BLOCK_SIZE+1; l++) {
-      next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2] +
-  	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] +
-  	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l-3] +
-  	alpha * full_vector[(k-2)*(BLOCK_SIZE+2)+l] +
-  	(1.0 - 4.0 * alpha) * full_vector[(k-2)*(BLOCK_SIZE+2)+l-2];
+      //printf("%d vem dos vizinhos %d, %d, %d, %d e ele mesmo %d\n", (k-1)*BLOCK_SIZE+l-1, (k-1)*(BLOCK_SIZE+2)+l, k*(BLOCK_SIZE+2)+l+1, (k+1)*(BLOCK_SIZE+2)+l, k*(BLOCK_SIZE+2)+l-1, k*(BLOCK_SIZE+2)+l);
+      next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-1)*(BLOCK_SIZE+2)+l] + // north
+  	alpha * full_vector[k*(BLOCK_SIZE+2)+l+1] + // east
+  	alpha * full_vector[(k+1)*(BLOCK_SIZE+2)+l] +
+	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] + // west
+  	(1.0 - 4.0 * alpha) * full_vector[k*(BLOCK_SIZE+2)+l];
     } 
   }
+    // 0.02*1 + 0.02*1 + 1 - 0.08
+  //printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
+  //for (int k = 0; k < 3; k++) {
+  //  for (int l = 0; l < 3; l++) {
+  //    printf("%f ", next_vector[k*3+l]);
+  //  }
+  //  printf("\n");
+  //}
   
-  printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
-  for (int k = 0; k < 3; k++) {
-    for (int l = 0; l < 3; l++) {
-      printf("%f ", next_vector[k*3+l]);
-    }
-    printf("\n");
-  }
-  
-  // checks if it converges
-  int converges = 1;
-  for (int k = 0; k < BLOCK_SIZE; k++) {
-    for (int l = 0; l < BLOCK_SIZE; l++) {
-      if(fabs(next_vector[k*BLOCK_SIZE+l] - prev_vector[k*BLOCK_SIZE+l]) > EPSILON) {
-  	converges = 0;
-      }
-    }
-  }
   
   free(full_vector);
   //return converges
@@ -309,12 +319,12 @@ void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *current
   descriptors[0].mode = STARPU_R;
   descriptors[1].handle = currently_writing[i*n_blocks+j];
   descriptors[1].mode = STARPU_W;
-  for (int k = 2; k < neighboors+2; k++) {
-    descriptors[k].handle = (*neighborhood)[k];
-    descriptors[k].mode = STARPU_R;
+  for (int k = 0; k < neighboors; k++) {
+    descriptors[k+2].handle = (*neighborhood[k]);
+    descriptors[k+2].mode = STARPU_R;
   }
 
-  starpu_task_insert(&stencil_step,
+starpu_task_insert(&stencil_step,
 		     STARPU_VALUE, &i, sizeof(i),
 		     STARPU_VALUE, &j, sizeof(j),
 		     STARPU_VALUE, &neighboors, sizeof(neighboors),
