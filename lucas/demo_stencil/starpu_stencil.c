@@ -15,7 +15,7 @@
 #define BLOCK_SIZE 3
 #define N_BLOCKS (SIZE/BLOCK_SIZE)*(SIZE/BLOCK_SIZE)
 #define EPSILON 0.001
-#define STENCIL_MAX_STEPS 1//0000
+#define STENCIL_MAX_STEPS 10000
 
 void step_func(void *buffers[], void *cl_arg);
 static void stencil_init(float **prev_vector, float **next_vector);
@@ -140,21 +140,12 @@ void step_func(void *buffers[], void *cl_arg) {
   prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
   next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
 
-  neighborhood = malloc(neighboors*sizeof(float));
+  neighborhood = malloc(neighboors*sizeof(float*));
 
   for (int k = 0; k < neighboors; k++) {
     temp_handle = buffers[2+k];
     neighborhood[k] = (float *)STARPU_VECTOR_GET_PTR(temp_handle);
-
-    //printf("vizinho %d\n", k);
-    //for (int l = 0; l < BLOCK_SIZE; l++) {
-    //  for (int m = 0; m < BLOCK_SIZE; m++) {
-    //	printf("%f ", neighborhood[k][l*BLOCK_SIZE+m]);
-    //  }
-    //  printf("\n");
-    //}
   }
-  
   
   // fill a bigger block with all the necessary info
   for (int k = 1; k < BLOCK_SIZE+1; k++) {
@@ -187,39 +178,18 @@ void step_func(void *buffers[], void *cl_arg) {
     }
   }
   
-  //printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
-  //for (int k = 0; k < 5; k++) {
-  //  for (int l = 0; l < 5; l++) {
-  //    printf("%f ", full_vector[k*5+l]);
-  //  }
-  //  printf("\n");
-  //}
-
-
-  // o 0 (next) tem que pegar as posicoes 1, 7, 11, 5 e 6 do full vector
   // calculate the stencil 
   for (int k = 1; k < BLOCK_SIZE+1; k++) {
     for (int l = 1; l < BLOCK_SIZE+1; l++) {
-      //printf("%d vem dos vizinhos %d, %d, %d, %d e ele mesmo %d\n", (k-1)*BLOCK_SIZE+l-1, (k-1)*(BLOCK_SIZE+2)+l, k*(BLOCK_SIZE+2)+l+1, (k+1)*(BLOCK_SIZE+2)+l, k*(BLOCK_SIZE+2)+l-1, k*(BLOCK_SIZE+2)+l);
       next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-1)*(BLOCK_SIZE+2)+l] + // north
   	alpha * full_vector[k*(BLOCK_SIZE+2)+l+1] + // east
-  	alpha * full_vector[(k+1)*(BLOCK_SIZE+2)+l] +
-	alpha * full_vector[k*(BLOCK_SIZE+2)+l-2] + // west
+  	alpha * full_vector[(k+1)*(BLOCK_SIZE+2)+l] + // south
+	alpha * full_vector[k*(BLOCK_SIZE+2)+l-1] + // west
   	(1.0 - 4.0 * alpha) * full_vector[k*(BLOCK_SIZE+2)+l];
     } 
-  }
-    // 0.02*1 + 0.02*1 + 1 - 0.08
-  //printf("bloco %d ficou\n", i*SIZE/BLOCK_SIZE+j);
-  //for (int k = 0; k < 3; k++) {
-  //  for (int l = 0; l < 3; l++) {
-  //    printf("%f ", next_vector[k*3+l]);
-  //  }
-  //  printf("\n");
-  //}
-  
+  }  
   
   free(full_vector);
-  //return converges
 }
 
 enum starpu_data_access_mode modes[STARPU_NMAXBUFS+1] = {STARPU_R, STARPU_W, STARPU_R, STARPU_R, STARPU_R, STARPU_R};
@@ -274,7 +244,6 @@ static void vector_to_blocks(float *vector, float ***blocks) {
       int block_i = i%BLOCK_SIZE;
       int block_j = j%BLOCK_SIZE;
 
-      //printf("pegando a posicao %d do original que eh %f e botandn oa posicao %d do block %d\n", i*SIZE+j, vector[i*SIZE+j], block_i*(SIZE/BLOCK_SIZE)+block_j, target_block_index);
       (*blocks)[target_block_index][block_i*(SIZE/BLOCK_SIZE)+block_j] = vector[i*SIZE+j];
     }
   }
@@ -331,5 +300,4 @@ starpu_task_insert(&stencil_step,
 		     STARPU_VALUE, &alpha, sizeof(alpha),
 		     STARPU_DATA_MODE_ARRAY, descriptors, neighboors+2,
 		     0);
-
 }
