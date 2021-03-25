@@ -133,7 +133,13 @@ void step_func(void *buffers[], void *cl_arg) {
   struct starpu_vector_interface *temp_handle;
   float *prev_vector, *next_vector, *full_vector, **neighborhood, alpha;
   int i, j, neighboors, last_neighboor = 0;
+  int k_begin, k_end, l_begin, l_end;
 
+  k_begin = 1;
+  k_end = BLOCK_SIZE+1;
+  l_begin = 1;
+  l_end = BLOCK_SIZE+1;
+  
   starpu_codelet_unpack_args(cl_arg, &i, &j, &neighboors, &alpha);
 
   full_vector = calloc((BLOCK_SIZE+2)*(BLOCK_SIZE+2), sizeof(float));
@@ -177,10 +183,22 @@ void step_func(void *buffers[], void *cl_arg) {
       full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][(k-1)*BLOCK_SIZE+BLOCK_SIZE-1];
     }
   }
-  
+
+  if (i == 0) {
+    k_begin = 2;
+  }
+  if (j == SIZE/BLOCK_SIZE-1) {
+    l_end = BLOCK_SIZE;
+  }
+  if (i == SIZE/BLOCK_SIZE-1) {
+    k_end = BLOCK_SIZE;
+  }
+  if (j == 0) {
+    l_begin = 2;
+  }
   // calculate the stencil 
-  for (int k = 1; k < BLOCK_SIZE+1; k++) {
-    for (int l = 1; l < BLOCK_SIZE+1; l++) {
+  for (int k = k_begin; k < k_end; k++) {
+    for (int l = l_begin; l < l_end; l++) {
       next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-1)*(BLOCK_SIZE+2)+l] + // north
   	alpha * full_vector[k*(BLOCK_SIZE+2)+l+1] + // east
   	alpha * full_vector[(k+1)*(BLOCK_SIZE+2)+l] + // south
