@@ -145,16 +145,11 @@ int main(int argc, char**argv)
   for(s = 0; s < stencil_max_steps; s++)
     {
       stencil_step();
-      if(stencil_test_convergence())
-	{
-	  //printf("# steps = %d\n", s);
-	  break;
-	}
     }
   clock_gettime(CLOCK_MONOTONIC, &t2);
   const double t_usec = (t2.tv_sec - t1.tv_sec) * 1000000.0 + (t2.tv_nsec - t1.tv_nsec) / 1000.0;
   //printf("# time = %g usecs.\n", t_usec);
-  //stencil_display(current_buffer, 0, STENCIL_SIZE_X - 1, 0, STENCIL_SIZE_Y - 1);
+  stencil_display(current_buffer, 0, STENCIL_SIZE_X - 1, 0, STENCIL_SIZE_Y - 1);
 
   printf("seq;%d;%d;%d;%.4f gflops/s\n", STENCIL_SIZE_X, STENCIL_SIZE_Y, s, perf(STENCIL_SIZE_X, STENCIL_SIZE_Y, s, t_usec));
 

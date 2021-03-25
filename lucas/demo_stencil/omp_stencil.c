@@ -148,11 +148,6 @@ int main(int argc, char**argv)
   for(s = 0; s < stencil_max_steps; s++)
     {
       stencil_step();
-      if(stencil_test_convergence())
-	{
-	  //printf("# steps = %d\n", s);
-	  break;
-	}
     }
   clock_gettime(CLOCK_MONOTONIC, &t2);
   const double t_usec = (t2.tv_sec - t1.tv_sec) * 1000000.0 + (t2.tv_nsec - t1.tv_nsec) / 1000.0;

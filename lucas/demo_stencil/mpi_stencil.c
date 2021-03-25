@@ -318,11 +318,6 @@ int main(int argc, char**argv)
   for(s = 0; s < stencil_max_steps; s++)
     {
       stencil_step(ghost_sizes, local_rows, local_cols, prows, pcols);
-      local_converged = stencil_test_convergence(grank, local_rows, local_cols, prows, pcols);
-      MPI_Allreduce(&local_converged, &global_converged, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
-      if (global_converged == np) {
-	break;
-      }
     }
   clock_gettime(CLOCK_MONOTONIC, &t2);
   const double t_usec = (t2.tv_sec - t1.tv_sec) * 1000000.0 + (t2.tv_nsec - t1.tv_nsec) / 1000.0;
