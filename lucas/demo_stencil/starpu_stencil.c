@@ -9,19 +9,33 @@
 #include <math.h>
 #include <time.h>
 #include <starpu.h>
-#include "stencil_tasks.h"
 
-#define SIZE 9
-#define BLOCK_SIZE 3
-#define N_BLOCKS (SIZE/BLOCK_SIZE)*(SIZE/BLOCK_SIZE)
+#define SIZE 400
 #define EPSILON 0.001
 #define STENCIL_MAX_STEPS 10000
+
+int __n_blocks_x, __n_blocks_y, __n_blocks;
+int __block_size_x, __block_size_y;
 
 void step_func(void *buffers[], void *cl_arg);
 static void stencil_init(float **prev_vector, float **next_vector);
 static void vector_to_blocks(float *vector, float ***blocks);
 static void stencil_display(float *vector, int x0, int x1, int y0, int y1);
-void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha);
+void insert_block_task(int i, int j, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha);
+void read_topo();
+
+void read_topo() {
+
+  FILE *input = fopen("topo.in", "r");
+  fscanf(input, "%d\t%d", &__n_blocks_x, &__n_blocks_y);
+  fclose(input);
+
+  __n_blocks = __n_blocks_x * __n_blocks_y;
+  __block_size_x = SIZE/__n_blocks_x;
+  __block_size_y = SIZE/__n_blocks_y;
+  printf("%d %d %d %d %d\n", __n_blocks_x, __n_blocks_y, __n_blocks, __block_size_x, __block_size_y);
+
+}
 
 /* =========================== */
 /* ---         Main        --- */
@@ -29,13 +43,15 @@ void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *current
 
 int main(int argc, char**argv) {
 
+  read_topo();
+  printf("%dx%d\n", __n_blocks_x, __n_blocks_y);
   int current_buffer = 0;
   float alpha = 0.02;
   float *prev_vector = malloc(sizeof(float)*SIZE*SIZE);
   float *next_vector = malloc(sizeof(float)*SIZE*SIZE);
   float **prev_blocks, **next_blocks;
-  starpu_data_handle_t prev_vector_handles[(SIZE/BLOCK_SIZE)*(SIZE/BLOCK_SIZE)];
-  starpu_data_handle_t next_vector_handles[(SIZE/BLOCK_SIZE)*(SIZE/BLOCK_SIZE)];
+  starpu_data_handle_t prev_vector_handles[__n_blocks];
+  starpu_data_handle_t next_vector_handles[__n_blocks];
   starpu_data_handle_t *currently_reading, *currently_writing;
   
   int ret = starpu_init(NULL);
@@ -47,11 +63,11 @@ int main(int argc, char**argv) {
   stencil_init(&prev_vector, &next_vector);
   vector_to_blocks(prev_vector, &prev_blocks);
   vector_to_blocks(next_vector, &next_blocks);
-  stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
+  //stencil_display(prev_vector, 0, SIZE-1, 0, SIZE-1);
 
-  for (int i = 0; i < N_BLOCKS; i++) {
-    starpu_vector_data_register(&(prev_vector_handles[i]), 0, (uintptr_t)prev_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(prev_blocks[i][0]));
-    starpu_vector_data_register(&(next_vector_handles[i]), 0, (uintptr_t)next_blocks[i], BLOCK_SIZE*BLOCK_SIZE, sizeof(next_blocks[i][0]));
+  for (int i = 0; i < __n_blocks; i++) {
+    starpu_vector_data_register(&(prev_vector_handles[i]), 0, (uintptr_t)prev_blocks[i], __block_size_x*__block_size_y, sizeof(prev_blocks[i][0]));
+    starpu_vector_data_register(&(next_vector_handles[i]), 0, (uintptr_t)next_blocks[i], __block_size_x*__block_size_y, sizeof(next_blocks[i][0]));
 
     //printf("bloco %d:\n", i);
     //for (int l = 0; l < BLOCK_SIZE; l++) {
@@ -63,14 +79,17 @@ int main(int argc, char**argv) {
 	
   }
 
+  struct timespec t1, t2;
+  clock_gettime(CLOCK_MONOTONIC, &t1);
+
   for(int s = 0; s < STENCIL_MAX_STEPS; s++) {
   
     int prev_buffer = current_buffer;
     int next_buffer = (current_buffer + 1) % 2;
   
     // the handles will depend on the current buffer
-    for (int i = 0; i < SIZE/BLOCK_SIZE; i++) {
-      for (int j = 0; j < SIZE/BLOCK_SIZE; j++) {
+    for (int i = 0; i < __n_blocks_x; i++) {
+      for (int j = 0; j < __n_blocks_y; j++) {
 	if (current_buffer == 0) {
 	  currently_reading = prev_vector_handles;
 	  currently_writing = next_vector_handles;
@@ -79,7 +98,7 @@ int main(int argc, char**argv) {
 	  currently_reading = next_vector_handles;
 	  currently_writing = prev_vector_handles;
 	}
-	insert_block_task(i, j, SIZE/BLOCK_SIZE, currently_reading, currently_writing, alpha);
+	insert_block_task(i, j, currently_reading, currently_writing, alpha);
 	
       }
     }
@@ -89,29 +108,15 @@ int main(int argc, char**argv) {
     current_buffer = next_buffer;     
   }
 
-  for (int i = 0; i < N_BLOCKS; i++) {
+  for (int i = 0; i < __n_blocks; i++) {
     starpu_data_unregister(prev_vector_handles[i]);
     starpu_data_unregister(next_vector_handles[i]);
   }
 
   starpu_shutdown();
-
-  printf("result:\n");
-  if (current_buffer == 1) {
-    for (int k = 0; k < N_BLOCKS; k++) {
-      printf("block %d\n", k);
-      stencil_display(next_blocks[k], 0, BLOCK_SIZE-1, 0, BLOCK_SIZE-1);
-      printf("\n");
-    }
-  }
-  else {
-    for (int k = 0; k < N_BLOCKS; k++) {
-      printf("block %d\n", k);
-      stencil_display(prev_blocks[k], 0, BLOCK_SIZE-1, 0, BLOCK_SIZE-1);
-      printf("\n");
-    }
-
-  }
+  clock_gettime(CLOCK_MONOTONIC, &t2);
+  const double t_usec = (t2.tv_sec - t1.tv_sec) * 1000000.0 + (t2.tv_nsec - t1.tv_nsec) / 1000.0;
+  printf("starpu;%f\n", t_usec/1000);
   return 0;
 }
 
@@ -136,13 +141,13 @@ void step_func(void *buffers[], void *cl_arg) {
   int k_begin, k_end, l_begin, l_end;
 
   k_begin = 1;
-  k_end = BLOCK_SIZE+1;
+  k_end = __block_size_x+1;
   l_begin = 1;
-  l_end = BLOCK_SIZE+1;
+  l_end = __block_size_y+1;
   
   starpu_codelet_unpack_args(cl_arg, &i, &j, &neighboors, &alpha);
 
-  full_vector = calloc((BLOCK_SIZE+2)*(BLOCK_SIZE+2), sizeof(float));
+  full_vector = calloc((__block_size_x+2)*(__block_size_y+2), sizeof(float));
   prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
   next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
 
@@ -154,44 +159,44 @@ void step_func(void *buffers[], void *cl_arg) {
   }
   
   // fill a bigger block with all the necessary info
-  for (int k = 1; k < BLOCK_SIZE+1; k++) {
-    for (int l = 1; l < BLOCK_SIZE+1; l++) {
-      full_vector[k*(BLOCK_SIZE+2)+l] = prev_vector[(k-1)*BLOCK_SIZE+l-1];
+  for (int k = 1; k < __block_size_x+1; k++) {
+    for (int l = 1; l < __block_size_y+1; l++) {
+      full_vector[k*(__block_size_x+2)+l] = prev_vector[(k-1)*__block_size_x+l-1];
     }
   }
   
   if (i > 0) { // it has a northern neighboor
-    for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[k] = neighborhood[last_neighboor][BLOCK_SIZE*(BLOCK_SIZE-1)+k-1];
+    for (int k = 1; k < __block_size_x+1; k++) {
+      full_vector[k] = neighborhood[last_neighboor][__block_size_y*(__block_size_x-1)+k-1]; // possivel erro aqui
     }
     last_neighboor++;
   }
-  if (j < (SIZE/BLOCK_SIZE)-1) { // it has a eastern neighboor
-    for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[(BLOCK_SIZE+2)*k+BLOCK_SIZE+1] = neighborhood[last_neighboor][BLOCK_SIZE*(k-1)];
+  if (j < __n_blocks_x-1) { // it has a eastern neighboor
+    for (int k = 1; k < __block_size_y+1; k++) {
+      full_vector[(__block_size_x+2)*k+__block_size_y+1] = neighborhood[last_neighboor][__block_size_x*(k-1)];
     }
     last_neighboor++;
   }
-  if (i < (SIZE/BLOCK_SIZE)-1) { // it has a southern neighboor
-    for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[(BLOCK_SIZE+2)*(BLOCK_SIZE+1)+k] = neighborhood[last_neighboor][k-1];
+  if (i < __n_blocks_y-1) { // it has a southern neighboor
+    for (int k = 1; k < __block_size_x+1; k++) {
+      full_vector[(__block_size_x+2)*(__block_size_y+1)+k] = neighborhood[last_neighboor][k-1];
     }
     last_neighboor++;
   }
   if (j > 0) { // it has a western neighboor
-    for (int k = 1; k < BLOCK_SIZE+1; k++) {
-      full_vector[(BLOCK_SIZE+2)*k] = neighborhood[last_neighboor][(k-1)*BLOCK_SIZE+BLOCK_SIZE-1];
+    for (int k = 1; k < __block_size_y+1; k++) {
+      full_vector[(__block_size_x+2)*k] = neighborhood[last_neighboor][(k-1)*__block_size_x+__block_size_y-1]; // possivel erro aqui
     }
   }
 
   if (i == 0) {
     k_begin = 2;
   }
-  if (j == SIZE/BLOCK_SIZE-1) {
-    l_end = BLOCK_SIZE;
+  if (j == __n_blocks_y-1) {
+    l_end = __block_size_y;
   }
-  if (i == SIZE/BLOCK_SIZE-1) {
-    k_end = BLOCK_SIZE;
+  if (i == __n_blocks_x-1) {
+    k_end = __block_size_x;
   }
   if (j == 0) {
     l_begin = 2;
@@ -199,11 +204,11 @@ void step_func(void *buffers[], void *cl_arg) {
   // calculate the stencil 
   for (int k = k_begin; k < k_end; k++) {
     for (int l = l_begin; l < l_end; l++) {
-      next_vector[(k-1)*BLOCK_SIZE+l-1] = alpha * full_vector[(k-1)*(BLOCK_SIZE+2)+l] + // north
-  	alpha * full_vector[k*(BLOCK_SIZE+2)+l+1] + // east
-  	alpha * full_vector[(k+1)*(BLOCK_SIZE+2)+l] + // south
-	alpha * full_vector[k*(BLOCK_SIZE+2)+l-1] + // west
-  	(1.0 - 4.0 * alpha) * full_vector[k*(BLOCK_SIZE+2)+l];
+      next_vector[(k-1)*__block_size_x+l-1] = alpha * full_vector[(k-1)*(__block_size_x+2)+l] + // north
+  	alpha * full_vector[k*(__block_size_x+2)+l+1] + // east
+  	alpha * full_vector[(k+1)*(__block_size_x+2)+l] + // south
+	alpha * full_vector[k*(__block_size_x+2)+l-1] + // west
+  	(1.0 - 4.0 * alpha) * full_vector[k*(__block_size_x+2)+l];
     } 
   }  
   
@@ -246,23 +251,23 @@ static void stencil_init(float **prev_vector, float **next_vector) {
 }
 
 static void vector_to_blocks(float *vector, float ***blocks) {
-  *blocks = malloc(N_BLOCKS*sizeof(float*));
+  *blocks = malloc(__n_blocks*sizeof(float*));
 
-  for (int i = 0; i < SIZE; i++) {
-    (*blocks)[i] = malloc(BLOCK_SIZE*BLOCK_SIZE*sizeof(float));
+  for (int i = 0; i < __n_blocks; i++) {
+    (*blocks)[i] = malloc(__block_size_x*__block_size_y*sizeof(float));
   }
 
-  for (int i = 0; i < SIZE; i++) {
-    for (int j = 0; j < SIZE; j++) {
+  for (int i = 0; i < __n_blocks_x; i++) {
+    for (int j = 0; j < __n_blocks_y; j++) {
 
-      int target_block_row = i/BLOCK_SIZE;
-      int target_block_col = j/BLOCK_SIZE;
-      int target_block_index = target_block_row*(SIZE/BLOCK_SIZE)+target_block_col;
+      int target_block_row = i/__block_size_x;
+      int target_block_col = j/__block_size_y;
+      int target_block_index = target_block_row*__n_blocks_x+target_block_col;
 
-      int block_i = i%BLOCK_SIZE;
-      int block_j = j%BLOCK_SIZE;
+      int block_i = i%__block_size_x;
+      int block_j = j%__block_size_y;
 
-      (*blocks)[target_block_index][block_i*(SIZE/BLOCK_SIZE)+block_j] = vector[i*SIZE+j];
+      (*blocks)[target_block_index][block_i*__n_blocks_x+block_j] = vector[i*__n_blocks_x+j];
     }
   }
 }
@@ -278,33 +283,33 @@ static void stencil_display(float *vector, int x0, int x1, int y0, int y1) {
   }
 }
   
-void insert_block_task(int i, int j, int n_blocks, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha) {
+void insert_block_task(int i, int j, starpu_data_handle_t *currently_reading, starpu_data_handle_t *currently_writing, float alpha) {
   struct starpu_data_descr *descriptors;
   starpu_data_handle_t **neighborhood = malloc(sizeof(starpu_data_handle_t)*4);
   int neighboors = 0;
 
   if (i != 0) {
-    neighborhood[neighboors] = &(currently_reading[(i-1)*n_blocks+j]);
+    neighborhood[neighboors] = &(currently_reading[(i-1)*__n_blocks_x+j]);
     neighboors++;
   }
-  if (j != n_blocks-1) {
-    neighborhood[neighboors] = &(currently_reading[i*n_blocks+j+1]);
+  if (j != __n_blocks_y-1) {
+    neighborhood[neighboors] = &(currently_reading[i*__n_blocks_x+j+1]);
     neighboors++;
   }
-  if (i != n_blocks-1) {
-    neighborhood[neighboors] = &(currently_reading[(i+1)*n_blocks+j]);
+  if (i != __n_blocks_x-1) {
+    neighborhood[neighboors] = &(currently_reading[(i+1)*__n_blocks_x+j]);
     neighboors++;
   }
   if (j != 0) {
-    neighborhood[neighboors] = &(currently_reading[i*n_blocks+j-1]);
+    neighborhood[neighboors] = &(currently_reading[i*__n_blocks_x+j-1]);
     neighboors++;
   }
 
   descriptors = malloc((2+neighboors) * sizeof(struct starpu_data_descr));
 
-  descriptors[0].handle = currently_reading[i*n_blocks+j];
+  descriptors[0].handle = currently_reading[i*__n_blocks_x+j];
   descriptors[0].mode = STARPU_R;
-  descriptors[1].handle = currently_writing[i*n_blocks+j];
+  descriptors[1].handle = currently_writing[i*__n_blocks_x+j];
   descriptors[1].mode = STARPU_W;
   for (int k = 0; k < neighboors; k++) {
     descriptors[k+2].handle = (*neighborhood[k]);
