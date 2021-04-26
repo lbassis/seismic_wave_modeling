@@ -12,7 +12,7 @@
 
 #define SIZE 40
 #define EPSILON 0.001
-#define STENCIL_MAX_STEPS 1//0000
+#define STENCIL_MAX_STEPS 100//00
 
 int __n_blocks_x, __n_blocks_y, __n_blocks;
 int __block_size_x, __block_size_y;
@@ -88,8 +88,8 @@ int main(int argc, char**argv) {
     int next_buffer = (current_buffer + 1) % 2;
   
     // the handles will depend on the current buffer
-    for (int i = 0; i < __n_blocks_x; i++) {
-      for (int j = 0; j < __n_blocks_y; j++) {
+    for (int i = 0; i < __n_blocks_y; i++) {
+      for (int j = 0; j < __n_blocks_x; j++) {
 	if (current_buffer == 0) {
 	  currently_reading = prev_vector_handles;
 	  currently_writing = next_vector_handles;
@@ -138,16 +138,10 @@ void step_func(void *buffers[], void *cl_arg) {
   struct starpu_vector_interface *temp_handle;
   float *prev_vector, *next_vector, *full_vector, **neighborhood, alpha;
   int i = 0, j = 0, neighboors, last_neighboor = 0;
-  int k_begin, k_end, l_begin, l_end;
   int block_size_x, block_size_y;
-
-  k_begin = 1;
-  k_end = block_size_x+1;
-  l_begin = 1;
-  l_end = block_size_y+1;
   
   starpu_codelet_unpack_args(cl_arg, &i, &j, &neighboors, &alpha, &block_size_x, &block_size_y);
-  printf("bloco %d\n", i+j*2);
+
   full_vector = calloc((block_size_x+2)*(block_size_y+2), sizeof(float));
   prev_vector = (float *)STARPU_VECTOR_GET_PTR(prev_vector_handle);
   next_vector = (float *)STARPU_VECTOR_GET_PTR(next_vector_handle);
@@ -160,19 +154,11 @@ void step_func(void *buffers[], void *cl_arg) {
   }
   
   // fill a bigger block with all the necessary info
-  //for (int k = 1; k < block_size_x+1; k++) {
-  //  for (int l = 1; l < block_size_y+1; l++) {
-  //    printf("acessando a posicao %d\n", (k-1)*(block_size_x+2)+l);
-  //    printf("e o prev vector na posicao %d\n", (k-1)*block_size_x+l-1);
-  //    full_vector[k*(block_size_x+2)+l] = prev_vector[(l-1)*block_size_x+k-1];
-  //  }
-  //}
   for (int k = 0; k < block_size_y; k++) {
     for (int l = 0; l < block_size_x; l++) {
       full_vector[(k+1)*block_size_x+l+1] = prev_vector[k*block_size_x+l];
     }
   }
-  printf("passou\n");
   
   if (i > 0) { // it has a northern neighboor -> ultima linha do vizinho na primeira linha do full
     for (int k = 0; k < block_size_x; k++) {
@@ -190,52 +176,34 @@ void step_func(void *buffers[], void *cl_arg) {
   
   if (i < __n_blocks_y-1) { //primeira linha do vizinho na ultima linha do full
     for (int k = 0; k < block_size_x; k++) {
-      full_vector[(block_size_x+2)*block_size_y+(k+1)] = 1;//neighborhood[last_neighboor][k];
+      full_vector[(block_size_x+2)*block_size_y+(k+1)] = neighborhood[last_neighboor][k];
     }
     last_neighboor++;
   }
   if (j > 0) { // ultima coluna do vizinho na primeira coluna do full
     for (int k = 0; k < block_size_y; k++) {
-      //full_vector[(block_size_x+2)*(k+1)] = 1;//neighborhood[last_neighboor][block_size_x*k+block_size_x-1];
-      //printf("full acessando %d e vizinho acessando %d\n", (block_size_x+2)*(k+1), block_size_x*k+block_size_x-1);
+      full_vector[(block_size_x+2)*(k+1)] = neighborhood[last_neighboor][block_size_x*k+block_size_x-1];
     }
   }
 
-  printf("bloco %d,%d com %d vizinhos\n", i, j, neighboors);
-  k_begin = 1;
-  l_begin = 1;
-  k_end = block_size_x+1;
-  l_end = block_size_y+1;
-  
-  if (i == 0) {
-    k_begin = 2;
-  }
-  if (j == __n_blocks_y-1) {
-    l_end = block_size_y;
-  }
-  if (i == __n_blocks_x-1) {
-    k_end = block_size_x;
-  }
-  if (j == 0) {
-    l_begin = 2;
-  }
   // calculate the stencil
   int k_next = 0;
   int l_next = 0;
-  //for (int k = k_begin; k < k_end; k++) {
-  //  for (int l = l_begin; l < l_end; l++) {
-  //    //next_vector[(k-1)*block_size_x+l-1] = alpha * full_vector[(k-1)*(block_size_x+2)+l] + // north
-  //    next_vector[k_next*block_size_x+l_next] = alpha * full_vector[(k-1)*(block_size_x+2)+l] + // north
-  //	alpha * full_vector[k*(block_size_x+2)+l+1] + // east
-  //	alpha * full_vector[(k+1)*(block_size_x+2)+l] + // south
-  //	alpha * full_vector[k*(block_size_x+2)+l-1] + // west
-  //	(1.0 - 4.0 * alpha) * full_vector[k*(block_size_x+2)+l];
-  //    l_next++;
-  //  }
-  //  l_next = 0;
-  //  k_next++;
-  //}  
-  printf("bloco %d,%d acabou\n", i, j);  
+
+  for (int k = 1; k < block_size_y; k++) {
+    for (int l = 1; l < block_size_x; l++) {
+      next_vector[k_next*block_size_x+l_next] =
+	alpha * full_vector[(k-1)*(block_size_x+2)+l] + // north
+  	alpha * full_vector[k*(block_size_x+2)+l+1] + // east
+  	alpha * full_vector[(k+1)*(block_size_x+2)+l] + // south
+  	alpha * full_vector[k*(block_size_x+2)+l-1] + // west
+  	(1.0 - 4.0 * alpha) * full_vector[k*(block_size_x+2)+l];
+      l_next++;
+    }
+    l_next = 0;
+    k_next++;
+  }  
+
   free(full_vector);
 }
 
@@ -316,11 +284,11 @@ void insert_block_task(int i, int j, starpu_data_handle_t *currently_reading, st
     neighborhood[neighboors] = &(currently_reading[(i-1)*__n_blocks_x+j]);
     neighboors++;
   }
-  if (j != __n_blocks_y-1) {
+  if (j != __n_blocks_x-1) {
     neighborhood[neighboors] = &(currently_reading[i*__n_blocks_x+j+1]);
     neighboors++;
   }
-  if (i != __n_blocks_x-1) {
+  if (i != __n_blocks_y-1) {
     neighborhood[neighboors] = &(currently_reading[(i+1)*__n_blocks_x+j]);
     neighboors++;
   }
