@@ -1,0 +1,72 @@
+:::::::::::: main parameters ::::::::::::::::
+<dt> 0.004 </dt>			time step
+<ds> 200. </ds>				size of the cell
+
+<tmax> 300 </tmax>			number of time steps
+<xMin> 1 </xMin> <xMax> 500 </xMax>	number of cells in each direction
+<yMin> 1 </yMin> <yMax> 350 </yMax>
+<zMin> 1 </zMin> <zMax> 130 </zMax>
+
+<fd0> 5. </fd0>				CPML main frequency
+
+:::::::::::: output description :::::::::::::
+<dir>./output/ligurian</dir>		 	directory of results
+# snapshots #
+<i0> 397 </i0>				index coordinates of the output planes
+<j0> 216 </j0>
+<k0> 1 </k0>
+
+# seismogramms #
+<fstatMap>./parameters/ligurian/nice_station.map</fstatMap>	stations coordinates
+
+:::::::::::: source description :::::::::::::
+<fsrcMap>./parameters/ligurian/nice.map</fsrcMap>		sources coordinates
+<fsrcHist>./parameters/ligurian/nice.hist</fsrcHist>	sources history file
+
+:::::::::::: geology description ::::::::::::
+<fgeo>./parameters/ligurian/nice_geol.prm</fgeo>
+<x0>  976000.  </x0>
+<y0> 1836000. </y0>
+<z0>  -25000.  </z0>
+<nlayer> 6 </nlayer>
+<layer1>
+        <name> out </name>
+        <rho> 1730. </rho> density
+        <vp> 0.0 </vp> pressure waves velocity
+        <vs> 0.0 </vs> shear waves velocity
+</layer1>
+<layer2>
+	<name> eau </name>
+	<rho> 1030. </rho> density
+	<vp> 1530. </vp> pressure waves velocity
+	<vs> 0.0 </vs> shear waves velocity
+</layer2>
+<layer3>
+       <name> M </name>
+        <rho> 2990. </rho> density
+        <vp> 6930. </vp> pressure waves velocity
+        <vs> 400. </vs> shear waves velocity
+</layer3>
+<layer4>
+       <name> CFV </name>
+
+        <rho> 2990. </rho> density
+        <vp> 6930. </vp> pressure waves velocity
+        <vs> 4000. </vs> shear waves velocity
+</layer4>
+<layer5>
+       <name> SA </name>
+
+        <rho> 2600. </rho> density
+        <vp> 5720. </vp> pressure waves velocity
+        <vs> 3300. </vs> shear waves velocity
+</layer5>
+<layer6>
+       <name> Cover </name>
+        <rho> 1730. </rho> density
+        <vp> 3000. </vp> pressure waves velocity
+        <vs> 1400. </vs> shear waves velocity
+</layer6>
+
+
+
