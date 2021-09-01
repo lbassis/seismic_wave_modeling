@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <starpu.h>
+//#include <starpu.h>
 
 #include "../include/IO.h"
 #include "../include/alloAndInit.h"
@@ -9,20 +9,21 @@
 #include "../include/computeIntermediates.h"
 #include "../include/computeStress.h"
 #include "../include/codelets.h"
+#include "../include/memory_dump.h"
 
-struct starpu_codelet intermediates_cl = {
-  .name = {"intermediate"},
-  .cpu_funcs = {compute_intermediates_func, NULL},
-  .nbuffers = 2,
-  .modes = {STARPU_RW, STARPU_RW},
-};
-
-struct starpu_codelet stress_cl = {
-  .name = {"stress"},
-  .cpu_funcs = {compute_stress_func, NULL},
-  .nbuffers = 3,
-  .modes = {STARPU_RW, STARPU_R, STARPU_R},
-};
+//struct starpu_codelet intermediates_cl = {
+//  .name = {"intermediate"},
+//  .cpu_funcs = {compute_intermediates_func, NULL},
+//  .nbuffers = 2,
+//  .modes = {STARPU_RW, STARPU_RW},
+//};
+//
+//struct starpu_codelet stress_cl = {
+//  .name = {"stress"},
+//  .cpu_funcs = {compute_stress_func, NULL},
+//  .nbuffers = 3,
+//  .modes = {STARPU_RW, STARPU_R, STARPU_R},
+//};
 
 int VerifFunction(int exitStatus, const char *msg, struct PARAMETERS PRM) {
   if (exitStatus != EXIT_SUCCESS) {
@@ -75,7 +76,7 @@ void calculate_mappings(int imode, int MPMX, int MPMY, int *mpmx_begin, int *mpm
   }      
 }
 
-void insert_compute_intermediates_task(starpu_data_handle_t abc_handle, starpu_data_handle_t anl_handle, struct VELOCITY v0, struct PARAMETERS prm,
+/*void insert_compute_intermediates_task(starpu_data_handle_t abc_handle, starpu_data_handle_t anl_handle, struct VELOCITY v0, struct PARAMETERS prm,
 				       struct MEDIUM mdm, int mpmx_begin, int mpmx_end, int mpmy_begin, int mpmy_end) {
 
   //starpu_data_handle_t abc_handle, anl_handle;
@@ -113,7 +114,7 @@ void insert_compute_stress(starpu_data_handle_t stress_handle, starpu_data_handl
 		     STARPU_VALUE, &mpmy_end, sizeof(mpmy_end),
 		     0);
 }
-
+*/
 int main() {
 
   int ret, l, imode, np = 1;
@@ -130,11 +131,11 @@ int main() {
   struct VELOCITY v0 = { 0 };
   struct STRESS t0 = { 0 };
 
-  ret = starpu_init(NULL);
+  /*ret = starpu_init(NULL);
   if (ret != 0) {
     printf("Erro inicializando StarPU\n");
     return -1;
-  }
+    }*/
 
   init_distribution_coords(&PRM);
   
@@ -179,11 +180,11 @@ int main() {
   VerifFunction(EXIT_SUCCESS, "Beginning of the iteration", PRM);
 
 
-  starpu_data_handle_t abc_handle, anl_handle, stress_handle;
+  /*starpu_data_handle_t abc_handle, anl_handle, stress_handle;
   starpu_variable_data_register(&abc_handle, STARPU_MAIN_RAM, (uintptr_t)&ABC, sizeof(ABC));
   starpu_variable_data_register(&anl_handle, STARPU_MAIN_RAM, (uintptr_t)&ANL, sizeof(ANL));
   starpu_variable_data_register(&stress_handle, STARPU_MAIN_RAM, (uintptr_t)&t0, sizeof(t0));
-
+  */
   
   
   for (l = 1; l <= PRM.tMax; l++) {
@@ -197,8 +198,8 @@ int main() {
        Phiv (CPML), t??? (PML), ksi (Day & Bradley), ksil (Kristek and Moczo) */
     for (imode = 1; imode <= 5; imode++) {
       calculate_mappings(imode, PRM.mpmx, PRM.mpmy, &mpmx_begin, &mpmx_end, &mpmy_begin, &mpmy_end);
-      insert_compute_intermediates_task(abc_handle, anl_handle, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
-      //ComputeIntermediates(&ABC, &ANL, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+      //insert_compute_intermediates_task(abc_handle, anl_handle, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+      ComputeIntermediates(&ABC, &ANL, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
     }
     
     /* COMMUNICATE KSIL (K&M anelasticity method) */
@@ -209,10 +210,14 @@ int main() {
     // fazer o ABC e o ANL como data handles em R
     for (imode = 1; imode <= 5; imode++) {
       calculate_mappings(imode, PRM.mpmx, PRM.mpmy, &mpmx_begin, &mpmx_end, &mpmy_begin, &mpmy_end);
-      insert_compute_stress(stress_handle, abc_handle, anl_handle, v0, MDM, PRM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
-      //ComputeStress(&t0, v0, MDM, PRM, ABC, ANL, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+      //insert_compute_stress(stress_handle, abc_handle, anl_handle, v0, MDM, PRM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+      ComputeStress(&t0, v0, MDM, PRM, ABC, ANL, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
     }
+
+    dump(&v0, &t0, &ABC, &SRC, &MDM, PRM);
+    exit(0);
   }
 
-  starpu_shutdown();
+  
+  //starpu_shutdown();
 }

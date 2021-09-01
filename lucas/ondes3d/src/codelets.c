@@ -1,11 +1,11 @@
-#include <starpu.h>
+//#include <starpu.h>
 
 #include "../include/struct.h"
 #include "../include/computeIntermediates.h"
 #include "../include/computeStress.h"
 #include "../include/codelets.h"
 
-
+/*
 void compute_intermediates_func(void *buffers[], void *cl_arg) {
   struct starpu_vector_interface *abc_handle = buffers[0];
   struct starpu_vector_interface *anl_handle = buffers[1];
@@ -46,3 +46,4 @@ void compute_stress_func(void *buffers[], void *cl_arg) {
 
   ComputeStress(t0, v0, mdm, prm, *abc, *anl, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
 }
+*/
