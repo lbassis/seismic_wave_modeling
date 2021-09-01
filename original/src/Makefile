@@ -97,7 +97,7 @@ OPTI 		+=  -O3
 #MODEL parameters; default values are in options.h
 CFLAGS		=   $(TESTFLAGS)  $(OPTI)  $(MODEL) 
 PREFIX =../ondes3d
-OBJS = main.o nrutil.o  computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o
+OBJS = main.o nrutil.o  computeVeloAndSource.o computeStress.o computeIntermediates.o alloAndInit.o IO.o alloAndInit_LayerModel.o memory_dump.o
 HEADERS=struct.h inlineFunctions.h options.h
 
 
