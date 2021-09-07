@@ -31,14 +31,6 @@ int VerifFunction(int exitStatus, const char *msg, struct PARAMETERS PRM) {
   }
 }
 
-void init_distribution_coords(struct PARAMETERS *prm) {
-  prm->me = 0;
-  prm->px = 1;
-  prm->py = 1;
-  prm->coords[0] = 0;
-  prm->coords[1] = 0;
-}
-
 /* imode : to increase the velocity of the computation, we begin by computing
    the values of ksil at the boundaries of the px * py parts of the array
    Afterwise, we can compute the values  in the middle */
@@ -115,44 +107,60 @@ void insert_compute_stress(starpu_data_handle_t stress_handle, starpu_data_handl
 		     0);
 }
 */
-int main() {
+int main(int argc, char *argv[]) {
 
   int ret, l, imode, np = 1;
   int mpmx_begin, mpmx_end, mpmy_begin, mpmy_end;
   double time;
   
-  struct SOURCE SRC = { 0 };
   struct PARAMETERS PRM = { 0 };
   struct MEDIUM MDM = { 0 };
   struct ABSORBING_BOUNDARY_CONDITION ABC = { 0 };
   struct ANELASTICITY ANL = { 0 };
   struct OUTPUTS OUT = { 0 };
 
-  struct VELOCITY v0 = { 0 };
-  struct STRESS t0 = { 0 };
+  struct SOURCE *SRC = NULL;
+  struct VELOCITY *v0 = NULL;
+  struct STRESS *t0 = NULL;
+
+  if (argc < 2) {
+    printf("Insira o tamanho do bloco a ser utilizado\n");
+    return -1;
+  }
+
+  else {
+    PRM.block_size = atoi(argv[1]);
+    printf("Usando blocos de tamanho %dx%d\n", PRM.block_size, PRM.block_size);
+  }
 
   /*ret = starpu_init(NULL);
   if (ret != 0) {
     printf("Erro inicializando StarPU\n");
     return -1;
     }*/
-
-  init_distribution_coords(&PRM);
-  
+  PRM.px = 1;
+  PRM.py = 1;
   VerifFunction(ReadPrmFile(&PRM, &MDM, &ABC, &ANL, &OUT, PRMFILE), "read parameter file ", PRM);
+  printf("aqui o nlayer ta %d\n", MDM.nLayer);
   VerifFunction(ReadSrc(&SRC, PRM), "read sources file ", PRM);
+  printf("depois do readsrc o nlayer ta %d\n", MDM.nLayer);
   VerifFunction(InitPartDomain(&PRM, &OUT), "split domain MPI", PRM);
-
+  printf("depois do initpartdomain o nlayer ta %d\n", MDM.nLayer);
+  
+  printf("antes do readgeofile ta %d\n", MDM.nLayer);
   if (model == GEOLOGICAL) {
     VerifFunction(ReadGeoFile(&MDM, PRM), "read geological file", PRM);
   }
 
   VerifFunction(ReadStation(&OUT, PRM, MDM), "read station file ", PRM);
-  VerifFunction(AllocateFields(&v0, &t0, &ANL, &ABC, &MDM, &SRC, PRM), "allocate Fields ", PRM);
+  printf("aqui o nlayer ta %d\n", MDM.nLayer);
+  VerifFunction(AllocateFields2(&v0, &t0, &ANL, &ABC, &MDM, &SRC, PRM), "allocate Fields ", PRM);
 
   if (model == LAYER) {
     VerifFunction(InitLayerModel(&MDM, &ANL, PRM), "initialize layer model", PRM);
   }
+
+  printf("passou!\n");
 
   /** initialize fields **/
   /* inside the domain */
@@ -161,10 +169,10 @@ int main() {
   } else if (ANLmethod == KRISTEKandMOCZO) {
     VerifFunction(InitializeKManelas(&ANL, &MDM, PRM.dt), "initilize KRISTEK and MOCZO anelasticity", PRM);
   }
-
+  
   /* in the absorbing layers */
   VerifFunction(InitializeABC(&ABC, &MDM, &ANL, PRM), "initilize absorbing boundaries ", PRM);
-
+  
   if (model == GEOLOGICAL) {
 #ifdef OUT_HOGE
     /* Checking the geological model : we write in a binary file */
@@ -196,25 +204,23 @@ int main() {
     /* === First step : t = l + 1/2 for stress === */
     /* computation of intermediates :
        Phiv (CPML), t??? (PML), ksi (Day & Bradley), ksil (Kristek and Moczo) */
-    for (imode = 1; imode <= 5; imode++) {
-      calculate_mappings(imode, PRM.mpmx, PRM.mpmy, &mpmx_begin, &mpmx_end, &mpmy_begin, &mpmy_end);
-      //insert_compute_intermediates_task(abc_handle, anl_handle, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
-      ComputeIntermediates(&ABC, &ANL, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
-    }
-    
-    /* COMMUNICATE KSIL (K&M anelasticity method) */
-    if (ANLmethod == KRISTEKandMOCZO) {
-      // funcoes mpi
-    }
+    //for (imode = 1; imode <= 5; imode++) {
+    //  calculate_mappings(imode, PRM.mpmx, PRM.mpmy, &mpmx_begin, &mpmx_end, &mpmy_begin, &mpmy_end);
+    //  //insert_compute_intermediates_task(abc_handle, anl_handle, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+    //  ComputeIntermediates(&ABC, &ANL, v0, PRM, MDM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+    //}
+    //ComputeIntermediates(&ABC, &ANL, v0, PRM, MDM, 1, PRM.mpmx, 1, PRM.mpmy);
 
     // fazer o ABC e o ANL como data handles em R
-    for (imode = 1; imode <= 5; imode++) {
-      calculate_mappings(imode, PRM.mpmx, PRM.mpmy, &mpmx_begin, &mpmx_end, &mpmy_begin, &mpmy_end);
-      //insert_compute_stress(stress_handle, abc_handle, anl_handle, v0, MDM, PRM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
-      ComputeStress(&t0, v0, MDM, PRM, ABC, ANL, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
-    }
+    //for (imode = 1; imode <= 5; imode++) {
+    //  calculate_mappings(imode, PRM.mpmx, PRM.mpmy, &mpmx_begin, &mpmx_end, &mpmy_begin, &mpmy_end);
+    //  //insert_compute_stress(stress_handle, abc_handle, anl_handle, v0, MDM, PRM, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+    //  ComputeStress(&t0, v0, MDM, PRM, ABC, ANL, mpmx_begin, mpmx_end, mpmy_begin, mpmy_end);
+    //}
 
-    dump(&v0, &t0, &ABC, &SRC, &MDM, PRM);
+    //ComputeStress(&t0, v0, MDM, PRM, ABC, ANL, 1, PRM.mpmx, 1, PRM.mpmy);
+    
+    //dump(&v0, &t0, &ABC, &SRC, &MDM, PRM);
     exit(0);
   }
 

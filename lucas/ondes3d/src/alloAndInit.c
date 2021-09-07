@@ -80,6 +80,7 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
 
     mpmx_tmp1 = (double) (XMAX - XMIN + 2 * DELTA + 3) / (double) PX;
+    printf("o px eh %d\n", PX);
     PRM->mpmx = floor(mpmx_tmp1);
     MPMX = PRM->mpmx;
 

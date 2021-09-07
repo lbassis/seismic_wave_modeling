@@ -135,6 +135,9 @@ struct PARAMETERS {
     char fsrcHist[50];
     char fstatMap[50];
     char fgeo[50];
+
+    /* lucas */
+    int block_size;
 };
 
 /*** MEDIUM MDM ***/

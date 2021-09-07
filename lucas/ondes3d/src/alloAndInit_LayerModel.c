@@ -220,6 +220,7 @@ static int AppendLayer2MDM(struct MEDIUM *MDM, struct ANELASTICITY *ANL,
 	MDM->nLayer += 1;
 	NLAYER = MDM->nLayer;
 
+	printf("vai botar algo no laydep\n");
 	MDM->laydep = mydvectorRealloc(MDM->laydep, 0, NLAYER - 1);
 	MDM->rho0 = mydvectorRealloc(MDM->rho0, 0, NLAYER - 1);
 	MDM->mu0 = mydvectorRealloc(MDM->mu0, 0, NLAYER - 1);
@@ -330,6 +331,8 @@ int InitLayerModel(struct MEDIUM *MDM,
 
   /*** compute k2ly  ***/
     Initk2ly(MDM, PRM);
+
+
 
   /*** compute amp ***/
     if (ANLmethod == ANOTHER) {
@@ -584,7 +587,6 @@ int InitLayerModel(struct MEDIUM *MDM,
 	    }
 	}
     }
-
 
 
     return EXIT_SUCCESS;
