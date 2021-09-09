@@ -59,6 +59,7 @@ int allocateSources(struct SOURCE **sources, struct PARAMETERS PRM) {
 
   for (i = 0; i < nb_blocks_y; i++) {
     for (j = 0; j < nb_blocks_x; j++) {
+      ReadSrc(&((*sources)[i*nb_blocks_x + j]), PRM);
       (*sources)[i*nb_blocks_x + j].fx = myd3tensor0(1, BLOCK_SIZE, 1, BLOCK_SIZE, ZMIN - DELTA, ZMAX0);
       (*sources)[i*nb_blocks_x + j].fy = myd3tensor0(1, BLOCK_SIZE, 1, BLOCK_SIZE, ZMIN - DELTA, ZMAX0);
       (*sources)[i*nb_blocks_x + j].fz = myd3tensor0(1, BLOCK_SIZE, 1, BLOCK_SIZE, ZMIN - DELTA, ZMAX0);
@@ -100,7 +101,7 @@ int allocateStress(struct STRESS **stresses, struct PARAMETERS PRM) {
   return (EXIT_SUCCESS);
 }
 
-int allocateABC(struct ABSORBING_BOUNDARY_CONDITION *ABC, struct PARAMETERS PRM) {
+int allocateABC(struct ABSORBING_BOUNDARY_CONDITION **ABCs, struct PARAMETERS PRM) {
 
   const int XMIN = PRM.xMin;
   const int XMAX = PRM.xMax;
@@ -110,59 +111,66 @@ int allocateABC(struct ABSORBING_BOUNDARY_CONDITION *ABC, struct PARAMETERS PRM)
   const int ZMAX = PRM.zMax;
   const int ZMAX0 = PRM.zMax0;
   const int DELTA = PRM.delta;
-
-  const int MPMX = XMAX - XMIN + 2 * DELTA + 3;
-  const int MPMY = YMAX - YMIN + 2 * DELTA + 3;
-
+  const int BLOCK_SIZE = PRM.block_size;
+  
   /* others */
-  int i, j, k, imp, jmp;
+  int i, i2, j, j2, k, imp, jmp, block_index;
+  int nb_blocks_x = ceil((float)(XMAX - XMIN + 2 * DELTA + 3)/BLOCK_SIZE);
+  int nb_blocks_y = ceil((float)(YMAX - YMIN + 2 * DELTA + 3)/BLOCK_SIZE);
   enum typePlace place;
+  
+  *ABCs = malloc(nb_blocks_x * nb_blocks_y * sizeof(struct ABSORBING_BOUNDARY_CONDITION));
+  
+  for (i = 0; i < nb_blocks_y; i++) {
+    for (j = 0; j < nb_blocks_x; j++) {
+      block_index = i*nb_blocks_x + j;
 
-  /* Velocity */
-  ABC->nPower = NPOWER;
-  ABC->npmlv = 0;
-  ABC->ipml = i3tensor(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
+      /* Velocity */
+      (*ABCs)[block_index].nPower = NPOWER;
+      (*ABCs)[block_index].npmlv = 0;
+      (*ABCs)[block_index].ipml = i3tensor(-1, BLOCK_SIZE + 2, -1, BLOCK_SIZE + 2, ZMIN - DELTA, ZMAX0);
 
-  for (imp = -1; imp <= MPMX + 2; imp++) {
-    i = PRM.imp2i_array[imp];
-    for (jmp = -1; jmp <= MPMY + 2; jmp++) {
-      j = PRM.jmp2j_array[jmp];
-      for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-	ABC->ipml[imp][jmp][k] = -1;
+      for (imp = -1; imp <= BLOCK_SIZE + 2; imp++) {
+	i2 = PRM.imp2i_array[imp];
+	for (jmp = -1; jmp <= BLOCK_SIZE + 2; jmp++) {
+	  j2 = PRM.jmp2j_array[jmp];
+	  for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
+	    (*ABCs)[block_index].ipml[imp][jmp][k] = -1;
 
-	place = WhereAmI(i, j, k, PRM);
-	if (place == ABSORBINGLAYER || place == FREEABS) {
-	  ABC->npmlv += 1;
-	  ABC->ipml[imp][jmp][k] = ABC->npmlv;
+	    place = WhereAmI(i2, j2, k, PRM);
+	    if (place == ABSORBINGLAYER || place == FREEABS) {
+	      (*ABCs)[block_index].npmlv += 1;
+	      (*ABCs)[block_index].ipml[imp][jmp][k] = (*ABCs)[block_index].npmlv;
+	    }
+	  }
 	}
       }
+      printf("\nNumber of points in the CPML : %li\n", (*ABCs)[block_index].npmlv);
+
+      (*ABCs)[block_index].phivxx = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivxy = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivxz = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivyx = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivyy = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivyz = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivzx = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivzy = mydvector0(1, (*ABCs)[block_index].npmlv);
+      (*ABCs)[block_index].phivzz = mydvector0(1, (*ABCs)[block_index].npmlv);
+
+      /* Stress */
+      (*ABCs)[block_index].npmlt = (*ABCs)[block_index].npmlv;
+
+      (*ABCs)[block_index].phitxxx = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phitxyy = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phitxzz = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phitxyx = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phityyy = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phityzz = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phitxzx = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phityzy = mydvector0(1, (*ABCs)[block_index].npmlt);
+      (*ABCs)[block_index].phitzzz = mydvector0(1, (*ABCs)[block_index].npmlt);
     }
   }
-  printf("\nNumber of points in the CPML : %li\n", ABC->npmlv);
-
-  ABC->phivxx = mydvector0(1, ABC->npmlv);
-  ABC->phivxy = mydvector0(1, ABC->npmlv);
-  ABC->phivxz = mydvector0(1, ABC->npmlv);
-  ABC->phivyx = mydvector0(1, ABC->npmlv);
-  ABC->phivyy = mydvector0(1, ABC->npmlv);
-  ABC->phivyz = mydvector0(1, ABC->npmlv);
-  ABC->phivzx = mydvector0(1, ABC->npmlv);
-  ABC->phivzy = mydvector0(1, ABC->npmlv);
-  ABC->phivzz = mydvector0(1, ABC->npmlv);
-
-  /* Stress */
-  ABC->npmlt = ABC->npmlv;
-
-  ABC->phitxxx = mydvector0(1, ABC->npmlt);
-  ABC->phitxyy = mydvector0(1, ABC->npmlt);
-  ABC->phitxzz = mydvector0(1, ABC->npmlt);
-  ABC->phitxyx = mydvector0(1, ABC->npmlt);
-  ABC->phityyy = mydvector0(1, ABC->npmlt);
-  ABC->phityzz = mydvector0(1, ABC->npmlt);
-  ABC->phitxzx = mydvector0(1, ABC->npmlt);
-  ABC->phityzy = mydvector0(1, ABC->npmlt);
-  ABC->phitzzz = mydvector0(1, ABC->npmlt);
-
   return (EXIT_SUCCESS);
 }
 
