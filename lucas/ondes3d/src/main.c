@@ -69,59 +69,62 @@ void calculate_mappings(int imode, int MPMX, int MPMY, int *mpmx_begin, int *mpm
 }
 
 /*void insert_compute_intermediates_task(starpu_data_handle_t abc_handle, starpu_data_handle_t anl_handle, struct VELOCITY v0, struct PARAMETERS prm,
-				       struct MEDIUM mdm, int mpmx_begin, int mpmx_end, int mpmy_begin, int mpmy_end) {
+  struct MEDIUM mdm, int mpmx_begin, int mpmx_end, int mpmy_begin, int mpmy_end) {
 
   //starpu_data_handle_t abc_handle, anl_handle;
   //starpu_variable_data_register(&abc_handle, STARPU_MAIN_RAM, (uintptr_t)abc, sizeof(abc));
   //starpu_variable_data_register(&anl_handle, STARPU_MAIN_RAM, (uintptr_t)anl, sizeof(anl));
 
   starpu_insert_task(&intermediates_cl,
-		     STARPU_RW, abc_handle,
-		     STARPU_RW, anl_handle,
-		     STARPU_VALUE, &v0, sizeof(v0),
-		     STARPU_VALUE, &prm, sizeof(prm),
-		     STARPU_VALUE, &mdm, sizeof(mdm),
-		     STARPU_VALUE, &mpmx_begin, sizeof(mpmx_begin),
-		     STARPU_VALUE, &mpmx_end, sizeof(mpmx_end),
-		     STARPU_VALUE, &mpmy_begin, sizeof(mpmy_begin),
-		     STARPU_VALUE, &mpmy_end, sizeof(mpmy_end),
-		     0);
-}
+  STARPU_RW, abc_handle,
+  STARPU_RW, anl_handle,
+  STARPU_VALUE, &v0, sizeof(v0),
+  STARPU_VALUE, &prm, sizeof(prm),
+  STARPU_VALUE, &mdm, sizeof(mdm),
+  STARPU_VALUE, &mpmx_begin, sizeof(mpmx_begin),
+  STARPU_VALUE, &mpmx_end, sizeof(mpmx_end),
+  STARPU_VALUE, &mpmy_begin, sizeof(mpmy_begin),
+  STARPU_VALUE, &mpmy_end, sizeof(mpmy_end),
+  0);
+  }
 
-void insert_compute_stress(starpu_data_handle_t stress_handle, starpu_data_handle_t abc_handle, starpu_data_handle_t anl_handle, struct VELOCITY v0, struct MEDIUM MDM,
-			   struct PARAMETERS PRM,int mpmx_begin, int mpmx_end, int mpmy_begin, int mpmy_end) {
+  void insert_compute_stress(starpu_data_handle_t stress_handle, starpu_data_handle_t abc_handle, starpu_data_handle_t anl_handle, struct VELOCITY v0, struct MEDIUM MDM,
+  struct PARAMETERS PRM,int mpmx_begin, int mpmx_end, int mpmy_begin, int mpmy_end) {
   //starpu_data_handle_t stress_handle;
   //starpu_variable_data_register(&stress_handle, STARPU_MAIN_RAM, (uintptr_t)t0, sizeof(t0));
 
   starpu_insert_task(&stress_cl,
-		     STARPU_RW, stress_handle,
-		     STARPU_R, abc_handle,
-		     STARPU_R, anl_handle,
-		     STARPU_VALUE, &v0, sizeof(v0),
-		     STARPU_VALUE, &PRM, sizeof(PRM),
-		     STARPU_VALUE, &MDM, sizeof(MDM),
-		     STARPU_VALUE, &mpmx_begin, sizeof(mpmx_begin),
-		     STARPU_VALUE, &mpmx_end, sizeof(mpmx_end),
-		     STARPU_VALUE, &mpmy_begin, sizeof(mpmy_begin),
-		     STARPU_VALUE, &mpmy_end, sizeof(mpmy_end),
-		     0);
-}
+  STARPU_RW, stress_handle,
+  STARPU_R, abc_handle,
+  STARPU_R, anl_handle,
+  STARPU_VALUE, &v0, sizeof(v0),
+  STARPU_VALUE, &PRM, sizeof(PRM),
+  STARPU_VALUE, &MDM, sizeof(MDM),
+  STARPU_VALUE, &mpmx_begin, sizeof(mpmx_begin),
+  STARPU_VALUE, &mpmx_end, sizeof(mpmx_end),
+  STARPU_VALUE, &mpmy_begin, sizeof(mpmy_begin),
+  STARPU_VALUE, &mpmy_end, sizeof(mpmy_end),
+  0);
+  }
 */
 int main(int argc, char *argv[]) {
 
   int ret, l, imode, np = 1;
   int mpmx_begin, mpmx_end, mpmy_begin, mpmy_end;
+
+  int nb_blocks_x, nb_blocks_y, block_size;
+  int i, j, block_index;
   double time;
   
   struct PARAMETERS PRM = { 0 };
   struct MEDIUM MDM = { 0 };
-  struct ABSORBING_BOUNDARY_CONDITION ABC = { 0 };
   struct ANELASTICITY ANL = { 0 };
   struct OUTPUTS OUT = { 0 };
 
   struct SOURCE *SRC = NULL;
   struct VELOCITY *v0 = NULL;
   struct STRESS *t0 = NULL;
+  struct ABSORBING_BOUNDARY_CONDITION *ABC = NULL;
 
   if (argc < 2) {
     printf("Insira o tamanho do bloco a ser utilizado\n");
@@ -134,33 +137,25 @@ int main(int argc, char *argv[]) {
   }
 
   /*ret = starpu_init(NULL);
-  if (ret != 0) {
+    if (ret != 0) {
     printf("Erro inicializando StarPU\n");
     return -1;
     }*/
   PRM.px = 1;
   PRM.py = 1;
   VerifFunction(ReadPrmFile(&PRM, &MDM, &ABC, &ANL, &OUT, PRMFILE), "read parameter file ", PRM);
-  printf("aqui o nlayer ta %d\n", MDM.nLayer);
-  VerifFunction(ReadSrc(&SRC, PRM), "read sources file ", PRM);
-  printf("depois do readsrc o nlayer ta %d\n", MDM.nLayer);
+
   VerifFunction(InitPartDomain(&PRM, &OUT), "split domain MPI", PRM);
-  printf("depois do initpartdomain o nlayer ta %d\n", MDM.nLayer);
   
-  printf("antes do readgeofile ta %d\n", MDM.nLayer);
   if (model == GEOLOGICAL) {
     VerifFunction(ReadGeoFile(&MDM, PRM), "read geological file", PRM);
   }
 
   VerifFunction(ReadStation(&OUT, PRM, MDM), "read station file ", PRM);
-  printf("aqui o nlayer ta %d\n", MDM.nLayer);
   VerifFunction(AllocateFields2(&v0, &t0, &ANL, &ABC, &MDM, &SRC, PRM), "allocate Fields ", PRM);
-
   if (model == LAYER) {
     VerifFunction(InitLayerModel(&MDM, &ANL, PRM), "initialize layer model", PRM);
   }
-
-  printf("passou!\n");
 
   /** initialize fields **/
   /* inside the domain */
@@ -172,7 +167,7 @@ int main(int argc, char *argv[]) {
   
   /* in the absorbing layers */
   VerifFunction(InitializeABC(&ABC, &MDM, &ANL, PRM), "initilize absorbing boundaries ", PRM);
-  
+
   if (model == GEOLOGICAL) {
 #ifdef OUT_HOGE
     /* Checking the geological model : we write in a binary file */
@@ -189,17 +184,29 @@ int main(int argc, char *argv[]) {
 
 
   /*starpu_data_handle_t abc_handle, anl_handle, stress_handle;
-  starpu_variable_data_register(&abc_handle, STARPU_MAIN_RAM, (uintptr_t)&ABC, sizeof(ABC));
-  starpu_variable_data_register(&anl_handle, STARPU_MAIN_RAM, (uintptr_t)&ANL, sizeof(ANL));
-  starpu_variable_data_register(&stress_handle, STARPU_MAIN_RAM, (uintptr_t)&t0, sizeof(t0));
+    starpu_variable_data_register(&abc_handle, STARPU_MAIN_RAM, (uintptr_t)&ABC, sizeof(ABC));
+    starpu_variable_data_register(&anl_handle, STARPU_MAIN_RAM, (uintptr_t)&ANL, sizeof(ANL));
+    starpu_variable_data_register(&stress_handle, STARPU_MAIN_RAM, (uintptr_t)&t0, sizeof(t0));
   */
+
+
+  nb_blocks_x = ceil((float)(PRM.xMax - PRM.xMin)/PRM.block_size);
+  nb_blocks_y = ceil((float)(PRM.yMax - PRM.yMin)/PRM.block_size);
   
-  
+
   for (l = 1; l <= PRM.tMax; l++) {
     time = PRM.dt * l;
-    if (source == HISTFILE)
-      computeSeisMoment(&SRC, time, PRM);
 
+    for (i = 0; i < nb_blocks_y; i++) {
+      for (j = 0; j < nb_blocks_x; j++) {
+	block_index = i*nb_blocks_x + j;
+	
+	computeSeisMoment(&(SRC[block_index]), time, PRM);
+	ComputeIntermediates(&(ABC[block_index]), &ANL, v0[block_index], PRM, MDM, 0, 0, PRM.block_size, PRM.block_size);
+	ComputeStress(&(t0[block_index]), v0[block_index], MDM, PRM, ABC[block_index], ANL, 0, 0, PRM.block_size, PRM.block_size);
+      }
+    }
+    
     /* Calculation */
     /* === First step : t = l + 1/2 for stress === */
     /* computation of intermediates :
@@ -221,9 +228,8 @@ int main(int argc, char *argv[]) {
     //ComputeStress(&t0, v0, MDM, PRM, ABC, ANL, 1, PRM.mpmx, 1, PRM.mpmy);
     
     //dump(&v0, &t0, &ABC, &SRC, &MDM, PRM);
-    exit(0);
   }
 
-  
+  printf("acabou\n");
   //starpu_shutdown();
 }
