@@ -270,3 +270,95 @@ static void CompABCCoef2(	/* outputs */
 }				/* end function */
 
 
+int InitializeOutputs2(int STATION_STEP,
+		      struct OUTPUTS *OUT, struct PARAMETERS PRM)
+{
+    /* ===Seismograms related === */
+    int i, j, k;
+    int i2, j2, k2;
+    int ir;
+    int icpu, jcpu;
+    int icpu2, jcpu2;
+    int icpuEnd, jcpuEnd;
+    /* mapping */
+    const int PX = PRM.px;
+
+    OUT->mapping_seis = imatrix(0, OUT->iObs - 1, 1, 9);
+    OUT->seis_output =
+	myd3tensor0(0, STATION_STEP - 1, 0, OUT->iObs - 1, 1, 9);
+    OUT->seis_buff = mydvector0(0, STATION_STEP - 1);
+    /* mapping cpu X direction (coords[0]) then y direction (coords[1])
+       rank = coords[0] + coords[1]*px */
+
+    /* For info :
+     * Vx component  : i, j 
+     * Vy component  : i2, j2 
+     * Vz component  : i2, j 
+     * Tii component : i2, j
+     * Txy component : i, j2
+     * Txz component : i, j 
+     * Tyz component : i2, j2 
+     */
+
+    for (ir = 0; ir < OUT->iObs; ir++) {
+	if (OUT->ista[ir] == 1) {
+
+	    i = OUT->ixobs[ir];
+	    j = OUT->iyobs[ir];
+	    icpu = PRM.i2icpu_array[i];
+	    jcpu = PRM.j2jcpu_array[j];
+
+	    if (OUT->xobswt[ir] >= 0.5) {
+		i2 = i;
+	    } else {
+		i2 = i - 1;
+	    }
+	    if (OUT->yobswt[ir] >= 0.5) {
+		j2 = j;
+	    } else {
+		j2 = j - 1;
+	    }
+	    icpu2 = PRM.i2icpu_array[i2];
+	    jcpu2 = PRM.j2jcpu_array[j2];
+
+	    /* Vx component */
+	    OUT->mapping_seis[ir][1] = icpu + jcpu * PX;
+
+	    /* Vy component */
+	    OUT->mapping_seis[ir][2] = icpu2 + jcpu2 * PX;
+
+	    /* Vz component */
+	    OUT->mapping_seis[ir][3] = icpu2 + jcpu * PX;
+
+	    /* Tii component */
+
+	    OUT->mapping_seis[ir][4] = icpu2 + jcpu * PX;
+	    OUT->mapping_seis[ir][5] = icpu2 + jcpu * PX;
+	    OUT->mapping_seis[ir][6] = icpu2 + jcpu * PX;
+
+	    /* Txy component */
+	    OUT->mapping_seis[ir][7] = icpu2 + jcpu2 * PX;
+
+	    /* Txz component */
+	    OUT->mapping_seis[ir][8] = icpu + jcpu * PX;
+
+	    /* Tyz component */
+	    OUT->mapping_seis[ir][9] = icpu2 + jcpu2 * PX;
+
+	}			/* end of if ista */
+    }				/* end of ir */
+
+    /* ===Snapshots related === */
+    if (snapType == ODISPL || snapType == OBOTH) {
+	const int ZMIN = PRM.zMin;
+	const int ZMAX0 = PRM.zMax0;
+	const int DELTA = PRM.delta;
+	const int MPMX = PRM.mpmx;
+	const int MPMY = PRM.mpmy;
+
+	OUT->Uxy = myd3tensor0(1, 3, -1, MPMX + 2, -1, MPMY + 2);
+	OUT->Uxz = myd3tensor0(1, 3, -1, MPMX + 2, ZMIN - DELTA, ZMAX0);
+	OUT->Uyz = myd3tensor0(1, 3, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
+    }
+    return (EXIT_SUCCESS);
+}

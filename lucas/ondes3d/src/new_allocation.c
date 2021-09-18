@@ -145,7 +145,7 @@ int allocateABC(struct ABSORBING_BOUNDARY_CONDITION **ABCs, struct PARAMETERS PR
 	  }
 	}
       }
-      printf("\nNumber of points in the CPML : %li\n", (*ABCs)[block_index].npmlv);
+      //printf("\nNumber of points in the CPML : %li\n", (*ABCs)[block_index].npmlv);
 
       (*ABCs)[block_index].phivxx = mydvector0(1, (*ABCs)[block_index].npmlv);
       (*ABCs)[block_index].phivxy = mydvector0(1, (*ABCs)[block_index].npmlv);

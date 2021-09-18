@@ -52,9 +52,9 @@ void dump_vectors(struct ABSORBING_BOUNDARY_CONDITION *abc, struct MEDIUM *mdm, 
 	    abc->phityyy[i], abc->phityzz[i], abc->phitxzx[i], abc->phityzy[i], abc->phitzzz[i]);
   }
 
-  for (i = ZMIN - DELTA; i <= ZMAX0; i++) {
-    fprintf(out, "%d %d\n", mdm->k2ly0[i], mdm->k2ly2[i]);
-  }
+//  for (i = ZMIN - DELTA; i <= ZMAX0; i++) {
+//    fprintf(out, "%d %d\n", mdm->k2ly0[i], mdm->k2ly2[i]);
+//  }
 }
 
 void dump_integers(struct ABSORBING_BOUNDARY_CONDITION *abc, FILE *out) {
@@ -67,9 +67,9 @@ void dump(struct VELOCITY *velocity, struct STRESS *stress, struct ABSORBING_BOU
 
   FILE *out = fopen("memory_dump.txt", "w");
 
-  dump_tensors(velocity, stress, abc, src, PRM, out);
+  //dump_tensors(velocity, stress, abc, src, PRM, out);
   dump_vectors(abc, mdm, PRM, out);
-  dump_integers(abc, out);
+  //dump_integers(abc, out);
 
   fclose(out);
 }
