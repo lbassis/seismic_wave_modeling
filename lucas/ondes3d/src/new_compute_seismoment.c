@@ -4,31 +4,31 @@
 struct starpu_codelet seis_moment_cl = {
 					.cpu_funcs = {seis_moment_task},
 					.nbuffers = 16,
-					.modes = {STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					.modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_R,
 						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						  STARPU_R  STARPU_W, STARPU_W, STARPU_W},
+						  STARPU_R, STARPU_R, STARPU_R, STARPU_R},
 };
 
 void seis_moment_task(void *buffers[], void *cl_arg) {
 
   // unpack structures
-  double *vel = (float *)STARPU_VECTOR_GET_PTR(buffers[0]);
-  double *strike = (float *)STARPU_VECTOR_GET_PTR(buffers[1]);
-  double *dip = (float *)STARPU_VECTOR_GET_PTR(buffers[2]);
-  double *rake = (float *)STARPU_VECTOR_GET_PTR(buffers[3]);
-  double *xweight = (float *)STARPU_VECTOR_GET_PTR(buffers[4]);
-  double *yweight = (float *)STARPU_VECTOR_GET_PTR(buffers[5]);
-  double *zweight = (float *)STARPU_VECTOR_GET_PTR(buffers[6]);
-  double *insrc = (float *)STARPU_VECTOR_GET_PTR(buffers[7]);
-  double *ixhypo = (float *)STARPU_VECTOR_GET_PTR(buffers[8]);
-  double *iyhypo = (float *)STARPU_VECTOR_GET_PTR(buffers[9]);
-  double *izhypo = (float *)STARPU_VECTOR_GET_PTR(buffers[10]);
-  double *i2imp_array = (float *)STARPU_VECTOR_GET_PTR(buffers[11]);
-  double *j2jmp_array = (float *)STARPU_VECTOR_GET_PTR(buffers[12]);
-  double *fx = (float *)STARPU_VECTOR_GET_PTR(buffers[13]);
-  double *fy = (float *)STARPU_VECTOR_GET_PTR(buffers[14]);
-  double *fz = (float *)STARPU_VECTOR_GET_PTR(buffers[15]);
+  double *fx = (float *)STARPU_VECTOR_GET_PTR(buffers[0]);
+  double *fy = (float *)STARPU_VECTOR_GET_PTR(buffers[1]);
+  double *fz = (float *)STARPU_VECTOR_GET_PTR(buffers[2]);
+  double *vel = (float *)STARPU_VECTOR_GET_PTR(buffers[3]);
+  double *strike = (float *)STARPU_VECTOR_GET_PTR(buffers[4]);
+  double *dip = (float *)STARPU_VECTOR_GET_PTR(buffers[5]);
+  double *rake = (float *)STARPU_VECTOR_GET_PTR(buffers[6]);
+  double *xweight = (float *)STARPU_VECTOR_GET_PTR(buffers[7]);
+  double *yweight = (float *)STARPU_VECTOR_GET_PTR(buffers[8]);
+  double *zweight = (float *)STARPU_VECTOR_GET_PTR(buffers[9]);
+  double *insrc = (float *)STARPU_VECTOR_GET_PTR(buffers[10]);
+  double *ixhypo = (float *)STARPU_VECTOR_GET_PTR(buffers[11]);
+  double *iyhypo = (float *)STARPU_VECTOR_GET_PTR(buffers[12]);
+  double *izhypo = (float *)STARPU_VECTOR_GET_PTR(buffers[13]);
+  double *i2imp_array = (float *)STARPU_VECTOR_GET_PTR(buffers[14]);
+  double *j2jmp_array = (float *)STARPU_VECTOR_GET_PTR(buffers[15]);
 
   int iDur, iSrc, dtbiem;
   double ds, dt;
