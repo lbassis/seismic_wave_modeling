@@ -13,9 +13,9 @@ struct starpu_codelet seis_moment_cl = {
 void seis_moment_task(void *buffers[], void *cl_arg) {
 
   // unpack structures
-  double *fx = (float *)STARPU_VECTOR_GET_PTR(buffers[0]);
-  double *fy = (float *)STARPU_VECTOR_GET_PTR(buffers[1]);
-  double *fz = (float *)STARPU_VECTOR_GET_PTR(buffers[2]);
+  double ***fx = (float *)STARPU_BLOCK_GET_PTR(buffers[0]);
+  double ***fy = (float *)STARPU_BLOCK_GET_PTR(buffers[1]);
+  double ***fz = (float *)STARPU_BLOCK_GET_PTR(buffers[2]);
   double *vel = (float *)STARPU_VECTOR_GET_PTR(buffers[3]);
   double *strike = (float *)STARPU_VECTOR_GET_PTR(buffers[4]);
   double *dip = (float *)STARPU_VECTOR_GET_PTR(buffers[5]);
