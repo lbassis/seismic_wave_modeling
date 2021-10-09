@@ -1,7 +1,10 @@
+#include <starpu.h>
+#include "include/new_compute_stress.h"
+
 struct starpu_codelet stress_cl = {
 				   .cpu_funcs = {compute_stress_task},
 				   .nbuffers = 30,
-				   .modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
+				   .modes = {STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
 					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
@@ -52,7 +55,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   int i, j, k, imp, jmp;
   double ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &i, &j, &imp, &jmp, &first_npml, &prm);
+  starpu_codelet_unpack_args(cl_arg, &i, &j, &first_npml, &prm);
   
   int i_block = i%prm.block_size;
   int j_block = j%prm.block_size;
@@ -67,7 +70,10 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   /*  */
   enum typePlace place;	/* What type of cell  */
   long int npml;
-  
+
+  jmp = prm.jmp2j_array[j];
+  imp = prm.imp2i_array[i];
+
   ds = prm.ds;
   dt = prm.dt;
 

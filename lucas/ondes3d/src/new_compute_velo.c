@@ -1,3 +1,6 @@
+#include <starpu.h>
+#include "include/new_compute_velo.h"
+
 struct starpu_codelet velo_cl = {
 				 .cpu_funcs = {compute_velo_task},
 				 .nbuffers = 42,
@@ -68,7 +71,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
   int i, j, k, imp, jmp;
   double ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &i, &j, &imp, &jmp, &first_npml, &prm);
+  starpu_codelet_unpack_args(cl_arg, &i, &j, &first_npml, &prm);
   
   int i_block = i%prm.block_size;
   int j_block = j%prm.block_size;
