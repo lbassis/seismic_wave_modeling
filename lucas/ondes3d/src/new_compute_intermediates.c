@@ -1,26 +1,21 @@
-struct starpu_codelet intermediates_cl = {
-					  .cpu_funcs = {compute_intermediate_task},
-					  .nbuffers = 39,
-					  .modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
-						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						    STARPU_R, STARPU_R, STARPU_R},
-};
+#include <starpu.h>
 
+#include "../include/struct.h"
+#include "../include/inlineFunctions.h"
+#include "../include/new_compute_intermediates.h"
 
-void compute_intermediate_task(void *buffers[], void *cl_arg) {
+void compute_intermediates_task(void *buffers[], void *cl_arg) {
 
   //unpack structures
-  double *phivxx = (float *)STARPU_VECTOR_GET_PTR(buffers[0]);
-  double *phivyy = (float *)STARPU_VECTOR_GET_PTR(buffers[1]);
-  double *phivzz = (float *)STARPU_VECTOR_GET_PTR(buffers[2]);
-  double *phivyx = (float *)STARPU_VECTOR_GET_PTR(buffers[3]);
-  double *phivxy = (float *)STARPU_VECTOR_GET_PTR(buffers[4]);
-  double *phivzx = (float *)STARPU_VECTOR_GET_PTR(buffers[5]);
-  double *phivxz = (float *)STARPU_VECTOR_GET_PTR(buffers[6]);
-  double *phivzy = (float *)STARPU_VECTOR_GET_PTR(buffers[7]);
-  double *phivyz = (float *)STARPU_VECTOR_GET_PTR(buffers[8]);
+  double *phivxx = (double *)STARPU_VECTOR_GET_PTR(buffers[0]);
+  double *phivyy = (double *)STARPU_VECTOR_GET_PTR(buffers[1]);
+  double *phivzz = (double *)STARPU_VECTOR_GET_PTR(buffers[2]);
+  double *phivyx = (double *)STARPU_VECTOR_GET_PTR(buffers[3]);
+  double *phivxy = (double *)STARPU_VECTOR_GET_PTR(buffers[4]);
+  double *phivzx = (double *)STARPU_VECTOR_GET_PTR(buffers[5]);
+  double *phivxz = (double *)STARPU_VECTOR_GET_PTR(buffers[6]);
+  double *phivzy = (double *)STARPU_VECTOR_GET_PTR(buffers[7]);
+  double *phivyz = (double *)STARPU_VECTOR_GET_PTR(buffers[8]);
 
   int *k2ly0 = (int *)STARPU_VECTOR_GET_PTR(buffers[9]);
   int *k2ly2 = (int *)STARPU_VECTOR_GET_PTR(buffers[10]);
@@ -59,11 +54,11 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
   double ***v0_y = (double ***)STARPU_BLOCK_GET_PTR(buffers[37]);
   double ***v0_z = (double ***)STARPU_BLOCK_GET_PTR(buffers[38]);
 
-  int first_npml;
+  long int first_npml;
   int i, j, k, imp, jmp;
   double ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &i, &j, &imp, &jmp, &first_npml, &prm);
+  starpu_codelet_unpack_args(cl_arg, &i, &j, &first_npml, &prm);
   
   int i_block = i%prm.block_size;
   int j_block = j%prm.block_size;
@@ -84,6 +79,11 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
   double a, b;		/* intermediates for FREEABS */
 
   int med1, med2;
+
+  int ly0, ly2;
+
+  jmp = prm.jmp2j_array[j];
+  imp = prm.imp2i_array[i];
 
   ds = prm.ds;
   dt = prm.dt;
@@ -161,54 +161,54 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
 
       phivxx[npml] =
 	CPML4(vpx, dumpx2[i], alphax2[i],
-	      kappax2[i], phixdum, DS, DT,
-	      v0.x[i][j][k], v0.x[i + 1][j][k],
-	      v0.x[i - 1][j][k],
-	      v0.x[i + 2][j][k]);
+	      kappax2[i], phixdum, ds, dt,
+	      v0_x[i][j][k], v0_x[i + 1][j][k],
+	      v0_x[i - 1][j][k],
+	      v0_x[i + 2][j][k]);
       phivyy[npml] =
 	CPML4(vpx, dumpy[j], alphay[j],
-	      kappay[j], phiydum, DS, DT,
-	      v0.y[i][j - 1][k], v0.y[i][j][k],
-	      v0.y[i][j - 2][k],
-	      v0.y[i][j + 1][k]);
+	      kappay[j], phiydum, ds, dt,
+	      v0_y[i][j - 1][k], v0_y[i][j][k],
+	      v0_y[i][j - 2][k],
+	      v0_y[i][j + 1][k]);
       phivzz[npml] =
 	CPML4(vpx, dumpz[k], alphaz[k],
-	      kappaz[k], phizdum, DS, DT,
-	      v0.z[i][j][k - 1], v0.z[i][j][k],
-	      v0.z[i][j][k - 2],
-	      v0.z[i][j][k + 1]);
+	      kappaz[k], phizdum, ds, dt,
+	      v0_z[i][j][k - 1], v0_z[i][j][k],
+	      v0_z[i][j][k - 2],
+	      v0_z[i][j][k + 1]);
       /* txy */
       phixdum = phivyx[npml];
       phiydum = phivxy[npml];
 
       phivyx[npml] =
 	CPML4(vpy, dumpx[i], alphax[i],
-	      kappax[i], phixdum, DS, DT,
-	      v0.y[i - 1][j][k], v0.y[i][j][k],
-	      v0.y[i - 2][j][k],
-	      v0.y[i + 1][j][k]);
+	      kappax[i], phixdum, ds, dt,
+	      v0_y[i - 1][j][k], v0_y[i][j][k],
+	      v0_y[i - 2][j][k],
+	      v0_y[i + 1][j][k]);
       phivxy[npml] =
 	CPML4(vpy, dumpy2[j], alphay2[j],
-	      kappay2[j], phiydum, DS, DT,
-	      v0.x[i][j][k], v0.x[i][j + 1][k],
-	      v0.x[i][j - 1][k],
-	      v0.x[i][j + 2][k]);
+	      kappay2[j], phiydum, ds, dt,
+	      v0_x[i][j][k], v0_x[i][j + 1][k],
+	      v0_x[i][j - 1][k],
+	      v0_x[i][j + 2][k]);
       /* txz */
       phixdum = phivzx[npml];
       phizdum = phivxz[npml];
 
       phivzx[npml] =
 	CPML4(vpz, dumpx[i], alphax[i],
-	      kappax[i], phixdum, DS, DT,
-	      v0.z[i - 1][j][k], v0.z[i][j][k],
-	      v0.z[i - 2][j][k],
-	      v0.z[i + 1][j][k]);
+	      kappax[i], phixdum, ds, dt,
+	      v0_z[i - 1][j][k], v0_z[i][j][k],
+	      v0_z[i - 2][j][k],
+	      v0_z[i + 1][j][k]);
       phivxz[npml] =
 	CPML4(vpz, dumpz2[k], alphaz2[k],
-	      kappaz2[k], phizdum, DS, DT,
-	      v0.x[i][j][k], v0.x[i][j][k + 1],
-	      v0.x[i][j][k - 1],
-	      v0.x[i][j][k + 2]);
+	      kappaz2[k], phizdum, ds, dt,
+	      v0_x[i][j][k], v0_x[i][j][k + 1],
+	      v0_x[i][j][k - 1],
+	      v0_x[i][j][k + 2]);
       /* tyz */
       phiydum = phivzy[npml];
       phizdum = phivyz[npml];
@@ -216,15 +216,15 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
       phivzy[npml] =
 	CPML4(vpxyz, dumpy2[j],
 	      alphay2[j], kappay2[j],
-	      phiydum, DS, DT, v0.z[i][j][k],
-	      v0.z[i][j + 1][k], v0.z[i][j - 1][k],
-	      v0.z[i][j + 2][k]);
+	      phiydum, ds, dt, v0_z[i][j][k],
+	      v0_z[i][j + 1][k], v0_z[i][j - 1][k],
+	      v0_z[i][j + 2][k]);
       phivyz[npml] =
 	CPML4(vpxyz, dumpz2[k],
 	      alphaz2[k], kappaz2[k],
-	      phizdum, DS, DT, v0.y[i][j][k],
-	      v0.y[i][j][k + 1], v0.y[i][j][k - 1],
-	      v0.y[i][j][k + 2]);
+	      phizdum, ds, dt, v0_y[i][j][k],
+	      v0_y[i][j][k + 1], v0_y[i][j][k - 1],
+	      v0_y[i][j][k + 2]);
     }		/* End compute Absorbing Layers */
 
     /* FREEABS      */
@@ -233,7 +233,7 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
      * So each coefficient will be computed only for those part 
      *
      * Expressions are simply obtain from approximation of dz(v0.z) in an elastic medium :
-     * DT(t0.zz)|z=0 = 0 = lam *(dx(v0.x) + dy(v0.y) + dz(v0.z)) + 2*mu * dz(v0.z);
+     * dt(t0.zz)|z=0 = 0 = lam *(dx(v0.x) + dy(v0.y) + dz(v0.z)) + 2*mu * dz(v0.z);
      *
      */
     if (place == FREEABS) {
@@ -242,13 +242,13 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
 	(kapx - 2. / 3. * mux) / (kapx +
 				  4. / 3. * mux) *
 	(Diff4
-	 (DS, v0.x[i][j][k], v0.x[i + 1][j][k],
-	  v0.x[i - 1][j][k],
-	  v0.x[i + 2][j][k]) + Diff4(DS,
-				     v0.y[i][j - 1][k],
-				     v0.y[i][j][k],
-				     v0.y[i][j - 2][k],
-				     v0.y[i][j + 1][k])
+	 (ds, v0_x[i][j][k], v0_x[i + 1][j][k],
+	  v0_x[i - 1][j][k],
+	  v0_x[i + 2][j][k]) + Diff4(ds,
+				     v0_y[i][j - 1][k],
+				     v0_y[i][j][k],
+				     v0_y[i][j - 2][k],
+				     v0_y[i][j + 1][k])
 	 );
 
       /* txx, tyy */
@@ -258,20 +258,20 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
       /* (copy&paste) */
       phivxx[npml] =
 	CPML4(vpx, dumpx2[i], alphax2[i],
-	      kappax2[i], phixdum, DS, DT,
-	      v0.x[i][j][k], v0.x[i + 1][j][k],
-	      v0.x[i - 1][j][k],
-	      v0.x[i + 2][j][k]);
+	      kappax2[i], phixdum, ds, dt,
+	      v0_x[i][j][k], v0_x[i + 1][j][k],
+	      v0_x[i - 1][j][k],
+	      v0_x[i + 2][j][k]);
       phivyy[npml] =
 	CPML4(vpx, dumpy[j], alphay[j],
-	      kappay[j], phiydum, DS, DT,
-	      v0.y[i][j - 1][k], v0.y[i][j][k],
-	      v0.y[i][j - 2][k],
-	      v0.y[i][j + 1][k]);
+	      kappay[j], phiydum, ds, dt,
+	      v0_y[i][j - 1][k], v0_y[i][j][k],
+	      v0_y[i][j - 2][k],
+	      v0_y[i][j + 1][k]);
       /* special */
       b = exp(-
 	      (vpx * dumpz[k] / kappaz[k] +
-	       alphaz[k]) * DT);
+	       alphaz[k]) * dt);
       a = 0.0;
       if (abs(vpx * dumpz[k]) > 0.000001) {
 	a = vpx * dumpz[k] * (b -
@@ -288,16 +288,16 @@ void compute_intermediate_task(void *buffers[], void *cl_arg) {
 
       phivyx[npml] =
 	CPML4(vpy, dumpx[i], alphax[i],
-	      kappax[i], phixdum, DS, DT,
-	      v0.y[i - 1][j][k], v0.y[i][j][k],
-	      v0.y[i - 2][j][k],
-	      v0.y[i + 1][j][k]);
+	      kappax[i], phixdum, ds, dt,
+	      v0_y[i - 1][j][k], v0_y[i][j][k],
+	      v0_y[i - 2][j][k],
+	      v0_y[i + 1][j][k]);
       phivxy[npml] =
 	CPML4(vpy, dumpy2[j], alphay2[j],
-	      kappay2[j], phiydum, DS, DT,
-	      v0.x[i][j][k], v0.x[i][j + 1][k],
-	      v0.x[i][j - 1][k],
-	      v0.x[i][j + 2][k]);
+	      kappay2[j], phiydum, ds, dt,
+	      v0_x[i][j][k], v0_x[i][j + 1][k],
+	      v0_x[i][j - 1][k],
+	      v0_x[i][j + 2][k]);
     }
   }
 }
