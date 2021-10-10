@@ -1,16 +1,8 @@
 #include <starpu.h>
-#include "include/new_compute_stress.h"
 
-struct starpu_codelet stress_cl = {
-				   .cpu_funcs = {compute_stress_task},
-				   .nbuffers = 30,
-				   .modes = {STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R}
-};
-
+#include "../include/struct.h"
+#include "../include/inlineFunctions.h"
+#include "../include/new_compute_stress.h"
 
 void compute_stress_task(void *buffers[], void *cl_arg) {
 
@@ -35,15 +27,15 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   double *kappaz = (double *)STARPU_VECTOR_GET_PTR(buffers[15]);
   double *kappaz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[16]);
 
-  double *phivxx = (float *)STARPU_VECTOR_GET_PTR(buffers[17]);
-  double *phivyy = (float *)STARPU_VECTOR_GET_PTR(buffers[18]);
-  double *phivzz = (float *)STARPU_VECTOR_GET_PTR(buffers[19]);
-  double *phivyx = (float *)STARPU_VECTOR_GET_PTR(buffers[20]);
-  double *phivxy = (float *)STARPU_VECTOR_GET_PTR(buffers[21]);
-  double *phivzx = (float *)STARPU_VECTOR_GET_PTR(buffers[22]);
-  double *phivxz = (float *)STARPU_VECTOR_GET_PTR(buffers[23]);
-  double *phivzy = (float *)STARPU_VECTOR_GET_PTR(buffers[24]);
-  double *phivyz = (float *)STARPU_VECTOR_GET_PTR(buffers[25]);
+  double *phivxx = (double *)STARPU_VECTOR_GET_PTR(buffers[17]);
+  double *phivyy = (double *)STARPU_VECTOR_GET_PTR(buffers[18]);
+  double *phivzz = (double *)STARPU_VECTOR_GET_PTR(buffers[19]);
+  double *phivyx = (double *)STARPU_VECTOR_GET_PTR(buffers[20]);
+  double *phivxy = (double *)STARPU_VECTOR_GET_PTR(buffers[21]);
+  double *phivzx = (double *)STARPU_VECTOR_GET_PTR(buffers[22]);
+  double *phivxz = (double *)STARPU_VECTOR_GET_PTR(buffers[23]);
+  double *phivzy = (double *)STARPU_VECTOR_GET_PTR(buffers[24]);
+  double *phivyz = (double *)STARPU_VECTOR_GET_PTR(buffers[25]);
 
   int *ipml = (int *)STARPU_VECTOR_GET_PTR(buffers[26]);
 
@@ -64,9 +56,9 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   /* approximations of a value in the corner of the cube */
   double kapxyz,		/* rigidity and mu */
     kapxy, kapxz, kapx, kapy, kapz, muxy, muxz, mux, muy, muz, muxyz;
-
+  double b1, b2;
   int ly0, ly2;		/* layer index */
-
+  
   /*  */
   enum typePlace place;	/* What type of cell  */
   long int npml;
@@ -82,7 +74,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   for (k = prm.zMin - prm.delta; k <= prm.zMax0; k++) {
 
     /* INITIALISATIONS */
-    place = WhereAmI(imp, jmp, k, PRM);
+    place = WhereAmI(imp, jmp, k, prm);
 
     /* jump "Not computed area" */
     if ((place == OUTSIDE) || (place == LIMIT)) {
@@ -90,7 +82,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
     }
     /* find the right npml number */
     if ((place == ABSORBINGLAYER) || (place == FREEABS)) {
-      npml = ipml[i][j][k];
+      npml = ipml[k];
     }
     /* medium */
 
@@ -140,98 +132,98 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
       t0_xx[i][j][k] += staggards4(kapx, mux,
 				    kappax2[i],
 				    kappay[j],
-				    kappaz[k], DT,
-				    DS, v0.x[i][j][k],
-				    v0.x[i + 1][j][k],
-				    v0.x[i - 1][j][k],
-				    v0.x[i + 2][j][k],
-				    v0.y[i][j - 1][k],
-				    v0.y[i][j][k],
-				    v0.y[i][j - 2][k],
-				    v0.y[i][j + 1][k],
-				    v0.z[i][j][k - 1],
-				    v0.z[i][j][k],
-				    v0.z[i][j][k - 2],
-				    v0.z[i][j][k + 1],
+				    kappaz[k], dt,
+				    ds, v0_x[i][j][k],
+				    v0_x[i + 1][j][k],
+				    v0_x[i - 1][j][k],
+				    v0_x[i + 2][j][k],
+				    v0_y[i][j - 1][k],
+				    v0_y[i][j][k],
+				    v0_y[i][j - 2][k],
+				    v0_y[i][j + 1][k],
+				    v0_z[i][j][k - 1],
+				    v0_z[i][j][k],
+				    v0_z[i][j][k - 2],
+				    v0_z[i][j][k + 1],
 				    place, ABCmethod);
 
       t0_yy[i][j][k] += staggards4(kapx, mux,
 				    kappay[j],
 				    kappax2[i],
-				    kappaz[k], DT,
-				    DS,
-				    v0.y[i][j - 1][k],
-				    v0.y[i][j][k],
-				    v0.y[i][j - 2][k],
-				    v0.y[i][j + 1][k],
-				    v0.x[i][j][k],
-				    v0.x[i + 1][j][k],
-				    v0.x[i - 1][j][k],
-				    v0.x[i + 2][j][k],
-				    v0.z[i][j][k - 1],
-				    v0.z[i][j][k],
-				    v0.z[i][j][k - 2],
-				    v0.z[i][j][k + 1],
+				    kappaz[k], dt,
+				    ds,
+				    v0_y[i][j - 1][k],
+				    v0_y[i][j][k],
+				    v0_y[i][j - 2][k],
+				    v0_y[i][j + 1][k],
+				    v0_x[i][j][k],
+				    v0_x[i + 1][j][k],
+				    v0_x[i - 1][j][k],
+				    v0_x[i + 2][j][k],
+				    v0_z[i][j][k - 1],
+				    v0_z[i][j][k],
+				    v0_z[i][j][k - 2],
+				    v0_z[i][j][k + 1],
 				    place, ABCmethod);
 
       t0_zz[i][j][k] += staggards4(kapx, mux,
 				    kappaz[k],
 				    kappax2[i],
-				    kappay[j], DT,
-				    DS,
-				    v0.z[i][j][k - 1],
-				    v0.z[i][j][k],
-				    v0.z[i][j][k - 2],
-				    v0.z[i][j][k + 1],
-				    v0.x[i][j][k],
-				    v0.x[i + 1][j][k],
-				    v0.x[i - 1][j][k],
-				    v0.x[i + 2][j][k],
-				    v0.y[i][j - 1][k],
-				    v0.y[i][j][k],
-				    v0.y[i][j - 2][k],
-				    v0.y[i][j + 1][k],
+				    kappay[j], dt,
+				    ds,
+				    v0_z[i][j][k - 1],
+				    v0_z[i][j][k],
+				    v0_z[i][j][k - 2],
+				    v0_z[i][j][k + 1],
+				    v0_x[i][j][k],
+				    v0_x[i + 1][j][k],
+				    v0_x[i - 1][j][k],
+				    v0_x[i + 2][j][k],
+				    v0_y[i][j - 1][k],
+				    v0_y[i][j][k],
+				    v0_y[i][j - 2][k],
+				    v0_y[i][j + 1][k],
 				    place, ABCmethod);
 
       t0_xy[i][j][k] += staggardt4(muy,
 				    kappax[i],
-				    kappay2[j], DT,
-				    DS,
-				    v0.y[i - 1][j][k],
-				    v0.y[i][j][k],
-				    v0.y[i - 2][j][k],
-				    v0.y[i + 1][j][k],
-				    v0.x[i][j][k],
-				    v0.x[i][j + 1][k],
-				    v0.x[i][j - 1][k],
-				    v0.x[i][j + 2][k],
+				    kappay2[j], dt,
+				    ds,
+				    v0_y[i - 1][j][k],
+				    v0_y[i][j][k],
+				    v0_y[i - 2][j][k],
+				    v0_y[i + 1][j][k],
+				    v0_x[i][j][k],
+				    v0_x[i][j + 1][k],
+				    v0_x[i][j - 1][k],
+				    v0_x[i][j + 2][k],
 				    place, ABCmethod);
 
       t0_xz[i][j][k] += staggardt4(muz,
 				    kappax[i],
-				    kappaz2[k], DT,
-				    DS,
-				    v0.z[i - 1][j][k],
-				    v0.z[i][j][k],
-				    v0.z[i - 2][j][k],
-				    v0.z[i + 1][j][k],
-				    v0.x[i][j][k],
-				    v0.x[i][j][k + 1],
-				    v0.x[i][j][k - 1],
-				    v0.x[i][j][k + 2],
+				    kappaz2[k], dt,
+				    ds,
+				    v0_z[i - 1][j][k],
+				    v0_z[i][j][k],
+				    v0_z[i - 2][j][k],
+				    v0_z[i + 1][j][k],
+				    v0_x[i][j][k],
+				    v0_x[i][j][k + 1],
+				    v0_x[i][j][k - 1],
+				    v0_x[i][j][k + 2],
 				    place, ABCmethod);
 
       t0_yz[i][j][k] += staggardt4(muxyz,
 				    kappay2[j],
-				    kappaz2[k], DT,
-				    DS, v0.z[i][j][k],
-				    v0.z[i][j + 1][k],
-				    v0.z[i][j - 1][k],
-				    v0.z[i][j + 2][k],
-				    v0.y[i][j][k],
-				    v0.y[i][j][k + 1],
-				    v0.y[i][j][k - 1],
-				    v0.y[i][j][k + 2],
+				    kappaz2[k], dt,
+				    ds, v0_z[i][j][k],
+				    v0_z[i][j + 1][k],
+				    v0_z[i][j - 1][k],
+				    v0_z[i][j + 2][k],
+				    v0_y[i][j][k],
+				    v0_y[i][j][k + 1],
+				    v0_y[i][j][k - 1],
+				    v0_y[i][j][k + 2],
 				    place, ABCmethod);
     }
 
@@ -243,26 +235,26 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
       b2 = kapx - 2. * mux / 3.;
 
       t0_xx[i][j][k] +=
-	DT * b2 * (phivyy[npml] +
+	dt * b2 * (phivyy[npml] +
 		   phivzz[npml]) +
-	DT * b1 * phivxx[npml];
+	dt * b1 * phivxx[npml];
       t0_yy[i][j][k] +=
-	DT * b2 * (phivxx[npml] +
+	dt * b2 * (phivxx[npml] +
 		   phivzz[npml]) +
-	DT * b1 * phivyy[npml];
+	dt * b1 * phivyy[npml];
       t0_zz[i][j][k] +=
-	DT * b2 * (phivxx[npml] +
+	dt * b2 * (phivxx[npml] +
 		   phivyy[npml]) +
-	DT * b1 * phivzz[npml];
+	dt * b1 * phivzz[npml];
 
       t0_xy[i][j][k] +=
-	DT * muy * (phivyx[npml] +
+	dt * muy * (phivyx[npml] +
 		    phivxy[npml]);
       t0_xz[i][j][k] +=
-	DT * muz * (phivzx[npml] +
+	dt * muz * (phivzx[npml] +
 		    phivxz[npml]);
       t0_yz[i][j][k] +=
-	DT * muxyz * (phivzy[npml] +
+	dt * muxyz * (phivzy[npml] +
 		      phivyz[npml]);
     }
     /* ************************************** */
@@ -308,62 +300,62 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 					   mux);
 
 	t0_xx[i][j][k] +=
-	  b1 * DT * ((9. / 8.) *
-		     (v0.x[i + 1][j][k] -
-		      v0.x[i][j][k])
+	  b1 * dt * ((9. / 8.) *
+		     (v0_x[i + 1][j][k] -
+		      v0_x[i][j][k])
 		     -
 		     (1. / 24.) *
-		     (v0.x[i + 2][j][k] -
-		      v0.x[i -
-			   1][j][k])) / (DS *
+		     (v0_x[i + 2][j][k] -
+		      v0_x[i -
+			   1][j][k])) / (ds *
 					 
 					 kappax2[i])
 	  +
-	  b2 * DT * ((9. / 8.) *
-		     (v0.y[i][j][k] -
-		      v0.y[i][j - 1][k])
+	  b2 * dt * ((9. / 8.) *
+		     (v0_y[i][j][k] -
+		      v0_y[i][j - 1][k])
 		     -
 		     (1. / 24.) *
-		     (v0.y[i][j + 1][k] -
-		      v0.y[i][j -
-			      2][k])) / (DS *
+		     (v0_y[i][j + 1][k] -
+		      v0_y[i][j -
+			      2][k])) / (ds *
 					 
 					 kappay[j]);
 
 	t0_yy[i][j][k] +=
-	  b1 * DT * ((9. / 8.) *
-		     (v0.y[i][j][k] -
-		      v0.y[i][j - 1][k])
+	  b1 * dt * ((9. / 8.) *
+		     (v0_y[i][j][k] -
+		      v0_y[i][j - 1][k])
 		     -
 		     (1. / 24.) *
-		     (v0.y[i][j + 1][k] -
-		      v0.y[i][j -
-			      2][k])) / (DS *
+		     (v0_y[i][j + 1][k] -
+		      v0_y[i][j -
+			      2][k])) / (ds *
 					 
 					 kappay[j])
 	  +
-	  b2 * DT * ((9. / 8.) *
-		     (v0.x[i + 1][j][k] -
-		      v0.x[i][j][k])
+	  b2 * dt * ((9. / 8.) *
+		     (v0_x[i + 1][j][k] -
+		      v0_x[i][j][k])
 		     -
 		     (1. / 24.) *
-		     (v0.x[i + 2][j][k] -
-		      v0.x[i -
-			   1][j][k])) / (DS *
+		     (v0_x[i + 2][j][k] -
+		      v0_x[i -
+			   1][j][k])) / (ds *
 					 
 					 kappax2[i]);
 
 	/* t0->xy computed like usual */
 	t0_xy[i][j][k] +=
-	  staggardt4(muy, un, un, DT, DS,
-		     v0.y[i - 1][j][k],
-		     v0.y[i][j][k],
-		     v0.y[i - 2][j][k],
-		     v0.y[i + 1][j][k],
-		     v0.x[i][j][k],
-		     v0.x[i][j + 1][k],
-		     v0.x[i][j - 1][k],
-		     v0.x[i][j + 2][k], place,
+	  staggardt4(muy, un, un, dt, ds,
+		     v0_y[i - 1][j][k],
+		     v0_y[i][j][k],
+		     v0_y[i - 2][j][k],
+		     v0_y[i + 1][j][k],
+		     v0_x[i][j][k],
+		     v0_x[i][j + 1][k],
+		     v0_x[i][j - 1][k],
+		     v0_x[i][j + 2][k], place,
 		     ABCmethod);
       }	/* end if k=1 */
       if (k == 2) {
@@ -400,15 +392,15 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 
 
 	  t0_xx[i][j][k] +=
-	    DT * b2 * (phivyy[npml] +
+	    dt * b2 * (phivyy[npml] +
 		       phivzz[npml]) +
-	    DT * b1 * phivxx[npml];
+	    dt * b1 * phivxx[npml];
 	  t0_yy[i][j][k] +=
-	    DT * b2 * (phivxx[npml] +
+	    dt * b2 * (phivxx[npml] +
 		       phivzz[npml]) +
-	    DT * b1 * phivyy[npml];
+	    dt * b1 * phivyy[npml];
 	  t0_xy[i][j][k] +=
-	    DT * muy * (phivyx[npml] +
+	    dt * muy * (phivyx[npml] +
 			phivxy[npml]);
 	}
 
