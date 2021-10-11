@@ -1,12 +1,61 @@
 #include <starpu.h>
 
 #include "../include/struct.h"
+#include "../include/new_compute_seismoment.h"
+#include "../include/new_compute_intermediates.h"
+#include "../include/new_compute_stress.h"
+#include "../include/new_compute_velo.h"
+
+struct starpu_codelet seis_moment_cl = {
+					.cpu_funcs = {seis_moment_task},
+					.nbuffers = 16,
+					.modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_R,
+						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+						  STARPU_R, STARPU_R, STARPU_R, STARPU_R},
+};
+
+struct starpu_codelet intermediates_cl = {
+					  .cpu_funcs = {compute_intermediates_task},
+					  .nbuffers = 39,
+					  .modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
+						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+						    STARPU_R, STARPU_R, STARPU_R},
+};
+
+struct starpu_codelet stress_cl = {
+				   .cpu_funcs = {compute_stress_task},
+				   .nbuffers = 30,
+				   .modes = {STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
+					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R}
+};
+
+struct starpu_codelet velo_cl = {
+				 .cpu_funcs = {compute_velo_task},
+				 .nbuffers = 48,
+				 .modes = {STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W, STARPU_W, STARPU_W,
+					   STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
+					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,}
+};
+
 
 void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 	       struct MEDIUM *MDM, struct STRESS *t0, struct VELOCITY *v0, struct PARAMETERS *PRM) {
 
   int i, j, k, index, neighboors, desc_index, current_neighboor;
   int i_block, j_block;
+  double time;
+  
   // starpu structures common to every iteration
   int nrows = PRM->mpmx + 4;
   int ncols = PRM->mpmy + 4; 
@@ -117,13 +166,14 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   int it;
   for (it = 0; it < PRM->tMax; it++) {
     // seismoment
+    time = PRM->dt * it;
     starpu_insert_task(&seis_moment_cl,
 		       STARPU_W, src_fx_handle, STARPU_W, src_fy_handle, STARPU_W, src_fz_handle,
 		       STARPU_R, src_vel_handle, STARPU_R, src_strike_handle, STARPU_R, src_dip_handle, STARPU_R, src_rake_handle,
 		       STARPU_R, src_xweight_handle, STARPU_R, src_yweight_handle, STARPU_R, src_zweight_handle,
 		       STARPU_R, src_insrc_handle, STARPU_R, src_ixhypo_handle, STARPU_R, src_iyhypo_handle, STARPU_R, src_izhypo_handle,
 		       STARPU_R, prm_i2imp_handle, STARPU_R, prm_j2jmp_handle,
-		       STARPU_VALUE, &(PRM->dt), sizeof(PRM->dt), STARPU_VALUE, &(PRM->ds), sizeof(PRM->ds),
+		       STARPU_VALUE, &time, STARPU_VALUE, &(PRM->dt), sizeof(PRM->dt), STARPU_VALUE, &(PRM->ds), sizeof(PRM->ds),
 		       &(SRC->dtbiem), sizeof(SRC->dtbiem), &(SRC->iDur), sizeof(SRC->iDur), &(SRC->iSrc), sizeof(SRC->iSrc),
 		       0);
 
@@ -289,7 +339,8 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
 			   STARPU_R, alphax_handle, STARPU_R, alphax2_handle, STARPU_R, alphay_handle, STARPU_R, alphay2_handle, STARPU_R, alphaz_handle, STARPU_R, alphaz2_handle,
 			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle, STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle,
-			   STARPU_R, ipml_handle, STARPU_R, src_fx_handle, STARPU_R, src_fy_handle, STARPU_R, src_fz_handle,
+			   STARPU_R, ipml_handle, STARPU_R, t0_xx_handle, STARPU_R, t0_yy_handle, STARPU_R, t0_zz_handle,
+			   STARPU_R, t0_xy_handle, STARPU_R, t0_xz_handle, STARPU_R, t0_yz_handle, STARPU_R, src_fx_handle, STARPU_R, src_fy_handle, STARPU_R, src_fz_handle,
 			   STARPU_VALUE, &i, sizeof(i),
 			   STARPU_VALUE, &j, sizeof(j),
 			   STARPU_VALUE, &first_npml, sizeof(first_npml),

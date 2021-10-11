@@ -7,7 +7,8 @@ LDLIBS += $(shell pkg-config --libs starpu-$(STARPU_VERSION))
 LDLIBS += -Wl,-rpath -Wl,$(shell pkg-config --variable=libdir starpu-$(STARPU_VERSION))
 
 PREFIX =./ondes3d
-OBJS = main.o IO.o alloAndInit.o alloAndInit_LayerModel.o nrutil.o computeVeloAndSource.o computeIntermediates.o codelets.o computeStress.o memory_dump.o new_allocation.o new_initialize.o
+OBJS = main.o IO.o alloAndInit.o alloAndInit_LayerModel.o nrutil.o computeVeloAndSource.o computeIntermediates.o codelets.o computeStress.o \
+       memory_dump.o main_loop.o new_compute_seismoment.o new_compute_intermediates.o new_compute_stress.o new_compute_velo.o
 HEADERS=include/struct.h include/options.h include/inlineFunctions.h
 
 
