@@ -1,18 +1,8 @@
 #include <starpu.h>
-#include "include/new_compute_velo.h"
 
-struct starpu_codelet velo_cl = {
-				 .cpu_funcs = {compute_velo_task},
-				 .nbuffers = 42,
-				 .modes = {STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W, STARPU_W, STARPU_W,
-					   STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,}
-};
-
+#include "../include/struct.h"
+#include "../include/inlineFunctions.h"
+#include "../include/new_compute_velo.h"
 
 void compute_velo_task(void *buffers[], void *cl_arg) {
 
@@ -21,15 +11,15 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
   double ***v0_y = (double ***)STARPU_BLOCK_GET_PTR(buffers[1]);
   double ***v0_z = (double ***)STARPU_BLOCK_GET_PTR(buffers[2]);
 
-  double *phitxxx = (float *)STARPU_VECTOR_GET_PTR(buffers[3]);
-  double *phitxyy = (float *)STARPU_VECTOR_GET_PTR(buffers[4]);
-  double *phitxzz = (float *)STARPU_VECTOR_GET_PTR(buffers[5]);
-  double *phitxyx = (float *)STARPU_VECTOR_GET_PTR(buffers[6]);
-  double *phityyy = (float *)STARPU_VECTOR_GET_PTR(buffers[7]);
-  double *phityzz = (float *)STARPU_VECTOR_GET_PTR(buffers[8]);
-  double *phitxzx = (float *)STARPU_VECTOR_GET_PTR(buffers[9]);
-  double *phityzy = (float *)STARPU_VECTOR_GET_PTR(buffers[10]);
-  double *phitzzz = (float *)STARPU_VECTOR_GET_PTR(buffers[11]);
+  double *phitxxx = (double *)STARPU_VECTOR_GET_PTR(buffers[3]);
+  double *phitxyy = (double *)STARPU_VECTOR_GET_PTR(buffers[4]);
+  double *phitxzz = (double *)STARPU_VECTOR_GET_PTR(buffers[5]);
+  double *phitxyx = (double *)STARPU_VECTOR_GET_PTR(buffers[6]);
+  double *phityyy = (double *)STARPU_VECTOR_GET_PTR(buffers[7]);
+  double *phityzz = (double *)STARPU_VECTOR_GET_PTR(buffers[8]);
+  double *phitxzx = (double *)STARPU_VECTOR_GET_PTR(buffers[9]);
+  double *phityzy = (double *)STARPU_VECTOR_GET_PTR(buffers[10]);
+  double *phitzzz = (double *)STARPU_VECTOR_GET_PTR(buffers[11]);
 
   int *k2ly0 = (int *)STARPU_VECTOR_GET_PTR(buffers[12]);
   int *k2ly2 = (int *)STARPU_VECTOR_GET_PTR(buffers[13]);
@@ -63,9 +53,16 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 
   int *ipml = (int *)STARPU_VECTOR_GET_PTR(buffers[38]);
 
-  double ***fx = (double ***)STARPU_BLOCK_GET_PTR(buffers[39]);
-  double ***fy = (double ***)STARPU_BLOCK_GET_PTR(buffers[40]);
-  double ***fz = (double ***)STARPU_BLOCK_GET_PTR(buffers[41]);
+  double ***t0_xx = (double ***)STARPU_BLOCK_GET_PTR(buffers[39]);
+  double ***t0_yy = (double ***)STARPU_BLOCK_GET_PTR(buffers[40]);
+  double ***t0_zz = (double ***)STARPU_BLOCK_GET_PTR(buffers[41]);
+  double ***t0_xy = (double ***)STARPU_BLOCK_GET_PTR(buffers[42]);
+  double ***t0_xz = (double ***)STARPU_BLOCK_GET_PTR(buffers[43]);
+  double ***t0_yz = (double ***)STARPU_BLOCK_GET_PTR(buffers[44]);
+
+  double ***fx = (double ***)STARPU_BLOCK_GET_PTR(buffers[45]);
+  double ***fy = (double ***)STARPU_BLOCK_GET_PTR(buffers[46]);
+  double ***fz = (double ***)STARPU_BLOCK_GET_PTR(buffers[47]);
 
   long int first_npml;
   int i, j, k, imp, jmp;
@@ -90,8 +87,6 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
   /*  */
   enum typePlace place;	/* What type of cell  */
   long int npml;		/* index in Absorbing Layer */
-  int i, j, k;		/* local position of the cell */
-  int imp, jmp;		/* global position of the cell (NB : kmp=k) */
   /* intermediates */
   double xdum, ydum, zdum;
   double phixdum, phiydum, phizdum;
@@ -121,7 +116,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
       v0_z[i][j][k] = 0.;
       continue;
     } else if (place == ABSORBINGLAYER || place == FREEABS) {
-      npml = ipml[i][j][k];
+      npml = ipml[k];
     }
 
     /*=====================================================*\
@@ -159,54 +154,54 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 				   kappay[j],
 				   kappaz[k], DT,
 				   DS,
-				   t0.xx[i - 1][j][k],
-				   t0.xx[i][j][k],
-				   t0.xx[i - 2][j][k],
-				   t0.xx[i + 1][j][k],
-				   t0.xy[i][j - 1][k],
-				   t0.xy[i][j][k],
-				   t0.xy[i][j - 2][k],
-				   t0.xy[i][j + 1][k],
-				   t0.xz[i][j][k - 1],
-				   t0.xz[i][j][k],
-				   t0.xz[i][j][k - 2],
-				   t0.xz[i][j][k + 1],
+				   t0_xx[i - 1][j][k],
+				   t0_xx[i][j][k],
+				   t0_xx[i - 2][j][k],
+				   t0_xx[i + 1][j][k],
+				   t0_xy[i][j - 1][k],
+				   t0_xy[i][j][k],
+				   t0_xy[i][j - 2][k],
+				   t0_xy[i][j + 1][k],
+				   t0_xz[i][j][k - 1],
+				   t0_xz[i][j][k],
+				   t0_xz[i][j][k - 2],
+				   t0_xz[i][j][k + 1],
 				   place, ABCmethod);
 
       v0_y[i][j][k] += staggardv4(by,
 				   kappax2[i],
 				   kappay2[j],
 				   kappaz[k], DT,
-				   DS, t0.xy[i][j][k],
-				   t0.xy[i + 1][j][k],
-				   t0.xy[i - 1][j][k],
-				   t0.xy[i + 2][j][k],
-				   t0.yy[i][j][k],
-				   t0.yy[i][j + 1][k],
-				   t0.yy[i][j - 1][k],
-				   t0.yy[i][j + 2][k],
-				   t0.yz[i][j][k - 1],
-				   t0.yz[i][j][k],
-				   t0.yz[i][j][k - 2],
-				   t0.yz[i][j][k + 1],
+				   DS, t0_xy[i][j][k],
+				   t0_xy[i + 1][j][k],
+				   t0_xy[i - 1][j][k],
+				   t0_xy[i + 2][j][k],
+				   t0_yy[i][j][k],
+				   t0_yy[i][j + 1][k],
+				   t0_yy[i][j - 1][k],
+				   t0_yy[i][j + 2][k],
+				   t0_yz[i][j][k - 1],
+				   t0_yz[i][j][k],
+				   t0_yz[i][j][k - 2],
+				   t0_yz[i][j][k + 1],
 				   place, ABCmethod);
 
       v0_z[i][j][k] += staggardv4(bz,
 				   kappax2[i],
 				   kappay[j],
 				   kappaz2[k], DT,
-				   DS, t0.xz[i][j][k],
-				   t0.xz[i + 1][j][k],
-				   t0.xz[i - 1][j][k],
-				   t0.xz[i + 2][j][k],
-				   t0.yz[i][j - 1][k],
-				   t0.yz[i][j][k],
-				   t0.yz[i][j - 2][k],
-				   t0.yz[i][j + 1][k],
-				   t0.zz[i][j][k],
-				   t0.zz[i][j][k + 1],
-				   t0.zz[i][j][k - 1],
-				   t0.zz[i][j][k + 2],
+				   DS, t0_xz[i][j][k],
+				   t0_xz[i + 1][j][k],
+				   t0_xz[i - 1][j][k],
+				   t0_xz[i + 2][j][k],
+				   t0_yz[i][j - 1][k],
+				   t0_yz[i][j][k],
+				   t0_yz[i][j - 2][k],
+				   t0_yz[i][j + 1][k],
+				   t0_zz[i][j][k],
+				   t0_zz[i][j][k + 1],
+				   t0_zz[i][j][k - 1],
+				   t0_zz[i][j][k + 2],
 				   place, ABCmethod);
     }		/* end REGULAR and ABSORBINGLAYER */
 
@@ -236,26 +231,26 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 				     kappay[j],
 				     kappaz[k],
 				     DT, DS,
-				     t0.xx[i -
+				     t0_xx[i -
 					   1][j][k],
-				     t0.xx[i][j][k],
-				     t0.xx[i -
+				     t0_xx[i][j][k],
+				     t0_xx[i -
 					   2][j][k],
-				     t0.xx[i +
+				     t0_xx[i +
 					   1][j][k],
-				     t0.xy[i][j -
+				     t0_xy[i][j -
 					      1][k],
-				     t0.xy[i][j][k],
-				     t0.xy[i][j -
+				     t0_xy[i][j][k],
+				     t0_xy[i][j -
 					      2][k],
-				     t0.xy[i][j +
+				     t0_xy[i][j +
 					      1][k],
-				     t0.xz[i][j][k -
+				     t0_xz[i][j][k -
 						 1],
-				     t0.xz[i][j][k],
-				     t0.xz[i][j][k -
+				     t0_xz[i][j][k],
+				     t0_xz[i][j][k -
 						 2],
-				     t0.xz[i][j][k +
+				     t0_xz[i][j][k +
 						 1],
 				     place, ABCmethod);
 
@@ -264,26 +259,26 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 				     kappay2[j],
 				     kappaz[k],
 				     DT, DS,
-				     t0.xy[i][j][k],
-				     t0.xy[i +
+				     t0_xy[i][j][k],
+				     t0_xy[i +
 					   1][j][k],
-				     t0.xy[i -
+				     t0_xy[i -
 					   1][j][k],
-				     t0.xy[i +
+				     t0_xy[i +
 					   2][j][k],
-				     t0.yy[i][j][k],
-				     t0.yy[i][j +
+				     t0_yy[i][j][k],
+				     t0_yy[i][j +
 					      1][k],
-				     t0.yy[i][j -
+				     t0_yy[i][j -
 					      1][k],
-				     t0.yy[i][j +
+				     t0_yy[i][j +
 					      2][k],
-				     t0.yz[i][j][k -
+				     t0_yz[i][j][k -
 						 1],
-				     t0.yz[i][j][k],
-				     t0.yz[i][j][k -
+				     t0_yz[i][j][k],
+				     t0_yz[i][j][k -
 						 2],
-				     t0.yz[i][j][k +
+				     t0_yz[i][j][k +
 						 1],
 				     place, ABCmethod);
 	/* v0->z */
@@ -381,21 +376,21 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
       phitxxx[npml] =
 	CPML4(vp, dumpx[i], alphax[i],
 	      kappax[i], phixdum, DS, DT,
-	      t0.xx[i - 1][j][k], t0.xx[i][j][k],
-	      t0.xx[i - 2][j][k],
-	      t0.xx[i + 1][j][k]);
+	      t0_xx[i - 1][j][k], t0_xx[i][j][k],
+	      t0_xx[i - 2][j][k],
+	      t0_xx[i + 1][j][k]);
       phitxyy[npml] =
 	CPML4(vp, dumpy[j], alphay[j],
 	      kappay[j], phiydum, DS, DT,
-	      t0.xy[i][j - 1][k], t0.xy[i][j][k],
-	      t0.xy[i][j - 2][k],
-	      t0.xy[i][j + 1][k]);
+	      t0_xy[i][j - 1][k], t0_xy[i][j][k],
+	      t0_xy[i][j - 2][k],
+	      t0_xy[i][j + 1][k]);
       phitxzz[npml] =
 	CPML4(vp, dumpz[k], alphaz[k],
 	      kappaz[k], phizdum, DS, DT,
-	      t0.xz[i][j][k - 1], t0.xz[i][j][k],
-	      t0.xz[i][j][k - 2],
-	      t0.xz[i][j][k + 1]);
+	      t0_xz[i][j][k - 1], t0_xz[i][j][k],
+	      t0_xz[i][j][k - 2],
+	      t0_xz[i][j][k + 1]);
       v0_x[i][j][k] +=
 	bx * DT * (phitxxx[npml] +
 		   phitxyy[npml] +
@@ -409,23 +404,23 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
       phitxyx[npml] =
 	CPML4(vpxy, dumpx2[i],
 	      alphax2[i], kappax2[i],
-	      phixdum, DS, DT, t0.xy[i][j][k],
-	      t0.xy[i + 1][j][k],
-	      t0.xy[i - 1][j][k],
-	      t0.xy[i + 2][j][k]);
+	      phixdum, DS, DT, t0_xy[i][j][k],
+	      t0_xy[i + 1][j][k],
+	      t0_xy[i - 1][j][k],
+	      t0_xy[i + 2][j][k]);
       phityyy[npml] =
 	CPML4(vpxy, dumpy2[j],
 	      alphay2[j], kappay2[j],
-	      phiydum, DS, DT, t0.yy[i][j][k],
-	      t0.yy[i][j + 1][k],
-	      t0.yy[i][j - 1][k],
-	      t0.yy[i][j + 2][k]);
+	      phiydum, DS, DT, t0_yy[i][j][k],
+	      t0_yy[i][j + 1][k],
+	      t0_yy[i][j - 1][k],
+	      t0_yy[i][j + 2][k]);
       phityzz[npml] =
 	CPML4(vpxy, dumpz[k], alphaz[k],
 	      kappaz[k], phizdum, DS, DT,
-	      t0.yz[i][j][k - 1], t0.yz[i][j][k],
-	      t0.yz[i][j][k - 2],
-	      t0.yz[i][j][k + 1]);
+	      t0_yz[i][j][k - 1], t0_yz[i][j][k],
+	      t0_yz[i][j][k - 2],
+	      t0_yz[i][j][k + 1]);
 
       v0_y[i][j][k] +=
 	by * DT * (phitxyx[npml] +
@@ -440,24 +435,24 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
       phitxzx[npml] =
 	CPML4(vpxz, dumpx2[i],
 	      alphax2[i], kappax2[i],
-	      phixdum, DS, DT, t0.xz[i][j][k],
-	      t0.xz[i + 1][j][k],
-	      t0.xz[i - 1][j][k],
-	      t0.xz[i + 2][j][k]);
+	      phixdum, DS, DT, t0_xz[i][j][k],
+	      t0_xz[i + 1][j][k],
+	      t0_xz[i - 1][j][k],
+	      t0_xz[i + 2][j][k]);
       phityzy[npml] =
 	CPML4(vpxz, dumpy[j], alphay[j],
 	      kappay[j], phiydum, DS, DT,
-	      t0.yz[i][j - 1][k], t0.yz[i][j][k],
-	      t0.yz[i][j - 2][k],
-	      t0.yz[i][j + 1][k]);
+	      t0_yz[i][j - 1][k], t0_yz[i][j][k],
+	      t0_yz[i][j - 2][k],
+	      t0_yz[i][j + 1][k]);
       if (place == ABSORBINGLAYER) {
 	phitzzz[npml] =
 	  CPML4(vpxz, dumpz2[k],
 		alphaz2[k], kappaz2[k],
-		phizdum, DS, DT, t0.zz[i][j][k],
-		t0.zz[i][j][k + 1],
-		t0.zz[i][j][k - 1],
-		t0.zz[i][j][k + 2]);
+		phizdum, DS, DT, t0_zz[i][j][k],
+		t0_zz[i][j][k + 1],
+		t0_zz[i][j][k - 1],
+		t0_zz[i][j][k + 2]);
       } else if (place == FREEABS && k == prm.zMax0 - 1) {	/* phitzzz = 0. since dz(tzz)==0 at Free Surface */
 	phitzzz[npml] = 0.;
       }
