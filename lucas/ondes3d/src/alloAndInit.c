@@ -186,7 +186,6 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
     icpu = XMIN - DELTA;
     PRM->i2imp_array = ivector(XMIN - DELTA, XMAX + 2 * DELTA + 2);
-
     for (j = 1; j <= PX; j++) {
 	for (i = 1; i <= PRM->mpmx_tab[j - 1]; i++) {
 	    PRM->i2imp_array[icpu] = i;
@@ -1863,97 +1862,34 @@ int DeallocateAll(int STATION_STEP,
     struct COMM_DIRECTION *com;
 
   /*** anelasticity ***/
-    if (ANLmethod == DAYandBRADLEY) {
-	free_d3tensor(ANL->ksixx, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->ksiyy, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->ksizz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->ksixy, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->ksixz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->ksiyz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-
-	free_d3tensor(ANL->fxx, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->fyy, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->fzz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->fxy, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->fxz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-	free_d3tensor(ANL->fyz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-
-	free_dvector(ANL->Qp0, 0, NLAYER - 1);
-	free_dvector(ANL->Qs0, 0, NLAYER - 1);
-	if (model == LAYER) {
-	    free_dvector(ANL->Qp2, 0, NLAYERINT - 1);
-	    free_dvector(ANL->Qs2, 0, NLAYERINT - 1);
-	}
-    } else if (ANLmethod == KRISTEKandMOCZO) {
-	free_d3tensor(ANL->ksilxx, -1, MPMX + 2, -1, MPMY + 2,
-		      ZMIN - DELTA, ZMAX0);
-	free_d3tensor(ANL->ksilyy, -1, MPMX + 2, -1, MPMY + 2,
-		      ZMIN - DELTA, ZMAX0);
-	free_d3tensor(ANL->ksilzz, -1, MPMX + 2, -1, MPMY + 2,
-		      ZMIN - DELTA, ZMAX0);
-	free_d3tensor(ANL->ksilxy, -1, MPMX + 2, -1, MPMY + 2,
-		      ZMIN - DELTA, ZMAX0);
-	free_d3tensor(ANL->ksilxz, -1, MPMX + 2, -1, MPMY + 2,
-		      ZMIN - DELTA, ZMAX0);
-	free_d3tensor(ANL->ksilyz, -1, MPMX + 2, -1, MPMY + 2,
-		      ZMIN - DELTA, ZMAX0);
-
-	free_dmatrix(ANL->ylmu, 1, 4, 0, NLAYER - 1);
-	free_dmatrix(ANL->ylkap, 1, 4, 0, NLAYER - 1);
-	free_dvector(ANL->wl, 1, 4);
-
-	free_dvector(ANL->Qp0, 0, NLAYER - 1);
-	free_dvector(ANL->Qs0, 0, NLAYER - 1);
+    if (ANLmethod == ANOTHER) {
+      free(ANL->q0);
+      free(ANL->amp);
 
 	if (model == LAYER) {
-	    free_dmatrix(ANL->ylmu2, 1, 4, 0, NLAYERINT - 1);
-	    free_dmatrix(ANL->ylkap2, 1, 4, 0, NLAYERINT - 1);
-
-	    free_dvector(ANL->Qp2, 0, NLAYERINT - 1);
-	    free_dvector(ANL->Qs2, 0, NLAYERINT - 1);
-	}
-
-    } else if (ANLmethod == ANOTHER) {
-	free_dvector(ANL->q0, 0, NLAYER - 1);
-	free_dvector(ANL->amp, 0, NLAYER - 1);
-
-	if (model == LAYER) {
-	    free_dvector(ANL->amp2, 0, NLAYERINT - 1);
+	  free(ANL);
 	}
     }				/* end anelasticities */
 
 
       /*** Velocity ***/
-    free_d3tensor(v0->x, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(v0->y, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(v0->z, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
+    free(v0->x);
+    free(v0->y);
+    free(v0->z);
 
   /*** Stress ***/
-    free_d3tensor(t0->xx, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(t0->yy, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(t0->zz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(t0->xy, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(t0->xz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    free_d3tensor(t0->yz, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-
+    free(t0->xx);
+    free(t0->yy);
+    free(t0->zz);
+    free(t0->xy);
+    free(t0->xz);
+    free(t0->yz);
 
   /*** Source ***/
-    free_ivector(SRC->ixhypo, 0, SRC->iSrc - 1);
-    free_ivector(SRC->iyhypo, 0, SRC->iSrc - 1);
-    free_ivector(SRC->izhypo, 0, SRC->iSrc - 1);
-    free_ivector(SRC->insrc, 0, SRC->iSrc - 1);
+    free(SRC->ixhypo);
+    free(SRC->iyhypo);
+    free(SRC->izhypo);
+    free(SRC->insrc);
 
     if (source == HISTFILE) {
 
@@ -1974,104 +1910,67 @@ int DeallocateAll(int STATION_STEP,
 
 
       /*** MEDIUM  ***/
-    if (model == GEOLOGICAL) {
-	free_i3tensor(MDM->imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		      ZMAX0);
-    }
-
-    free_dvector(MDM->laydep, 0, NLAYER - 1);
-    free_dvector(MDM->rho0, 0, NLAYER - 1);
-    free_dvector(MDM->mu0, 0, NLAYER - 1);
-    free_dvector(MDM->kap0, 0, NLAYER - 1);
+    free(MDM->laydep);
+    free(MDM->rho0);
+    free(MDM->mu0);
+    free(MDM->kap0);
 
     if (model == LAYER) {
-	free_dvector(MDM->rho2, 0, NLAYER - 1);
-	free_dvector(MDM->mu2, 0, NLAYER - 1);
-	free_dvector(MDM->kap2, 0, NLAYER - 1);
+      free(MDM->rho2);
+      free(MDM->mu2);
+      free(MDM->kap2);
     }				/* end if model */
 
       /*** Absorbing Boundary Condition ***/
-    free_i3tensor(ABC->ipml, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA,
-		  ZMAX0);
+    free(ABC->ipml);
 
-    free_dvector(ABC->dumpx, 1, MPMX);
-    free_dvector(ABC->dumpx2, 1, MPMX);
-    free_dvector(ABC->dumpy, 1, MPMY);
-    free_dvector(ABC->dumpy2, 1, MPMY);
-    free_dvector(ABC->dumpz, ZMIN - DELTA, ZMAX0);
-    free_dvector(ABC->dumpz2, ZMIN - DELTA, ZMAX0);
+    free(ABC->dumpx);
+    free(ABC->dumpx2);
+    free(ABC->dumpy);
+    free(ABC->dumpy2);
+    free(ABC->dumpz);
+    free(ABC->dumpz2);
 
     if (ABCmethod == CPML) {
 
-	free_dvector(ABC->phivxx, 1, NPMLV);
-	free_dvector(ABC->phivyy, 1, NPMLV);
-	free_dvector(ABC->phivzz, 1, NPMLV);
+	free(ABC->phivxx);
+	free(ABC->phivyy);
+	free(ABC->phivzz);
 
-	free_dvector(ABC->phivxy, 1, NPMLV);
-	free_dvector(ABC->phivyx, 1, NPMLV);
+	free(ABC->phivxy);
+	free(ABC->phivyx);
 
-	free_dvector(ABC->phivxz, 1, NPMLV);
-	free_dvector(ABC->phivzx, 1, NPMLV);
+	free(ABC->phivxz);
+	free(ABC->phivzx);
 
-	free_dvector(ABC->phivyz, 1, NPMLV);
-	free_dvector(ABC->phivzy, 1, NPMLV);
+	free(ABC->phivyz);
+	free(ABC->phivzy);
 
-	free_dvector(ABC->phitxxx, 1, NPMLT);
-	free_dvector(ABC->phitxyy, 1, NPMLT);
-	free_dvector(ABC->phitxzz, 1, NPMLT);
+	free(ABC->phitxxx);
+	free(ABC->phitxyy);
+	free(ABC->phitxzz);
 
-	free_dvector(ABC->phitxyx, 1, NPMLT);
-	free_dvector(ABC->phityyy, 1, NPMLT);
-	free_dvector(ABC->phityzz, 1, NPMLT);
+	free(ABC->phitxyx);
+	free(ABC->phityyy);
+	free(ABC->phityzz);
 
-	free_dvector(ABC->phitxzx, 1, NPMLT);
-	free_dvector(ABC->phityzy, 1, NPMLT);
-	free_dvector(ABC->phitzzz, 1, NPMLT);
+	free(ABC->phitxzx);
+	free(ABC->phityzy);
+	free(ABC->phitzzz);
 
-	free_dvector(ABC->kappax, 1, MPMX);
-	free_dvector(ABC->kappax2, 1, MPMX);
-	free_dvector(ABC->kappay, 1, MPMY);
-	free_dvector(ABC->kappay2, 1, MPMY);
-	free_dvector(ABC->kappaz, ZMIN - DELTA, ZMAX0);
-	free_dvector(ABC->kappaz2, ZMIN - DELTA, ZMAX0);
+	free(ABC->kappax);
+	free(ABC->kappax2);
+	free(ABC->kappay);
+	free(ABC->kappay2);
+	free(ABC->kappaz);
+	free(ABC->kappaz2);
 
-	free_dvector(ABC->alphax, 1, MPMX);
-	free_dvector(ABC->alphax2, 1, MPMX);
-	free_dvector(ABC->alphay, 1, MPMY);
-	free_dvector(ABC->alphay2, 1, MPMY);
-	free_dvector(ABC->alphaz, ZMIN - DELTA, ZMAX0);
-	free_dvector(ABC->alphaz2, ZMIN - DELTA, ZMAX0);
-
-    } else if (ABCmethod == PML) {
-	free_dvector(ABC->vxx, 1, NPMLV);
-	free_dvector(ABC->vyy, 1, NPMLV);
-	free_dvector(ABC->vzz, 1, NPMLV);
-	free_dvector(ABC->vxy, 1, NPMLV);
-	free_dvector(ABC->vxz, 1, NPMLV);
-	free_dvector(ABC->vyz, 1, NPMLV);
-
-	free_dvector(ABC->txxx, 1, NPMLT);
-	free_dvector(ABC->txxy, 1, NPMLT);
-	free_dvector(ABC->txxz, 1, NPMLT);
-
-	free_dvector(ABC->tyyx, 1, NPMLT);
-	free_dvector(ABC->tyyy, 1, NPMLT);
-	free_dvector(ABC->tyyz, 1, NPMLT);
-
-	free_dvector(ABC->tzzx, 1, NPMLT);
-	free_dvector(ABC->tzzy, 1, NPMLT);
-	free_dvector(ABC->tzzz, 1, NPMLT);
-
-	free_dvector(ABC->txyx, 1, NPMLT);
-	free_dvector(ABC->txyy, 1, NPMLT);
-
-	free_dvector(ABC->txzx, 1, NPMLT);
-	free_dvector(ABC->txzz, 1, NPMLT);
-
-	free_dvector(ABC->tyzy, 1, NPMLT);
-	free_dvector(ABC->tyzz, 1, NPMLT);
-    }
-
+	free(ABC->alphax);
+	free(ABC->alphax2);
+	free(ABC->alphay);
+	free(ABC->alphay2);
+	free(ABC->alphaz);
+	free(ABC->alphaz2);
 
       /*** Communications ***/
     for (step = 1; step <= 4; step++) {
@@ -2085,66 +1984,61 @@ int DeallocateAll(int STATION_STEP,
 	if (step == 4)
 	    com = WEST;
 
-	free_dvector(com->bufV0S, 0, 3 * com->nmax - 1);
-	free_dvector(com->bufV0R, 0, 3 * com->nmax - 1);
+	free(com->bufV0S);
+	free(com->bufV0R);
 
-	free_dvector(com->bufT0S, 0, 6 * com->nmax - 1);
-	free_dvector(com->bufT0R, 0, 6 * com->nmax - 1);
+	free(com->bufT0S);
+	free(com->bufT0R);
 
-	if (ANLmethod == KRISTEKandMOCZO) {
-	    free_dvector(com->bufKsiS, 0, 6 * com->nmax - 1);
-	    free_dvector(com->bufKsiR, 0, 6 * com->nmax - 1);
-	}
 	/* remove mapping */
 	com = NULL;
     }
 
 
   /*** parameters ***/
-    free_ivector(PRM->imp2i_array, -1, MPMX + 2);
-    free_ivector(PRM->jmp2j_array, -1, MPMY + 2);
+    free(PRM->imp2i_array);
+    free(PRM->jmp2j_array);
 
-    free_ivector(PRM->i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2);
-    free_ivector(PRM->j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2);
+    free(PRM->i2imp_array);
+    free(PRM->j2jmp_array);
 
-    free_ivector(PRM->i2icpu_array, XMIN - DELTA, XMAX + 2 * DELTA + 2);
-    free_ivector(PRM->j2jcpu_array, YMIN - DELTA, YMAX + 2 * DELTA + 2);
+    free(PRM->i2icpu_array);
+    free(PRM->j2jcpu_array);
 
   /*** OUTPUTS ***/
     /* seismogramms */
-    free_ivector(OUT->ixobs, 0, OUT->iObs - 1);
-    free_ivector(OUT->iyobs, 0, OUT->iObs - 1);
-    free_ivector(OUT->izobs, 0, OUT->iObs - 1);
+    free(OUT->ixobs);
+    free(OUT->iyobs);
+    free(OUT->izobs);
 
-    free_dvector(OUT->xobs, 0, OUT->iObs - 1);
-    free_dvector(OUT->yobs, 0, OUT->iObs - 1);
-    free_dvector(OUT->zobs, 0, OUT->iObs - 1);
+    free(OUT->xobs);
+    free(OUT->yobs);
+    free(OUT->zobs);
 
-    free_ivector(OUT->nobs, 0, OUT->iObs - 1);
-    free_ivector(OUT->ista, 0, OUT->iObs - 1);
+    free(OUT->nobs);
+    free(OUT->ista);
 
-    free_dvector(OUT->xobswt, 0, OUT->iObs - 1);
-    free_dvector(OUT->yobswt, 0, OUT->iObs - 1);
-    free_dvector(OUT->zobswt, 0, OUT->iObs - 1);
+    free(OUT->xobswt);
+    free(OUT->yobswt);
+    free(OUT->zobswt);
 
-    free_imatrix(OUT->mapping_seis, 0, OUT->iObs - 1, 1, 9);
-    free_d3tensor(OUT->seis_output, 0, STATION_STEP - 1, 0, OUT->iObs - 1,
-		  1, 9);
-    free_dvector(OUT->seis_buff, 0, STATION_STEP - 1);
+    free(OUT->mapping_seis);
+    freer(OUT->seis_output);
+    free(OUT->seis_buff);
 
     /* velocity planes */
-    free_dvector(OUT->snapBuff, 1, OUT->test_size);
+    free(OUT->snapBuff);
     if (snapType == ODISPL || snapType == OBOTH) {
-	free_d3tensor(OUT->Uxy, 1, 3, -1, MPMX + 2, -1, MPMY + 2);
-	free_d3tensor(OUT->Uxz, 1, 3, -1, MPMX + 2, ZMIN - DELTA, ZMAX0);
-	free_d3tensor(OUT->Uyz, 1, 3, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
+	free(OUT->Uxy);
+	free(OUT->Uxz);
+	free(OUT->Uyz);
     }
     OUT->Vxglobal = NULL;	/* already free */
     OUT->Vyglobal = NULL;
     OUT->Vzglobal = NULL;
     /* partition domain related */
-    free_ivector(PRM->mpmx_tab, 0, PRM->px - 1);
-    free_ivector(PRM->mpmy_tab, 0, PRM->py - 1);
+    free(PRM->mpmx_tab);
+    free(PRM->mpmy_tab);
 
 
     return EXIT_SUCCESS;
