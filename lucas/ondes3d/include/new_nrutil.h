@@ -1,5 +1,7 @@
 #define NR_END 0
 
+#define i3access(p, nrl, nrh, ncl, nch, ndl, ndh, i, j, k)  p[i*(nch-ncl)*(ndh-ndl)+j*(ndh-ndl)+k]
+
 static float sqrarg;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
 

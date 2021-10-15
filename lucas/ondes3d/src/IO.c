@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "../include/nrutil.h"
+#include "../include/new_nrutil.h"
 #include "../include/struct.h"
 #include "../include/inlineFunctions.h"
 #include "../include/options.h"
@@ -145,7 +145,7 @@ int ReadTopo(struct PARAMETERS *PRM, const char *topoFile, const int np)
 
 /////////////////////////////////
 //      Read Parameter File
-/////////////////////////////////       
+/////////////////////////////////
 
 
 
@@ -760,12 +760,12 @@ int ReadSrc(struct SOURCE *SRC, struct PARAMETERS PRM)
 	    SRC->slip[is] = 0.;
 
 	    for (it = 0; it < SRC->iDur; it++) {
-		if (1 != fscanf(fp2, "%lf", &(SRC->vel[is][it])))
+		if (1 != fscanf(fp2, "%lf", &(SRC->vel[is * (SRC->iDur - 1) + it])))
 		    return EXIT_FAILURE;
-		SRC->slip[is] += SRC->vel[is][it] * SRC->dtbiem;
-		SRC->vel[is][it] =
+		SRC->slip[is] += SRC->vel[is * (SRC->iDur - 1) + it] * SRC->dtbiem;
+		SRC->vel[is * (SRC->iDur - 1) + it] =
 		    (SRC->dsbiem / DS) * (SRC->dsbiem / DS) *
-		    SRC->vel[is][it] / DS;
+		    SRC->vel[is * (SRC->iDur - 1) + it] / DS;
 	    }
 	    SRC->mo += SRC->slip[is];
 	}			/* end of is (source) */
@@ -814,6 +814,8 @@ int ReadStation(struct OUTPUTS *OUT, struct PARAMETERS PRM,
     const int ZMAX = PRM.zMax;
     const int ZMAX0 = PRM.zMax0;
     const int DELTA = PRM.delta;
+    const int MPMX = PRM.mpmx;
+    const int MPMY = PRM.mpmy;
     const double DS = PRM.ds;
     double ori;
 
@@ -906,7 +908,7 @@ int ReadStation(struct OUTPUTS *OUT, struct PARAMETERS PRM,
 			OUT->izobs[ir] = ZMAX;
 
 			for (k = ZMAX; k >= ZMIN - (PRM.delta); k--) {
-			    i1 = MDM.imed[imp][jmp][k];
+			    i1 = i3access(MDM.imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0, imp, jmp, k);
 			    if (i1 <= MDM.numSea)
 				OUT->izobs[ir] = OUT->izobs[ir] - 1;
 			}
@@ -989,7 +991,7 @@ int ReadStation(struct OUTPUTS *OUT, struct PARAMETERS PRM,
 
 /////////////////////////////////
 //      Read Geology File
-/////////////////////////////////       
+/////////////////////////////////
 
 
 
@@ -1029,12 +1031,14 @@ int ReadGeoFile(struct MEDIUM *MDM, struct PARAMETERS PRM)
     }
 
     MDM->imed = i3tensor(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
+
     for (imp = -1; imp <= MPMX + 2; imp++) {
-	for (jmp = -1; jmp <= MPMY + 2; jmp++) {
-	    for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-		MDM->imed[imp][jmp][k] = 999;	/* initial value */
-	    }
-	}
+    	for (jmp = -1; jmp <= MPMY + 2; jmp++) {
+    	    for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
+              i3access(MDM->imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0, imp, jmp, k) = 999;
+    		      //MDM->imed[imp][jmp][k] = 999;	/* initial value */
+    	    }
+    	}
     }
 
     if (PRM.me == 0)
@@ -1147,7 +1151,8 @@ int ReadGeoFile(struct MEDIUM *MDM, struct PARAMETERS PRM)
 		if (flagi == 1 && flagj == 1) {
 		    for (i1 = 0; i1 < MDM->nLayer; i1++) {
 			if (strcmp(MDM->name_mat[i1], prop_name) == 0) {
-			    MDM->imed[imp][jmp][k] = i1;
+			    //MDM->imed[imp][jmp][k] = i1;
+          i3access(MDM->imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0, imp, jmp, k) = i1;
 			}	/* end of if */
 
 		    }		/* end of i1 */
@@ -1164,7 +1169,8 @@ int ReadGeoFile(struct MEDIUM *MDM, struct PARAMETERS PRM)
 	for (imp = -1; imp <= MPMX + 2; imp++) {
 	    for (jmp = -1; jmp <= MPMY + 2; jmp++) {
 		for (k = nz; k <= ZMAX; k++) {
-		    MDM->imed[imp][jmp][k] = NUM_VOID;
+		    //MDM->imed[imp][jmp][k] = NUM_VOID;
+        i3access(MDM->imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0, imp, jmp, k) = NUM_VOID;
 		}
 	    }
 	}
@@ -1185,9 +1191,9 @@ int ReadGeoFile(struct MEDIUM *MDM, struct PARAMETERS PRM)
 		    j = PRM.jmp2j_array[jmp];
 		    place = WhereAmI(i, j, k, PRM);
 		    if (place == REGULAR && ((k - 1) * PRM.ds + PRM.z0 < 0.) &&	/* should be replaced by a function? */
-			MDM->imed[imp][jmp][k] == NUM_VOID) {
+			i3access(MDM->imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0, imp, jmp, k) == NUM_VOID) {
 
-			MDM->imed[imp][jmp][k] = NUM_SEA;
+			i3access(MDM->imed, -1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0, imp, jmp, k) = NUM_SEA;
 		    }		/* end if */
 
 		}
@@ -1283,7 +1289,7 @@ int OutSeismogramsbis(struct OUTPUTS OUT, struct PARAMETERS PRM, int ir,
 
 
 ///////////////////////////////////////////
-//      Write Seismograms File 
+//      Write Seismograms File
 //////////////////////////////////////////
 #ifdef OUTSTD
 int OutSeismograms(struct OUTPUTS OUT, struct PARAMETERS PRM, int ir,
@@ -1513,12 +1519,12 @@ int IOsurfhelper1(double ***v, int flag, int outvel, int outdisp,
 		}
 	    } else if (outdisp == 1) {
 
-		if (flag == 1)
-		    OUT.snapBuff[imp] = OUT.Uxy[1][i][j];
-		if (flag == 2)
-		    OUT.snapBuff[imp] = OUT.Uxy[2][i][j];
-		if (flag == 3)
-		    OUT.snapBuff[imp] = OUT.Uxy[3][i][j];
+		//if (flag == 1)
+		    //OUT.snapBuff[imp] = OUT.Uxy[1][i][j];
+		//if (flag == 2)
+		    //OUT.snapBuff[imp] = OUT.Uxy[2][i][j];
+		//if (flag == 3)
+		    //OUT.snapBuff[imp] = OUT.Uxy[3][i][j];
 
 	    }
 
@@ -1552,12 +1558,12 @@ int IOsurfhelper2(double ***v, int flag, int outvel, int outdisp,
 	    if (outvel == 1) {
 		OUT.snapBuff[imp] = v[i][jmp_tmp][k];
 	    } else if (outdisp == 1) {
-		if (flag == 1)
-		    OUT.snapBuff[imp] = OUT.Uxz[1][i][k];
-		if (flag == 2)
-		    OUT.snapBuff[imp] = OUT.Uxz[2][i][k];
-		if (flag == 3)
-		    OUT.snapBuff[imp] = OUT.Uxz[3][i][k];
+		//if (flag == 1)
+		    //OUT.snapBuff[imp] = OUT.Uxz[1][i][k];
+		//if (flag == 2)
+		    //OUT.snapBuff[imp] = OUT.Uxz[2][i][k];
+		//if (flag == 3)
+		    //OUT.snapBuff[imp] = OUT.Uxz[3][i][k];
 
 
 	    }
@@ -1594,12 +1600,12 @@ int IOsurfhelper3(double ***v, int flag, int outvel, int outdisp,
 	    if (outvel == 1) {
 		OUT.snapBuff[imp] = v[imp_tmp][j][k];
 	    } else if (outdisp == 1) {
-		if (flag == 1)
-		    OUT.snapBuff[imp] = OUT.Uyz[1][j][k];
-		if (flag == 2)
-		    OUT.snapBuff[imp] = OUT.Uyz[2][j][k];
-		if (flag == 3)
-		    OUT.snapBuff[imp] = OUT.Uyz[3][j][k];
+		//if (flag == 1)
+		    //OUT.snapBuff[imp] = OUT.Uyz[1][j][k];
+		//if (flag == 2)
+		    //OUT.snapBuff[imp] = OUT.Uyz[2][j][k];
+		//if (flag == 3)
+		    //OUT.snapBuff[imp] = OUT.Uyz[3][j][k];
 
 	    }
 	}
@@ -1620,7 +1626,7 @@ int IOsurfhelper3(double ***v, int flag, int outvel, int outdisp,
 
 
 ////////////////////////////////////////////////////
-//      Write OBS NECDF File 
+//      Write OBS NECDF File
 ////////////////////////////////////////////////////
 
 int OutObsNetcdf(char *flname, int l, int ir, int TMAX, double dt,
@@ -2089,8 +2095,8 @@ int OutSurfNetcdf(char *flname, int d, int XMIN, int XMAX, int YMIN,
    }
 */
 
-    /* For multidimensional arrays, the last dimension varies fastest. 
-       Thus, row-order rather than column order is used for matrices. 
+    /* For multidimensional arrays, the last dimension varies fastest.
+       Thus, row-order rather than column order is used for matrices.
        We have to tranpose the matrices. */
 
     for (y = YMIN - d + 1; y <= YMAX + d + 1; y++) {
@@ -2252,7 +2258,7 @@ int ERR(int retval)
 
 ////////////////////////////////////
 //      Write Geological model
-///////////////////////////////////     
+///////////////////////////////////
 
 
 int OutGeol(struct MEDIUM MDM, struct OUTPUTS OUT, struct PARAMETERS PRM,
@@ -2305,7 +2311,8 @@ int OutGeol(struct MEDIUM MDM, struct OUTPUTS OUT, struct PARAMETERS PRM,
 		    i = PRM.imp2i_array[imp];
 		    xdum = X0 + (i - 1) * DS;
 
-		    med = MDM.imed[imp][jmp][k];
+		    //med = MDM.imed[imp][jmp][k];
+        med = i3access(MDM.imed, -1, PRM.mpmx + 2, -1, PRM.mpmy + 2, PRM.zMin - PRM.delta, PRM.zMax0, imp, jmp, k);
 		    vpdum = (double) (med);
 		    fwrite(&vpdum, sizeof(double), 1, fp5);
 		    vpdum =

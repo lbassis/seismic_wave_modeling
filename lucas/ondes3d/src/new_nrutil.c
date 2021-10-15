@@ -128,7 +128,7 @@ double *dvector(const long nl, const long nh)
 }
 
 double *dvector0(long nl, long nh)
-/* allocate a double vector with subscript range v[nl..nh] and 
+/* allocate a double vector with subscript range v[nl..nh] and
 initiate to 0 */
 {
     double *v;
@@ -173,7 +173,7 @@ double *dmatrix(long nrl, long nrh, long ncl, long nch)
 }
 
 double *dmatrix0(long nrl, long nrh, long ncl, long nch)
-/* allocate a double matrix with subscript range m[nrl..nrh][ncl..nch] 
+/* allocate a double matrix with subscript range m[nrl..nrh][ncl..nch]
 and initiate 0*/
 {
   long i, j, nrow = nrh - nrl + 1, ncol = nch - ncl + 1;
@@ -189,7 +189,7 @@ and initiate 0*/
 	m[(i)*(nch-ncl)+j] = 0.;
       }
     }
-    
+
     /* return pointer to array of pointers to rows */
     return m;
 }
@@ -263,7 +263,7 @@ int *i3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
 
 double *d3tensor0(long nrl, long nrh, long ncl, long nch, long ndl,
 		    long ndh)
-/* allocate a double 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh] 
+/* allocate a double 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh]
 and initiate 0*/
 {
     long i, j, k, nrow = nrh - nrl + 1, ncol = nch - ncl + 1, ndep =

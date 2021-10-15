@@ -51,7 +51,7 @@ static inline enum typePlace WhereAmI(int i, int j, int k,
 
     /* Descriptions :
      *  - domain not centered :  [xMin-DELTA:xMax+DELTA+2] x [yMin-DELTA:yMax+DELTA+2] x [zMin-DELTA:zMax+DELTA+2]
-     *  i0=i-1,j0=j-1,k0=k-1  (0 indicates real domain) 
+     *  i0=i-1,j0=j-1,k0=k-1  (0 indicates real domain)
      *  - the 2 last cells of the domain is considered in the border
      *  - CPML :  We do not compute the 2 last cells of the CPML (because of 4th Order approximation
      *  - Free surface :  We compute +1 cell on z axis if Free Surface
@@ -60,7 +60,7 @@ static inline enum typePlace WhereAmI(int i, int j, int k,
      *  xMin-DELTA-1 <= i0 <= xMax+DELTA+1
      *  (last cell of domain is not seen in this algorithm)
      *   xMin-DELTA+1 <= i0 <= xMax+DELTA-1       : CPML we remove the 2 cells
-     *   xMin-DELTA+2 <= i  <= xMax+DELTA   : Domain is not centered 
+     *   xMin-DELTA+2 <= i  <= xMax+DELTA   : Domain is not centered
      */
     /* I am OutSide */
     if (i < XMIN - DELTA || i > XMAX + DELTA + 2 ||
@@ -244,7 +244,7 @@ static inline double CornerXYZ_GeolInverse(double *field,
 	for (jdum = 0; jdum <= 1; jdum++) {
 	    for (kdum = 0; kdum <= 1; kdum++) {
 
-		med = MDM.imed[i + idum][j + jdum][k + kdum];
+		//med = MDM.imed[i + idum][j + jdum][k + kdum];
 		if (field[med] > PRECISION_INVERSE) {
 		    res += 1. / field[med];
 		} else {
@@ -267,7 +267,7 @@ static inline double CornerXYZ_Geol(double *field,
 	for (jdum = 0; jdum <= 1; jdum++) {
 	    for (kdum = 0; kdum <= 1; kdum++) {
 
-		med = MDM.imed[i + idum][j + jdum][k + kdum];
+		//med = MDM.imed[i + idum][j + jdum][k + kdum];
 
 		res += field[med];
 

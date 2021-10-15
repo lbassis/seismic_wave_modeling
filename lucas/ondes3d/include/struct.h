@@ -17,11 +17,11 @@ static const double REFLECT = 0.001;
  * name el; : el is the global variable "name"
  * name *ptr; : ptr is a pointer on this global variable (in fact it should not be really defined );
  *
- * so for each file, you have a global variable "name" which should be volatile 
+ * so for each file, you have a global variable "name" which should be volatile
  * (because others functions in others file can modify this variable "name"
  *
  * better approach is to use : struct name{ }; where you only define a structure and not a name
- * 
+ *
  * Infos available on :
  * http://testincprogrammingandembeddedsystem.com/volatile.html
  * [french] http://cpp.developpez.com/cours/cpp/?page=page_5 (3.1.6 and 3.2)
@@ -81,8 +81,8 @@ struct SOURCE {
     double *fy;
     double *fz;
 
-    /*   /\* to test if it speed up computation ? *\/ 
-       double  *pxx;  double  *pyy;   double  *pzz;  
+    /*   /\* to test if it speed up computation ? *\/
+       double  *pxx;  double  *pyy;   double  *pzz;
        double   *pxy;  double  *pyz;   double  *pxz;  */
 };
 
@@ -148,7 +148,7 @@ enum typeInterface { USUAL, KMINTERFACE };
 struct MEDIUM {
   /** to find the index medium **/
     /* model == GEOLOGICAL */
-    int ***imed;		/* medium ( model == GEOLOGICAL) */
+    int *imed;		/* medium ( model == GEOLOGICAL) */
     int numVoid;		/* number of medium for the air */
     int numSea;			/* number of medium for the sea */
     char **name_mat;
@@ -357,8 +357,8 @@ struct OUTPUTS {
     double *zobswt;		/* weight on the stations */
 
     int *mapping_seis;		/* store the CPU index containing the station.
-				 * first index = index of station, 
-				 * second index = 1-3 : v0, 4-9 : t0 
+				 * first index = index of station,
+				 * second index = 1-3 : v0, 4-9 : t0
 				 */
     double *seis_output;	/* contains the seismogramms (output) */
     double *seis_buff;		/* buffer to communicate seismograms */

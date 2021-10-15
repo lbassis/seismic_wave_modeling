@@ -41,7 +41,7 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
        hence the global size is XMAX+DELTA+2-XMIN+DELTA+1
        we part this domain */
 
-    /* Découpage : 1rst way */
+    /* Dï¿½coupage : 1rst way */
 
 /**************************************************************************/
 //#if (DECOUP1)
@@ -64,9 +64,9 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
   for ( i = 0; i <= (PY-1); i++){ PRM->mpmy_tab[i] = mpmy ; }
 */
-//#endif /* fin du premier découpage */
+//#endif /* fin du premier dï¿½coupage */
 
-    /* Découpage : 2nd way */
+    /* Dï¿½coupage : 2nd way */
 
 /************************************************************************/
 //#if (DECOUP2)
@@ -115,9 +115,9 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 	printf(" Reduce the number of processes used \n");
 	exit(0);
     }
-//#endif /* fin du deuxième découpage */
+//#endif /* fin du deuxiï¿½me dï¿½coupage */
 /********************************************************************/
-    /* Fin du découpage */
+    /* Fin du dï¿½coupage */
 
     /* Allocate output matrix */
 
@@ -334,7 +334,7 @@ int AllocateFields(struct VELOCITY *v0,
 	    j = PRM.jmp2j_array[jmp];
 	    for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
 	      TENSOR_POSITION(ABC->ipml, imp, jmp, k, -1, -1, MPMY+2, ZMIN-DELTA, ZMAX0) = -1;
-	      
+
 		place = WhereAmI(i, j, k, PRM);
 		if (place == ABSORBINGLAYER || place == FREEABS) {
 		    ABC->npmlv += 1;
@@ -698,7 +698,7 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
 			/* Warning :
 			 * each cpu have 2 cells of communications for each direction. [-1,0] and [mpm{x/y}+1,mpm{x/y}+2]
 			 * Meanwhile, i2cpu_array/i2imp_array give only 1 possibility ( the other one may be the cells of communication ).
-			 * So if it don't match exactly, we try to use those cells, even if it is not quite robust. 
+			 * So if it don't match exactly, we try to use those cells, even if it is not quite robust.
 			 * ( the 10 minimum cells for each CPU should prevents some cases for some "DELTA")
 			 * A more robust method should be to make communications.
 			 */
@@ -748,8 +748,9 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
 			/* ========== */
 			/* ALLOCATE   */
 			/* ========== */
-			MDM->imed[imp][jmp][k] = MDM->imed[impN][jmpN][kN];
-
+			//MDM->imed[imp][jmp][k] = MDM->imed[impN][jmpN][kN];
+      i3access(MDM->imed, -1, PRM.mpmx + 2, -1, PRM.mpmy + 2, PRM.zMin - PRM.delta, PRM.zMax0, imp, jmp, k) = \
+      i3access(MDM->imed, -1, PRM.mpmx + 2, -1, PRM.mpmy + 2, PRM.zMin - PRM.delta, PRM.zMax0, impN, jmpN, kN);
 		    }		/* end if no regular */
 
 		}		/* end for k */
@@ -790,7 +791,7 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
 	ABC->alphaz2 = dvector(ZMIN - DELTA, ZMAX0);
     }
   /*** Compute PML coefficients  ***/
-    /* We compute the PML domain 
+    /* We compute the PML domain
        /* NB : when ABCmethod == PML, CompABCCoef will ignore alphai, kappai arguments */
 
  /*** initialize oefficients like you were in regular domain ***/
@@ -1010,7 +1011,8 @@ int InitializeGeol(struct OUTPUTS *OUT,
 
 			OUT->izobs[ir] = ZMAX0;
 			for (k = ZMAX0; k >= ZMIN - DELTA; k--) {
-			    i1 = MDM.imed[imp][jmp][k];
+			    //i1 = MDM.imed[imp][jmp][k];
+          i1 = i3access(MDM.imed, -1, PRM.mpmx + 2, -1, PRM.mpmy + 2, PRM.zMin - PRM.delta, PRM.zMax0, imp, jmp, k);
 			    if (sea == NOSEA && i1 != NVOID) {
 				OUT->izobs[ir] = k;
 				break;
@@ -1190,13 +1192,13 @@ double CompYlkap(double Ylalpha, double Ylbeta, double kap, double mu,
 //       rank = coords[0] + coords[1]*px */
 //
 //    /* For info :
-//     * Vx component  : i, j 
-//     * Vy component  : i2, j2 
-//     * Vz component  : i2, j 
+//     * Vx component  : i, j
+//     * Vy component  : i2, j2
+//     * Vz component  : i2, j
 //     * Tii component : i2, j
 //     * Txy component : i, j2
-//     * Txz component : i, j 
-//     * Tyz component : i2, j2 
+//     * Txz component : i, j
+//     * Tyz component : i2, j2
 //     */
 //
 //    for (ir = 0; ir < OUT->iObs; ir++) {
@@ -1479,6 +1481,6 @@ int DeallocateAll(int STATION_STEP,
     free(PRM->mpmx_tab);
     free(PRM->mpmy_tab);
 
-    
+
     return EXIT_SUCCESS;
 }
