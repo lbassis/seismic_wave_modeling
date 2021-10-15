@@ -112,15 +112,15 @@ int allocateABC(struct ABSORBING_BOUNDARY_CONDITION **ABCs, struct PARAMETERS PR
   const int ZMAX0 = PRM.zMax0;
   const int DELTA = PRM.delta;
   const int BLOCK_SIZE = PRM.block_size;
-  
+
   /* others */
   int i, i2, j, j2, k, imp, jmp, block_index;
   int nb_blocks_x = ceil((float)(XMAX - XMIN + 2 * DELTA + 3)/BLOCK_SIZE);
   int nb_blocks_y = ceil((float)(YMAX - YMIN + 2 * DELTA + 3)/BLOCK_SIZE);
   enum typePlace place;
-  
+
   *ABCs = malloc(nb_blocks_x * nb_blocks_y * sizeof(struct ABSORBING_BOUNDARY_CONDITION));
-  
+
   for (i = 0; i < nb_blocks_y; i++) {
     for (j = 0; j < nb_blocks_x; j++) {
       block_index = i*nb_blocks_x + j;
@@ -198,6 +198,6 @@ int AllocateFields2(struct VELOCITY **velocities,
   allocateStress(stresses, PRM);
   allocateABC(ABC, PRM);
   allocateMedium(MDM, PRM);
-  	   
+
   return (EXIT_SUCCESS);
 }

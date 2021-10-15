@@ -17,8 +17,18 @@ void dump_tensors(struct VELOCITY *velocity, struct STRESS *stress, struct ABSOR
   for (i = -1; i <= MPMX; i++) {
     for (j = -1; j <= MPMY; j++) {
       for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-	fprintf(out, "%f %f %f %f %f %f %f %f %f %d\n", velocity->x[i][j][k], velocity->y[i][j][k], velocity->z[i][j][k], stress->xx[i][j][k],
-		stress->yy[i][j][k], stress->zz[i][j][k], stress->xy[i][j][k], stress->xz[i][j][k], stress->yz[i][j][k], abc->ipml[i][j][k]);
+
+	fprintf(out, "%f %f %f %f %f %f %f %f %f %d\n", i3access(velocity->x, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(velocity->y, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(velocity->z, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(stress->xx, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+		i3access(stress->yy, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(stress->zz, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(stress->xy, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(stress->xz, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(stress->yz, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k),
+    i3access(abc->ipml, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k)
+        );
       }
     }
   }
@@ -27,7 +37,7 @@ void dump_tensors(struct VELOCITY *velocity, struct STRESS *stress, struct ABSOR
   for (i = 1; i <= MPMX; i++) {
     for (j = 1; j <= MPMY; j++) {
       for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-	fprintf(out, "%d", abc->ipml[i][j][k]);
+	fprintf(out, "%d", i3access(abc->ipml, -1, PRM.block_size + 2, -1, PRM.block_size + 2, PRM.zMin - PRM.delta, PRM.zMax0, i, j, k));
       }
     }
   }
@@ -41,7 +51,7 @@ void dump_vectors(struct ABSORBING_BOUNDARY_CONDITION *abc, struct MEDIUM *mdm, 
   const int DELTA = PRM.delta;
 
   int i;
-  
+
   for (i = 1; i <= abc->npmlv; i++) {
     fprintf(out, "%f %f %f %f %f %f %f %f %f\n", abc->phivxx[i], abc->phivxy[i], abc->phivxz[i], abc->phivyx[i],
 	    abc->phivyy[i], abc->phivyz[i], abc->phivzx[i], abc->phivzy[i], abc->phivzz[i]);
