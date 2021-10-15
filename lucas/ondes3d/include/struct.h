@@ -29,19 +29,19 @@ static const double REFLECT = 0.001;
 
 /*** T0 ***/
 struct STRESS {
-    double ***xx;
-    double ***yy;
-    double ***zz;
-    double ***xy;
-    double ***xz;
-    double ***yz;
+    double *xx;
+    double *yy;
+    double *zz;
+    double *xy;
+    double *xz;
+    double *yz;
 };
 
 /*** V0 ***/
 struct VELOCITY {
-    double ***x;
-    double ***y;
-    double ***z;
+    double *x;
+    double *y;
+    double *z;
 };
 
 /*** SRC ***/
@@ -76,10 +76,10 @@ struct SOURCE {
     double *xweight;
     double *yweight;
     double *zweight;
-    double **vel;
-    double ***fx;
-    double ***fy;
-    double ***fz;
+    double *vel;
+    double *fx;
+    double *fy;
+    double *fz;
 
     /*   /\* to test if it speed up computation ? *\/ 
        double  *pxx;  double  *pyy;   double  *pzz;  
@@ -177,7 +177,7 @@ struct ABSORBING_BOUNDARY_CONDITION {
     double reflect;
     int npmlv;			/* numbers of cell in ABC */
     int npmlt;
-    int ***ipml;		/* index in the PML */
+    int *ipml;		/* index in the PML */
 
     double *dumpx;
     double *dumpy;
@@ -356,11 +356,11 @@ struct OUTPUTS {
     double *yobswt;
     double *zobswt;		/* weight on the stations */
 
-    int **mapping_seis;		/* store the CPU index containing the station.
+    int *mapping_seis;		/* store the CPU index containing the station.
 				 * first index = index of station, 
 				 * second index = 1-3 : v0, 4-9 : t0 
 				 */
-    double ***seis_output;	/* contains the seismogramms (output) */
+    double *seis_output;	/* contains the seismogramms (output) */
     double *seis_buff;		/* buffer to communicate seismograms */
 
     /* velocity planes */
@@ -372,7 +372,7 @@ struct OUTPUTS {
     double **PGVlocal;		// PGV
     double **PGVglobal;		//PGV
     long int test_size;
-    double ***Uxy, ***Uyz, ***Uxz;	/* displacement, for snapType==SNAPDISPL */
+    double *Uxy, *Uyz, *Uxz;	/* displacement, for snapType==SNAPDISPL */
     /* partition domain related */
     long int total_prec_x;
     long int total_prec_y;

@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "../include/nrutil.h"
+#include "../include/new_nrutil.h"
 #include "../include/struct.h"
 
 #define MALLOC_CHECK_ 1
@@ -186,7 +186,7 @@ and initiate 0*/
 
     for (i = 0; i < nrow; i++) {
       for (j = 0; j < ncol; j++) {
-	t[(i)*(nch-ncl)+j] = 0.;
+	m[(i)*(nch-ncl)+j] = 0.;
       }
     }
     
@@ -271,7 +271,7 @@ and initiate 0*/
     double *t;
 
     /* allocate pointers to pointers to rows */
-    t = (double *) calloc((nrow*ncol*ndepth), (size_t) (sizeof(double)));
+    t = (double *) calloc((nrow*ncol*ndep), (size_t) (sizeof(double)));
     if (!t)
 	nrerror("allocation failure 1 in f3tensor()");
 

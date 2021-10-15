@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "../include/nrutil.h"
+#include "../include/new_nrutil.h"
 #include "../include/struct.h"
 #include "../include/inlineFunctions.h"
 #include "../include/options.h"
@@ -80,7 +80,6 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
 
     mpmx_tmp1 = (double) (XMAX - XMIN + 2 * DELTA + 3) / (double) PX;
-    printf("o px eh %d\n", PX);
     PRM->mpmx = floor(mpmx_tmp1);
     MPMX = PRM->mpmx;
 
@@ -334,12 +333,12 @@ int AllocateFields(struct VELOCITY *v0,
 	for (jmp = -1; jmp <= MPMY + 2; jmp++) {
 	    j = PRM.jmp2j_array[jmp];
 	    for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-		ABC->ipml[imp][jmp][k] = -1;
-
+	      TENSOR_POSITION(ABC->ipml, imp, jmp, k, -1, -1, MPMY+2, ZMIN-DELTA, ZMAX0) = -1;
+	      
 		place = WhereAmI(i, j, k, PRM);
 		if (place == ABSORBINGLAYER || place == FREEABS) {
 		    ABC->npmlv += 1;
-		    ABC->ipml[imp][jmp][k] = ABC->npmlv;
+		    TENSOR_POSITION(ABC->ipml, imp, jmp, k, -1, -1, MPMY+2, ZMIN-DELTA, ZMAX0) = ABC->npmlv;
 		}
 	    }
 	}
@@ -352,19 +351,7 @@ int AllocateFields(struct VELOCITY *v0,
 
     }
 
-    if (ABCmethod == PML) {
-	ABC->vxx = mydvector0(1, ABC->npmlv);
-	ABC->vxy = mydvector0(1, ABC->npmlv);
-	ABC->vxz = mydvector0(1, ABC->npmlv);
-	ABC->vyx = mydvector0(1, ABC->npmlv);
-	ABC->vyy = mydvector0(1, ABC->npmlv);
-	ABC->vyz = mydvector0(1, ABC->npmlv);
-	ABC->vzx = mydvector0(1, ABC->npmlv);
-	ABC->vzy = mydvector0(1, ABC->npmlv);
-	ABC->vzz = mydvector0(1, ABC->npmlv);
-
-
-    } else if (ABCmethod == CPML) {
+    if (ABCmethod == CPML) {
 
 	ABC->phivxx = mydvector0(1, ABC->npmlv);
 	ABC->phivxy = mydvector0(1, ABC->npmlv);
@@ -383,23 +370,7 @@ int AllocateFields(struct VELOCITY *v0,
     /* Stress */
     ABC->npmlt = ABC->npmlv;
 
-    if (ABCmethod == PML) {
-	ABC->txxx = mydvector0(1, ABC->npmlt);
-	ABC->tyyx = mydvector0(1, ABC->npmlt);
-	ABC->tzzx = mydvector0(1, ABC->npmlt);
-	ABC->txyx = mydvector0(1, ABC->npmlt);
-	ABC->txzx = mydvector0(1, ABC->npmlt);
-	ABC->txxy = mydvector0(1, ABC->npmlt);
-	ABC->tyyy = mydvector0(1, ABC->npmlt);
-	ABC->tzzy = mydvector0(1, ABC->npmlt);
-	ABC->txyy = mydvector0(1, ABC->npmlt);
-	ABC->tyzy = mydvector0(1, ABC->npmlt);
-	ABC->txxz = mydvector0(1, ABC->npmlt);
-	ABC->tyyz = mydvector0(1, ABC->npmlt);
-	ABC->tzzz = mydvector0(1, ABC->npmlt);
-	ABC->tyzz = mydvector0(1, ABC->npmlt);
-	ABC->txzz = mydvector0(1, ABC->npmlt);
-    } else if (ABCmethod == CPML) {
+    if (ABCmethod == CPML) {
 
 	ABC->phitxxx = mydvector0(1, ABC->npmlt);
 	ABC->phitxyy = mydvector0(1, ABC->npmlt);
@@ -412,51 +383,6 @@ int AllocateFields(struct VELOCITY *v0,
 	ABC->phitzzz = mydvector0(1, ABC->npmlt);
 
     }				/* end of if PML */
-
-#if (VERBOSE > 2)
-    fprintf(stderr, "\n ## ANELASTICITIES\n");
-#endif
-    if (ANLmethod == DAYandBRADLEY) {
-	ANL->ksixx =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksiyy =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksizz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksixy =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksixz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksiyz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-
-	ANL->fxx =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->fyy =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->fzz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->fxy =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->fxz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->fyz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-
-    } else if (ANLmethod == KRISTEKandMOCZO) {
-	ANL->ksilxx =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksilyy =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksilzz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksilxy =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksilxz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-	ANL->ksilyz =
-	    myd3tensor0(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    }				/* end of ANLmethod == KRISTEKandMOCZO */
 
 #if (VERBOSE > 2)
     fprintf(stderr, "## MEDIUM ");
@@ -509,11 +435,6 @@ int InitializeCOMM(struct COMM_DIRECTION *NORTH,	/* no segfault */
     NORTH->jMaxR = MPMY + 2;
     NORTH->bufV0R = mydvector0(0, (3 * NMAXY) - 1);
     NORTH->bufT0R = mydvector0(0, (6 * NMAXY) - 1);
-
-    if (ANLmethod == KRISTEKandMOCZO) {
-	NORTH->bufKsiS = mydvector0(0, (6 * NMAXY) - 1);
-	NORTH->bufKsiR = mydvector0(0, (6 * NMAXY) - 1);
-    }
 
     /* South */
     SOUTH->nmax = NMAXY;
@@ -1234,278 +1155,6 @@ int InitializeDayBradley(struct MEDIUM *MDM,
 
 
 
-
-/* =================================================== */
-/* INITIALIZE KRISTEK and MOCZO anelasticity method    */
-/* =================================================== */
-int InitializeKManelas(struct ANELASTICITY *ANL,
-		       struct MEDIUM *MDM, double dt)
-{
-    /* Ref : 
-     * Seismic-Wave Propagation in Viscoelastic media , 
-     * J.Kristek and P. Moczo,
-     * Bulletin of seismological society of america, vol. 93, No 5 pp 2273-2280, october 2003
-     */
-    /* Warning :
-     * the real system is not linear, but we consider it is.
-     */
-    /*  assert ( ANLmethod == KRISTEKandMOCZO ); */
-
-    const int n = 4;
-    const int kmax = 7;		/* = 2*n-1 */
-
-    int interfaceStep, intStepMax;
-    int step;
-
-    /* for mapping */
-    int NLAYER;
-    double *RHO, *KAP, *MU;
-    double *Qp, *Qs;
-    double **Ylkap;
-    double **Ylmu;
-
-    /* others */
-    int i;
-    int l, k, l1, l2, ly;
-    double val, dlogw;
-    double y[5], wl[5];
-    double ydum[5], q[8], wk[8];
-    double **a, **adum, **inv_adum;
-    double *d, *c, *ytk, *ytm;
-    double kapdum, mudum;
-
-    /* ALGORITHM */
-    /* 0 - some allocations
-       1- compute pulsations : wl and wk
-       2- depending on the "interface";
-       for ( interfaceStep )
-       allocation of Yl and mappings ;
-       for each layer
-       compute Ylalpha, Ylbeta ( step )
-       Ylaplha/beta -> Ylmu/kap;
-       compute new kap, mu and Ylmu/kap;
-       end 
-       end 
-     */
-
-    /* allocate */
-    ANL->wl = mydvector0(1, 4);
-    a = dmatrix(1, kmax, 1, n);
-
-    adum = dmatrix(1, n, 1, n);
-    inv_adum = dmatrix(1, n, 1, n);
-
-    /* Compute wl and wk */
-    wl[1] = ANL->wmin;
-    wl[n] = ANL->wmax;
-    dlogw = (log10(ANL->wmax) - log10(ANL->wmin)) / (n - 1);
-    for (l = 2; l < n; l++) {
-	wl[l] = pow(10., log10(ANL->wmin) + dlogw * (l - 1));
-    }
-
-    wk[1] = wl[1];
-    wk[kmax] = wl[n];
-    dlogw = (log10(ANL->wmax) - log10(ANL->wmin)) / (kmax - 1);
-    for (k = 2; k < kmax; k++) {
-	wk[k] = pow(10., log10(ANL->wmin) + dlogw * (k - 1));
-    }
-
-    ANL->wl[1] = wl[1];
-    ANL->wl[2] = wl[2];
-    ANL->wl[3] = wl[3];
-    ANL->wl[4] = wl[4];
-#if (VERBOSE > 2 )
-    printf("wl 1:%e 2:%e  3:%e 4:%e \n ",
-	   ANL->wl[1], ANL->wl[2], ANL->wl[3], ANL->wl[4]);
-#endif
-
-  /*=== Compute yl and other coefficients ===*/
-    if (model == GEOLOGICAL) {
-	intStepMax = 1;
-    } else if (model == USUAL) {
-	intStepMax = 2;
-    }
-
-    for (interfaceStep = 0; interfaceStep < intStepMax; interfaceStep++) {
-    /***  allocate and map ***/
-	if (interfaceStep == 0) {	/* layers */
-	    NLAYER = MDM->nLayer;
-	    MU = MDM->mu0;
-	    KAP = MDM->kap0;
-	    RHO = MDM->rho0;
-	    Qp = ANL->Qp0;
-	    Qs = ANL->Qs0;
-
-	    ANL->ylkap = mydmatrix0(1, 4, 0, NLAYER - 1);
-	    ANL->ylmu = mydmatrix0(1, 4, 0, NLAYER - 1);
-
-	    Ylkap = ANL->ylkap;
-	    Ylmu = ANL->ylmu;
-
-	} else if (interfaceStep == 1) {	/* interfaces */
-	    NLAYER = MDM->nLayer2;
-	    MU = MDM->mu2;
-	    KAP = MDM->kap2;
-	    RHO = MDM->rho2;
-	    Qp = ANL->Qp2;
-	    Qs = ANL->Qs2;
-
-	    ANL->ylkap2 = mydmatrix0(1, 4, 0, NLAYER - 1);
-	    ANL->ylmu2 = mydmatrix0(1, 4, 0, NLAYER - 1);
-
-	    Ylkap = ANL->ylkap2;
-	    Ylmu = ANL->ylmu2;
-	}
-
-      /**** Compute Ylalpha Ylbeta ***/
-	for (ly = 0; ly <= NLAYER - 1; ly++) {
-
-	    for (step = 1; step <= 2; step++) {	/* Compute: step1=>Ylalpha(Qp), step2=>Ylmu(Qs) */
-
-		/* initialise */
-		for (k = 1; k <= kmax; k++) {	/* we compute on Q^-1 */
-		    if (step == 1) {
-			q[k] = 1. / Qp[ly];
-		    } else if (step == 2) {
-			q[k] = 1. / Qs[ly];
-		    }
-
-		    for (l = 1; l <= n; l++) {	/* construct matrix */
-			a[k][l] =
-			    (wk[k] / wl[l] + q[k]) / (1 +
-						      (wk[k] / wl[l]) *
-						      (wk[k] / wl[l]));
-		    }
-		}
-
-		/* Linear inverse problem (Over-determined case) */
-		/* A Y = Q -> Y = (A^t A)^(-1) A^t Q */
-		/* We compute A^t A */
-		for (l1 = 1; l1 <= n; l1++) {
-		    for (l2 = 1; l2 <= n; l2++) {
-			adum[l1][l2] = 0.0;
-			for (k = 1; k <= kmax; k++) {
-			    adum[l1][l2] += a[k][l1] * a[k][l2];
-			}
-		    }
-		}
-
-		/* Inverse A^t A */
-		for (l1 = 1; l1 <= n; l1++) {
-		    for (l2 = 1; l2 <= n; l2++) {
-			if (l1 == l2)
-			    inv_adum[l1][l2] = 1.;
-			if (l1 != l2)
-			    inv_adum[l1][l2] = 0.;
-		    }
-		}
-		if (inv(adum, inv_adum, n) != EXIT_SUCCESS) {
-		    return EXIT_FAILURE;
-		}
-
-		/* We compute A^t y */
-		for (l1 = 1; l1 <= n; l1++) {
-		    ydum[l1] = 0.0;
-		    for (k = 1; k <= kmax; k++) {
-			ydum[l1] += a[k][l1] * q[k];
-		    }
-		}
-
-		for (l = 1; l <= n; l++) {
-		    y[l] = 0.0;
-		    for (k = 1; k <= n; k++) {
-			y[l] += inv_adum[l][k] * ydum[k];
-		    }
-		}
-
-#if (VERBOSE > 2 )
-		/* verify result */
-		for (l = 1; l <= n; l++) {
-		    printf("interfacestep %i step : %i l = %i  yl = %g\n",
-			   interfaceStep, step, l, y[l]);
-		}
-
-		for (k = 1; k <= kmax; k++) {
-		    double verif = 0.;
-		    for (l = 1; l <= n; l++) {
-
-			verif += a[k][l] * y[l];
-		    }
-		    verif = (verif - q[k]) / q[k];
-		    printf("residu %i  = %g \n", k, verif);
-		}
-#endif
-
-		if (step == 1) {	/* Qp */
-		    Ylkap[1][ly] = y[1];
-		    Ylkap[2][ly] = y[2];
-		    Ylkap[3][ly] = y[3];
-		    Ylkap[4][ly] = y[4];
-		} else if (step == 2) {	/* Qs */
-		    Ylmu[1][ly] = y[1];
-		    Ylmu[2][ly] = y[2];
-		    Ylmu[3][ly] = y[3];
-		    Ylmu[4][ly] = y[4];
-		}
-
-	    }			/* end for step ( compute Ylaplha, Ylbeta ) */
-
-
-
-      /*=== Ylalpha, Ylbeta => Ylkap , Ylmu ===*/
-	    for (i = 1; i <= 4; i++) {
-		Ylkap[i][ly] =
-		    CompYlkap(Ylkap[i][ly], Ylmu[i][ly], KAP[ly], MU[ly],
-			      RHO[ly]);
-	    }
-
-      /*=== compute de kappa~ ,mu~  ===*/
-	    double dum;
-	    dum = 0.;
-	    for (i = 1; i <= 4; i++) {
-		dum += ((wl[i] * dt) / (2. - wl[i] * dt)) * Ylkap[i][ly];
-	    }
-	    kapdum = KAP[ly] * (1. + dum);
-
-
-	    dum = 0.;
-	    for (i = 1; i <= 4; i++) {
-		dum += ((wl[i] * dt) / (2. - wl[i] * dt)) * Ylmu[i][ly];
-	    }
-	    mudum = MU[ly] * (1. + dum);
-
-      /*===  Ylkap, Ylmu => Ylkap~ , Ylmu~ ===*/
-	    for (i = 1; i <= 4; i++) {
-		Ylmu[i][ly] *= (2. / (2. - wl[i] * dt)) * MU[ly];
-	    }
-	    for (i = 1; i <= 4; i++) {
-		Ylkap[i][ly] *= (2. / (2. - wl[i] * dt)) * KAP[ly];
-	    }
-
-	    KAP[ly] = kapdum;
-	    MU[ly] = mudum;
-
-	}			/* end for ly */
-
-	/* remove mapping */
-	RHO = NULL;
-	MU = NULL;
-	KAP = NULL;
-	Qp = NULL;
-	Qs = NULL;
-
-	Ylkap = (double **) NULL;
-	Ylmu = (double **) NULL;
-
-    }				/* end for interfaceStep */
-
-    /* free local memory */
-    free_dmatrix(a, 1, n, 1, n);
-    free_dmatrix(adum, 1, n, 1, n);
-
-    return EXIT_SUCCESS;
-}
-
 /*  functions : Ylapha/beta to Ylkap and inverse a matrix */
 double CompYlkap(double Ylalpha, double Ylbeta, double kap, double mu,
 		 double rho)
@@ -1519,309 +1168,99 @@ double CompYlkap(double Ylalpha, double Ylbeta, double kap, double mu,
 							      beta_2);
 }
 
-int inv(double **M, double **invM, int XMAX)
-{				/* from Numerical recipies */
-    int i, j, k, n, l, ind;
-    double max;
-    double **auxM, **E, **aux;
 
-    auxM = dmatrix(1, XMAX, 1, XMAX);
-    E = dmatrix(1, XMAX, 1, XMAX);
-    aux = dmatrix(1, XMAX, 1, XMAX);
-
-    for (i = 1; i <= XMAX; i++) {
-	for (j = 1; j <= XMAX; j++) {
-	    auxM[i][j] = M[i][j];
-	}
-    }
-
-    for (n = 1; n <= XMAX - 1; n++) {
-
-	max = 0.0;
-	ind = n;
-	for (k = n; k <= XMAX; k++) {
-	    if (abs(M[k][n]) > abs(max)) {
-		max = M[k][n];
-		ind = k;
-	    }
-	}
-
-	if (ind != n) {
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    if (i == j)
-			E[i][j] = 1.;
-		    if (i != j)
-			E[i][j] = 0.;
-		}
-	    }
-
-	    E[ind][ind] -= 1.;
-	    E[n][n] -= 1.;
-	    E[ind][n] += 1.;
-	    E[n][ind] += 1.;
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    aux[i][j] = 0.;
-		    for (l = 1; l <= XMAX; l++) {
-			aux[i][j] += E[i][l] * auxM[l][j];
-		    }
-		}
-	    }
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    auxM[i][j] = aux[i][j];
-		}
-	    }
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    aux[i][j] = 0.;
-		    for (l = 1; l <= XMAX; l++) {
-			aux[i][j] += E[i][l] * invM[l][j];
-		    }
-		}
-	    }
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    invM[i][j] = aux[i][j];
-		}
-	    }
-
-	}
-
-	for (k = n + 1; k <= XMAX; k++) {
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    if (i == j)
-			E[i][j] = 1.;
-		    if (i != j)
-			E[i][j] = 0.;
-		}
-	    }
-
-	    E[k][n] -= auxM[k][n] / auxM[n][n];
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    aux[i][j] = 0.;
-		    for (l = 1; l <= XMAX; l++) {
-			aux[i][j] += E[i][l] * auxM[l][j];
-		    }
-		}
-	    }
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    auxM[i][j] = aux[i][j];
-		}
-	    }
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    aux[i][j] = 0.;
-		    for (l = 1; l <= XMAX; l++) {
-			aux[i][j] += E[i][l] * invM[l][j];
-		    }
-		}
-	    }
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    invM[i][j] = aux[i][j];
-		}
-	    }
-
-	}
-    }
-
-    for (n = XMAX; n >= 2; n--) {
-
-	for (k = n - 1; k >= 1; k--) {
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    if (i == j)
-			E[i][j] = 1.;
-		    if (i != j)
-			E[i][j] = 0.;
-		}
-	    }
-
-	    E[k][n] -= auxM[k][n] / auxM[n][n];
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    aux[i][j] = 0.;
-		    for (l = 1; l <= XMAX; l++) {
-			aux[i][j] += E[i][l] * auxM[l][j];
-		    }
-		}
-	    }
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    auxM[i][j] = aux[i][j];
-		}
-	    }
-
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    aux[i][j] = 0.;
-		    for (l = 1; l <= XMAX; l++) {
-			aux[i][j] += E[i][l] * invM[l][j];
-		    }
-		}
-	    }
-	    for (i = 1; i <= XMAX; i++) {
-		for (j = 1; j <= XMAX; j++) {
-		    invM[i][j] = aux[i][j];
-		}
-	    }
-
-	}
-    }
-
-    for (n = 1; n <= XMAX; n++) {
-
-	for (i = 1; i <= XMAX; i++) {
-	    for (j = 1; j <= XMAX; j++) {
-		if (i == j)
-		    E[i][j] = 1.;
-		if (i != j)
-		    E[i][j] = 0.;
-	    }
-	}
-
-	E[n][n] = 1. / auxM[n][n];
-
-	for (i = 1; i <= XMAX; i++) {
-	    for (j = 1; j <= XMAX; j++) {
-		aux[i][j] = 0.;
-		for (l = 1; l <= XMAX; l++) {
-		    aux[i][j] += E[i][l] * auxM[l][j];
-		}
-	    }
-	}
-	for (i = 1; i <= XMAX; i++) {
-	    for (j = 1; j <= XMAX; j++) {
-		auxM[i][j] = aux[i][j];
-	    }
-	}
-
-	for (i = 1; i <= XMAX; i++) {
-	    for (j = 1; j <= XMAX; j++) {
-		aux[i][j] = 0.;
-		for (l = 1; l <= XMAX; l++) {
-		    aux[i][j] += E[i][l] * invM[l][j];
-		}
-	    }
-	}
-	for (i = 1; i <= XMAX; i++) {
-	    for (j = 1; j <= XMAX; j++) {
-		invM[i][j] = aux[i][j];
-	    }
-	}
-
-    }
-    return EXIT_SUCCESS;
-}
-
-
-
-
-int InitializeOutputs(int STATION_STEP,
-		      struct OUTPUTS *OUT, struct PARAMETERS PRM)
-{
-    /* ===Seismograms related === */
-    int i, j, k;
-    int i2, j2, k2;
-    int ir;
-    int icpu, jcpu;
-    int icpu2, jcpu2;
-    int icpuEnd, jcpuEnd;
-    /* mapping */
-    const int PX = PRM.px;
-
-    OUT->mapping_seis = imatrix(0, OUT->iObs - 1, 1, 9);
-    OUT->seis_output =
-	myd3tensor0(0, STATION_STEP - 1, 0, OUT->iObs - 1, 1, 9);
-    OUT->seis_buff = mydvector0(0, STATION_STEP - 1);
-    /* mapping cpu X direction (coords[0]) then y direction (coords[1])
-       rank = coords[0] + coords[1]*px */
-
-    /* For info :
-     * Vx component  : i, j 
-     * Vy component  : i2, j2 
-     * Vz component  : i2, j 
-     * Tii component : i2, j
-     * Txy component : i, j2
-     * Txz component : i, j 
-     * Tyz component : i2, j2 
-     */
-
-    for (ir = 0; ir < OUT->iObs; ir++) {
-	if (OUT->ista[ir] == 1) {
-
-	    i = OUT->ixobs[ir];
-	    j = OUT->iyobs[ir];
-	    icpu = PRM.i2icpu_array[i];
-	    jcpu = PRM.j2jcpu_array[j];
-
-	    if (OUT->xobswt[ir] >= 0.5) {
-		i2 = i;
-	    } else {
-		i2 = i - 1;
-	    }
-	    if (OUT->yobswt[ir] >= 0.5) {
-		j2 = j;
-	    } else {
-		j2 = j - 1;
-	    }
-	    icpu2 = PRM.i2icpu_array[i2];
-	    jcpu2 = PRM.j2jcpu_array[j2];
-
-	    /* Vx component */
-	    OUT->mapping_seis[ir][1] = icpu + jcpu * PX;
-
-	    /* Vy component */
-	    OUT->mapping_seis[ir][2] = icpu2 + jcpu2 * PX;
-
-	    /* Vz component */
-	    OUT->mapping_seis[ir][3] = icpu2 + jcpu * PX;
-
-	    /* Tii component */
-
-	    OUT->mapping_seis[ir][4] = icpu2 + jcpu * PX;
-	    OUT->mapping_seis[ir][5] = icpu2 + jcpu * PX;
-	    OUT->mapping_seis[ir][6] = icpu2 + jcpu * PX;
-
-	    /* Txy component */
-	    OUT->mapping_seis[ir][7] = icpu2 + jcpu2 * PX;
-
-	    /* Txz component */
-	    OUT->mapping_seis[ir][8] = icpu + jcpu * PX;
-
-	    /* Tyz component */
-	    OUT->mapping_seis[ir][9] = icpu2 + jcpu2 * PX;
-
-	}			/* end of if ista */
-    }				/* end of ir */
-
-    /* ===Snapshots related === */
-    if (snapType == ODISPL || snapType == OBOTH) {
-	const int ZMIN = PRM.zMin;
-	const int ZMAX0 = PRM.zMax0;
-	const int DELTA = PRM.delta;
-	const int MPMX = PRM.mpmx;
-	const int MPMY = PRM.mpmy;
-
-	OUT->Uxy = myd3tensor0(1, 3, -1, MPMX + 2, -1, MPMY + 2);
-	OUT->Uxz = myd3tensor0(1, 3, -1, MPMX + 2, ZMIN - DELTA, ZMAX0);
-	OUT->Uyz = myd3tensor0(1, 3, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
-    }
-    return (EXIT_SUCCESS);
-}				/* end function */
+//int InitializeOutputs(int STATION_STEP,
+//		      struct OUTPUTS *OUT, struct PARAMETERS PRM)
+//{
+//    /* ===Seismograms related === */
+//    int i, j, k;
+//    int i2, j2, k2;
+//    int ir;
+//    int icpu, jcpu;
+//    int icpu2, jcpu2;
+//    int icpuEnd, jcpuEnd;
+//    /* mapping */
+//    const int PX = PRM.px;
+//
+//    OUT->mapping_seis = imatrix(0, OUT->iObs - 1, 1, 9);
+//    OUT->seis_output =
+//	myd3tensor0(0, STATION_STEP - 1, 0, OUT->iObs - 1, 1, 9);
+//    OUT->seis_buff = mydvector0(0, STATION_STEP - 1);
+//    /* mapping cpu X direction (coords[0]) then y direction (coords[1])
+//       rank = coords[0] + coords[1]*px */
+//
+//    /* For info :
+//     * Vx component  : i, j 
+//     * Vy component  : i2, j2 
+//     * Vz component  : i2, j 
+//     * Tii component : i2, j
+//     * Txy component : i, j2
+//     * Txz component : i, j 
+//     * Tyz component : i2, j2 
+//     */
+//
+//    for (ir = 0; ir < OUT->iObs; ir++) {
+//	if (OUT->ista[ir] == 1) {
+//
+//	    i = OUT->ixobs[ir];
+//	    j = OUT->iyobs[ir];
+//	    icpu = PRM.i2icpu_array[i];
+//	    jcpu = PRM.j2jcpu_array[j];
+//
+//	    if (OUT->xobswt[ir] >= 0.5) {
+//		i2 = i;
+//	    } else {
+//		i2 = i - 1;
+//	    }
+//	    if (OUT->yobswt[ir] >= 0.5) {
+//		j2 = j;
+//	    } else {
+//		j2 = j - 1;
+//	    }
+//	    icpu2 = PRM.i2icpu_array[i2];
+//	    jcpu2 = PRM.j2jcpu_array[j2];
+//
+//	    /* Vx component */
+//	    OUT->mapping_seis[ir][1] = icpu + jcpu * PX;
+//
+//	    /* Vy component */
+//	    OUT->mapping_seis[ir][2] = icpu2 + jcpu2 * PX;
+//
+//	    /* Vz component */
+//	    OUT->mapping_seis[ir][3] = icpu2 + jcpu * PX;
+//
+//	    /* Tii component */
+//
+//	    OUT->mapping_seis[ir][4] = icpu2 + jcpu * PX;
+//	    OUT->mapping_seis[ir][5] = icpu2 + jcpu * PX;
+//	    OUT->mapping_seis[ir][6] = icpu2 + jcpu * PX;
+//
+//	    /* Txy component */
+//	    OUT->mapping_seis[ir][7] = icpu2 + jcpu2 * PX;
+//
+//	    /* Txz component */
+//	    OUT->mapping_seis[ir][8] = icpu + jcpu * PX;
+//
+//	    /* Tyz component */
+//	    OUT->mapping_seis[ir][9] = icpu2 + jcpu2 * PX;
+//
+//	}			/* end of if ista */
+//    }				/* end of ir */
+//
+//    /* ===Snapshots related === */
+//    if (snapType == ODISPL || snapType == OBOTH) {
+//	const int ZMIN = PRM.zMin;
+//	const int ZMAX0 = PRM.zMax0;
+//	const int DELTA = PRM.delta;
+//	const int MPMX = PRM.mpmx;
+//	const int MPMY = PRM.mpmy;
+//
+//	OUT->Uxy = myd3tensor0(1, 3, -1, MPMX + 2, -1, MPMY + 2);
+//	OUT->Uxz = myd3tensor0(1, 3, -1, MPMX + 2, ZMIN - DELTA, ZMAX0);
+//	OUT->Uyz = myd3tensor0(1, 3, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
+//    }
+//    return (EXIT_SUCCESS);
+//}				/* end function */
 
 
 
@@ -1893,19 +1332,19 @@ int DeallocateAll(int STATION_STEP,
 
     if (source == HISTFILE) {
 
-	free_dvector(SRC->strike, 0, SRC->iSrc - 1);
-	free_dvector(SRC->dip, 0, SRC->iSrc - 1);
-	free_dvector(SRC->rake, 0, SRC->iSrc - 1);
-	free_dvector(SRC->slip, 0, SRC->iSrc - 1);
-	free_dvector(SRC->xweight, 0, SRC->iSrc - 1);
-	free_dvector(SRC->yweight, 0, SRC->iSrc - 1);
-	free_dvector(SRC->zweight, 0, SRC->iSrc - 1);
+      free(SRC->strike);
+	free(SRC->dip);
+	free(SRC->rake);
+	free(SRC->slip);
+	free(SRC->xweight);
+	free(SRC->yweight);
+	free(SRC->zweight);
 
-	free_dmatrix(SRC->vel, 0, SRC->iSrc - 1, 0, SRC->iDur - 1);
+	free(SRC->vel);
 
-	free_d3tensor(SRC->fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0);
-	free_d3tensor(SRC->fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0);
-	free_d3tensor(SRC->fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0);
+	free(SRC->fx);
+	free(SRC->fy);
+	free(SRC->fz);
     }
 
 
@@ -1971,7 +1410,7 @@ int DeallocateAll(int STATION_STEP,
 	free(ABC->alphay2);
 	free(ABC->alphaz);
 	free(ABC->alphaz2);
-
+    }
       /*** Communications ***/
     for (step = 1; step <= 4; step++) {
 	/* mapping */
@@ -2023,7 +1462,7 @@ int DeallocateAll(int STATION_STEP,
     free(OUT->zobswt);
 
     free(OUT->mapping_seis);
-    freer(OUT->seis_output);
+    free(OUT->seis_output);
     free(OUT->seis_buff);
 
     /* velocity planes */
@@ -2040,70 +1479,6 @@ int DeallocateAll(int STATION_STEP,
     free(PRM->mpmx_tab);
     free(PRM->mpmy_tab);
 
-
+    
     return EXIT_SUCCESS;
 }
-
-
-/* ################# TEST FUNCTIONS ################################# */
-#ifdef TEST
-int testInitializeKManelas(void)
-{
-    struct ANELASTICITY ANL;
-    struct MEDIUM MDM;
-
-    const double qp = 0.2, qs = 0.02, wmin = 0.1, wmax = 10.;
-    const int n = 4;
-    const int NLAYER = 2;
-    double *Yl1mu, *Yl2mu, *Yl3mu, *Yl4mu,
-	*Yl1kap, *Yl2kap, *Yl3kap, *Yl4kap,
-	*kapmat, *mumat, *Qp0, *Qs0, *rho0;
-    double wl1, wl2, wl3, wl4, dt;
-    int l, ly;
-    /* cstes */
-    /*  qs=0.02; /\* constant Q-inverse *\/ */
-    /*   qp=0.2; /\* constant Q-inverse *\/ */
-
-    ANL.wmin = wmin;
-    ANL.wmax = wmax;
-    dt = 0.0045;
-
-    /* Definition */
-    MDM.nLayer = NLAYER;
-    MDM.kap0 = dvector(0, NLAYER - 1);
-    MDM.mu0 = dvector(0, NLAYER - 1);
-    MDM.rho0 = dvector(0, NLAYER - 1);
-    ANL.Qp0 = dvector(0, NLAYER - 1);
-    ANL.Qs0 = dvector(0, NLAYER - 1);
-
-    for (ly = 0; ly <= NLAYER - 1; ly++) {
-	MDM.kap0[ly] = 1600 * (1125 * 1125 - 4 * 625 * 625 / 3);
-	MDM.mu0[ly] = 1600 * 625 * 625;
-	MDM.rho0[ly] = 2700.;
-	ANL.Qp0[ly] = 5;
-	ANL.Qs0[ly] = 50;
-    }
-    ANL.Qp0[0] = 10;
-    ANL.Qs0[0] = 100;
-    printf("mu  %15.3g kap %15.3f \n", MDM.mu0[0], MDM.kap0[0]);
-
-    InitializeKManelas(&ANL, &MDM, dt, USUAL);
-
-
-    /* sorties */
-    for (ly = 0; ly <= NLAYER - 1; ly++) {
-	printf("\n===== layer  %i ====== \n", ly);
-
-	printf("wl1 %15.3f yl1mu  %15.3f yl1kap %15.3f \n", ANL.wl1,
-	       ANL.yl1mu[ly], ANL.yl1kap[ly]);
-	printf("wl2 %15.3f yl2mu  %15.3f yl2kap %15.3f \n", ANL.wl2,
-	       ANL.yl2mu[ly], ANL.yl2kap[ly]);
-	printf("wl3 %15.3f yl3mu  %15.3f yl3kap %15.3f \n", ANL.wl3,
-	       ANL.yl3mu[ly], ANL.yl3kap[ly]);
-	printf("wl4 %15.3f yl4mu  %15.3f yl4kap %15.3f \n", ANL.wl4,
-	       ANL.yl4mu[ly], ANL.yl4kap[ly]);
-	printf("mu  %15.3f kap %15.3f \n", MDM.mu0[ly], MDM.kap0[ly]);
-    }
-
-}
-#endif				/* TEST */
