@@ -285,3 +285,15 @@ and initiate 0*/
     /* return pointer to array of pointers to rows */
     return t;
 }
+
+void free_dvector(double *v, long nl, long nh)
+/* free a double vector allocated with dvector() */
+{
+    free((FREE_ARG) (v + nl - NR_END));
+}
+
+void free_ivector(int *v, long nl, long nh)
+/* free an int vector allocated with ivector() */
+{
+    free((FREE_ARG) (v + nl - NR_END));
+}

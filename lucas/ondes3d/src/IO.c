@@ -2466,7 +2466,7 @@ char *FindField(const char *cs, const char *ct)
 	assert(EXIT_SUCCESS == EXIT_FAILURE);
 	return NULL;
     }
-    out = malloc((indexE - indexB + 1) * sizeof(char));
+    out = malloc((indexE - indexB + 5) * sizeof(char));
 
     strncpy(out, &cs[indexB], (indexE - indexB + 1) * sizeof(char));
     out[indexE - indexB] = '\0';

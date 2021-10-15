@@ -187,7 +187,8 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
     PRM->i2imp_array = ivector(XMIN - DELTA, XMAX + 2 * DELTA + 2);
     for (j = 1; j <= PX; j++) {
 	for (i = 1; i <= PRM->mpmx_tab[j - 1]; i++) {
-	    PRM->i2imp_array[icpu] = i;
+	    ivector_access(PRM->i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, icpu) = i;
+      //PRM->i2imp_array[icpu - (XMIN - DELTA)] = i;
 	    icpu++;
 	}
     }
@@ -200,7 +201,8 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
     for (j = 1; j <= PY; j++) {
 	for (i = 1; i <= PRM->mpmy_tab[j - 1]; i++) {
-	    PRM->j2jmp_array[jcpu] = i;
+	    //PRM->j2jmp_array[jcpu] = i;
+      ivector_access(PRM->j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, jcpu) = i;
 	    jcpu++;
 	}
     }
@@ -210,13 +212,15 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
     icpu = XMIN - DELTA;
     PRM->imp2i_array = ivector(-1, MPMX + 2);
     for (i = -1; i <= MPMX + 2; i++) {
-	PRM->imp2i_array[i] = XMIN - DELTA + OUT->total_prec_x + i - 1;
+	//PRM->imp2i_array[i] = XMIN - DELTA + OUT->total_prec_x + i - 1;
+  ivector_access(PRM->imp2i_array, -1, MPMX + 2, i) = XMIN - DELTA + OUT->total_prec_x + i - 1;
     }
 
     jcpu = YMIN - DELTA;
     PRM->jmp2j_array = ivector(-1, MPMY + 2);
     for (i = -1; i <= MPMY + 2; i++)
-	PRM->jmp2j_array[i] = YMIN - DELTA + OUT->total_prec_y + i - 1;
+	//PRM->jmp2j_array[i] = YMIN - DELTA + OUT->total_prec_y + i - 1;
+  ivector_access(PRM->jmp2j_array, -1, MPMY + 2, i) = YMIN - DELTA + OUT->total_prec_y + i - 1;
 
     /* On veut s affranchir des anciennes fonctions i2icpu
        En fait i2icpu ne doit pas renvoyer le rang mais les coordonnees abs et ord
@@ -233,8 +237,8 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
     for (j = 0; j <= (PX - 1); j++) {
 	for (i = 1; i <= PRM->mpmx_tab[j]; i++) {
-	    PRM->i2icpu_array[idebut] = j;
-
+	    //PRM->i2icpu_array[idebut] = j;
+      ivector_access(PRM->i2icpu_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, idebut) = j;
 	    idebut++;
 	}
     }
@@ -248,7 +252,8 @@ int InitPartDomain(struct PARAMETERS *PRM, struct OUTPUTS *OUT)
 
     for (j = 0; j <= (PY - 1); j++) {
 	for (i = 1; i <= PRM->mpmy_tab[j]; i++) {
-	    PRM->j2jcpu_array[jdebut] = j;
+	    //PRM->j2jcpu_array[jdebut] = j;
+      ivector_access(PRM->j2jcpu_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, jdebut) = j;
 	    jdebut++;
 	}
     }
@@ -329,7 +334,8 @@ int AllocateFields(struct VELOCITY *v0,
     ABC->ipml = i3tensor(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
 
     for (imp = -1; imp <= MPMX + 2; imp++) {
-	i = PRM.imp2i_array[imp];
+	//i = PRM.imp2i_array[imp];
+  i = ivector_access(PRM.imp2i_array, -1, MPMX + 2, imp);
 	for (jmp = -1; jmp <= MPMY + 2; jmp++) {
 	    j = PRM.jmp2j_array[jmp];
 	    for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
@@ -647,7 +653,8 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
     if (model == GEOLOGICAL) {
 
 	for (imp = -1; imp <= MPMX + 2; imp++) {
-	    i = PRM.imp2i_array[imp];
+	    //i = PRM.imp2i_array[imp];
+      i = ivector_access(PRM.imp2i_array, -1, MPMX + 2, imp);
 	    for (jmp = -1; jmp <= MPMY + 2; jmp++) {
 		j = PRM.jmp2j_array[jmp];
 		for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
@@ -707,13 +714,13 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
 			if (PRM.coords[0] == icpu) {	/* I am the right  cpu */
 			    impN = PRM.i2imp_array[iN];
 			} else {	/* Try to correct */
-			    if (iN == PRM.imp2i_array[-1]) {
+			    if (iN == ivector_access(PRM.imp2i_array, -1, MPMX + 2, -1)) {
 				impN = -1;
-			    } else if (iN == PRM.imp2i_array[0]) {
+      } else if (iN == ivector_access(PRM.imp2i_array, -1, MPMX + 2, 0)) {
 				impN = 0;
-			    } else if (iN == PRM.imp2i_array[MPMX + 1]) {
+      } else if (iN == ivector_access(PRM.imp2i_array, -1, MPMX + 2, MPMX + 1)) {
 				impN = MPMX + 1;
-			    } else if (iN == PRM.imp2i_array[MPMX + 2]) {
+      } else if (iN == ivector_access(PRM.imp2i_array, -1, MPMX + 2, MPMX + 2)) {
 				impN = MPMX + 2;
 			    } else {
 				printf
@@ -831,7 +838,8 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
     xoriginleft = XMIN * DS;
     xoriginright = XMAX * DS;
     for (imp = 1; imp <= MPMX; imp++) {
-	i = PRM.imp2i_array[imp];
+	//i = PRM.imp2i_array[imp];
+  i = ivector_access(PRM.imp2i_array, -1, MPMX + 2, imp);
 	xval = DS * (i - 1);
 
 	if (i <= XMIN + 1) {	/* For the left side */

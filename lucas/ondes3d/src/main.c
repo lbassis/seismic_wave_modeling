@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   int nb_blocks_x, nb_blocks_y, block_size;
   int i, j, block_index;
   double time;
-  
+
   struct PARAMETERS PRM = { 0 };
   struct MEDIUM MDM = { 0 };
   struct ANELASTICITY ANL = { 0 };
@@ -48,13 +48,13 @@ int main(int argc, char *argv[]) {
     printf("Erro inicializando StarPU\n");
     return -1;
   }
-  
+
   PRM.px = 1;
   PRM.py = 1;
   VerifFunction(ReadPrmFile(&PRM, &MDM, &ABC, &ANL, &OUT, PRMFILE), "read parameter file ", PRM);
 
   VerifFunction(InitPartDomain(&PRM, &OUT), "split domain MPI", PRM);
-  
+
   if (model == GEOLOGICAL) {
     VerifFunction(ReadGeoFile(&MDM, PRM), "read geological file", PRM);
   }
@@ -64,13 +64,13 @@ int main(int argc, char *argv[]) {
   if (model == LAYER) {
     VerifFunction(InitLayerModel(&MDM, &ANL, PRM), "initialize layer model", PRM);
   }
-  
+
   /* in the absorbing layers */
   VerifFunction(InitializeABC(&ABC, &MDM, &ANL, PRM), "initilize absorbing boundaries ", PRM);
 
   /* Allocation output */
-  VerifFunction(InitializeOutputs(STATION_STEP, &OUT, PRM),
-		" MapSeismograms", PRM);
+  //VerifFunction(InitializeOutputs(STATION_STEP, &OUT, PRM),
+	//	" MapSeismograms", PRM);
   VerifFunction(EXIT_SUCCESS, "Beginning of the iteration", PRM);
 
   main_loop(&SRC, &ABC, &MDM, &t0, &v0, &PRM);

@@ -1,6 +1,9 @@
 #define NR_END 0
+#define FREE_ARG char*
 
-#define i3access(p, nrl, nrh, ncl, nch, ndl, ndh, i, j, k)  p[i*(nch-ncl)*(ndh-ndl)+j*(ndh-ndl)+k]
+#define i3access(p, nrl, nrh, ncl, nch, ndl, ndh, i, j, k)  p[(i)*((nch)-(ncl))*((ndh)-(ndl))+(j)*((ndh)-(ndl))+(k)]
+
+#define ivector_access(p, nl, nh, i)  p[(i) - (nl) + NR_END]
 
 static float sqrarg;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
