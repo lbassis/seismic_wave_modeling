@@ -2,15 +2,17 @@
 #include <math.h>
 
 #include "../include/inlineFunctions.h"
+#include "../include/new_nrutil.h"
 #include "../include/new_compute_seismoment.h"
 
 void seis_moment_task(void *buffers[], void *cl_arg) {
 
+  printf("seis moment task\n");
   // unpack structures
-  double ***fx = (double ***)STARPU_BLOCK_GET_PTR(buffers[0]);
-  double ***fy = (double ***)STARPU_BLOCK_GET_PTR(buffers[1]);
-  double ***fz = (double ***)STARPU_BLOCK_GET_PTR(buffers[2]);
-  double **vel = (double **)STARPU_MATRIX_GET_PTR(buffers[3]);
+  double *fx = (double *)STARPU_BLOCK_GET_PTR(buffers[0]);
+  double *fy = (double *)STARPU_BLOCK_GET_PTR(buffers[1]);
+  double *fz = (double *)STARPU_BLOCK_GET_PTR(buffers[2]);
+  double *vel = (double *)STARPU_MATRIX_GET_PTR(buffers[3]);
   double *strike = (double *)STARPU_VECTOR_GET_PTR(buffers[4]);
   double *dip = (double *)STARPU_VECTOR_GET_PTR(buffers[5]);
   double *rake = (double *)STARPU_VECTOR_GET_PTR(buffers[6]);
@@ -26,8 +28,25 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
 
   int iDur, iSrc, dtbiem;
   double time, ds, dt;
-  starpu_codelet_unpack_args(cl_arg, &time, &ds, &dt, &iDur, &iSrc);
+  struct PARAMETERS prm;
+  starpu_codelet_unpack_args(cl_arg, &time, &prm, &iDur, &iSrc);
 
+  const int XMIN = prm.xMin;
+  const int XMAX = prm.xMax;
+  const int YMIN = prm.yMin;
+  const int YMAX = prm.yMax;
+  const int ZMIN = prm.zMin;
+  const int ZMAX = prm.zMax;
+  const int ZMAX0 = prm.zMax0;
+  const int DELTA = prm.delta;
+
+  const int MPMX = prm.mpmx;
+  const int MPMY = prm.mpmy;
+
+  ds = prm.ds;
+  dt = prm.dt;
+
+  printf("pegou tudo\n");
   // computeseismoment
   int it, is, iw;
   int i, j, k;
@@ -41,7 +60,7 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
   if (it < iDur) {
     for (is = 0; is < iSrc; is++) {
       if (insrc[is] == 1) {
-	mo = vel[is][it] * dt;
+	mo = vel[is*iSrc+it] * dt;
 	pxx = radxx(strike[is], dip[is], rake[is]);
 	pyy = radyy(strike[is], dip[is], rake[is]);
 	pzz = radzz(strike[is], dip[is], rake[is]);
@@ -73,55 +92,63 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
 	    weight = weight * zweight[is];
 	  }
 
-	  imp = i2imp_array[i];
-	  jmp1 = j2jmp_array[j - 1];
-	  jmp2 = j2jmp_array[j];
-	  jmp3 = j2jmp_array[j + 1];
+	  
+	  //imp = i2imp_array[i];
+	  imp = ivector_access(prm.i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, i);
+	  //jmp1 = j2jmp_array[j - 1];
+	  jmp1 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j-1);
+	  //jmp2 = j2jmp_array[j];
+	  jmp2 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j);
+	  //jmp3 = j2jmp_array[j + 1];
+	  jmp3 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j+1);
 
-	  fx[imp][jmp3][k] += 0.5 * mo * pxy * weight;
-	  fx[imp][jmp1][k] -= 0.5 * mo * pxy * weight;
-	  fx[imp][jmp2][k + 1] += 0.5 * mo * pxz * weight;
-	  fx[imp][jmp2][k - 1] -= 0.5 * mo * pxz * weight;
-	  fy[imp][jmp2][k] += 0.5 * mo * pxy * weight;
-	  fy[imp][jmp1][k] += 0.5 * mo * pxy * weight;
-	  fy[imp][jmp2][k] += 0.5 * mo * pyy * weight;
-	  fy[imp][jmp1][k] -= 0.5 * mo * pyy * weight;
-	  fy[imp][jmp2][k + 1] += 0.125 * mo * pyz * weight;
-	  fy[imp][jmp1][k + 1] += 0.125 * mo * pyz * weight;
-	  fy[imp][jmp2][k - 1] -= 0.125 * mo * pyz * weight;
-	  fy[imp][jmp1][k - 1] -= 0.125 * mo * pyz * weight;
-	  fz[imp][jmp2][k] += 0.5 * mo * pxz * weight;
-	  fz[imp][jmp2][k - 1] += 0.5 * mo * pxz * weight;
-	  fz[imp][jmp3][k] += 0.125 * mo * pyz * weight;
-	  fz[imp][jmp3][k - 1] += 0.125 * mo * pyz * weight;
-	  fz[imp][jmp1][k] -= 0.125 * mo * pyz * weight;
-	  fz[imp][jmp1][k - 1] -= 0.125 * mo * pyz * weight;
-	  fz[imp][jmp2][k] += 0.5 * mo * pzz * weight;
-	  fz[imp][jmp2][k - 1] -= 0.5 * mo * pzz * weight;
+	  printf("blzzz\n");
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp3, k) += 0.5 * mo * pxy * weight;
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.5 * mo * pxy * weight;
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k + 1) += 0.5 * mo * pxz * weight;
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) -= 0.5 * mo * pxz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pxy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) += 0.5 * mo * pxy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pyy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.5 * mo * pyy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k + 1) += 0.125 * mo * pyz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k + 1) += 0.125 * mo * pyz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) -= 0.125 * mo * pyz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k - 1) -= 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pxz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) += 0.5 * mo * pxz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp3, k) += 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp3, k - 1) += 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k - 1) -= 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pzz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) -= 0.5 * mo * pzz * weight;
 
-	  imp = i2imp_array[i - 1];
+	  //imp = i2imp_array[i - 1];
+	  imp = ivector_access(prm.i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, i-1);
 
-	  fy[imp][jmp2][k] -= 0.5 * mo * pxy * weight;
-	  fy[imp][jmp1][k] -= 0.5 * mo * pxy * weight;
-	  fy[imp][jmp2][k] += 0.5 * mo * pyy * weight;
-	  fy[imp][jmp1][k] -= 0.5 * mo * pyy * weight;
-	  fy[imp][jmp2][k + 1] += 0.125 * mo * pyz * weight;
-	  fy[imp][jmp1][k + 1] += 0.125 * mo * pyz * weight;
-	  fy[imp][jmp2][k - 1] -= 0.125 * mo * pyz * weight;
-	  fy[imp][jmp1][k - 1] -= 0.125 * mo * pyz * weight;
-	  fx[imp][jmp2][k] -= 0.5 * mo * pxx * weight;
-	  fz[imp][jmp3][k] += 0.125 * mo * pyz * weight;
-	  fz[imp][jmp3][k - 1] += 0.125 * mo * pyz * weight;
-	  fz[imp][jmp1][k] -= 0.125 * mo * pyz * weight;
-	  fz[imp][jmp1][k - 1] -= 0.125 * mo * pyz * weight;
-	  fz[imp][jmp2][k] += 0.5 * mo * pzz * weight;
-	  fz[imp][jmp2][k - 1] -= 0.5 * mo * pzz * weight;
-	  fz[imp][jmp2][k] -= 0.5 * mo * pxz * weight;
-	  fz[imp][jmp2][k - 1] -= 0.5 * mo * pxz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) -= 0.5 * mo * pxy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.5 * mo * pxy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pyy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.5 * mo * pyy * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k + 1) += 0.125 * mo * pyz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k + 1) += 0.125 * mo * pyz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) -= 0.125 * mo * pyz * weight;
+	  i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k - 1) -= 0.125 * mo * pyz * weight;
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) -= 0.5 * mo * pxx * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp3, k) += 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp3, k - 1) += 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k - 1) -= 0.125 * mo * pyz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pzz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) -= 0.5 * mo * pzz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) -= 0.5 * mo * pxz * weight;
+	  i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k - 1) -= 0.5 * mo * pxz * weight;
 
-	  imp = i2imp_array[i + 1];
+	  //imp = i2imp_array[i + 1];
+	  imp = ivector_access(prm.i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, i+1);
 
-	  fx[imp][jmp2][k] += 0.5 * mo * pxx * weight;	  
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pxx * weight;	  
 	}		/* end of iw (weighting) */
       }		        /* end of if SRC.insrc */
     }			/* end of is (each source) */
