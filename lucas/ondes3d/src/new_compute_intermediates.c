@@ -108,7 +108,6 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	/* find the right npml number */
 	if ((place == ABSORBINGLAYER) || (place == FREEABS)) {
 	  npml = first_npml+k-(prm.zMin - prm.delta);
-	  printf("npml = %ld\n", npml);
 	}
 	/* medium */
 	/* Warning : k2ly0 & k2ly2
@@ -136,7 +135,6 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	/* ---------------------- */
 	if (place == ABSORBINGLAYER || place == FREEABS) {
 	  /* Initialize corner coefficients */
-	  printf("absorbing layer ou freeabs\n");
 	  muy = mu0[ly0];
 	  kapy = kap0[ly0];
 	  rhox = rho0[ly0];
@@ -170,26 +168,25 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  phixdum = ivector_access(phivxx, 1, 1000, npml);
 	  phiydum = ivector_access(phivyy, 1, 1000, npml);
 	  phizdum = ivector_access(phivzz, 1, 1000, npml);
-
-
+	  
 	  ivector_access(phivxx, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpx2, 1, prm.mpmx, i), ivector_access(alphax2, 1, prm.mpmx, i),
 		  ivector_access(kappax2, 1, prm.mpmx, i), phixdum, ds, dt,
-		  v0_x[i][j][k], v0_x[i + 1][j][k],
-		  v0_x[i - 1][j][k],
-		  v0_x[i + 2][j][k]);
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k));
 	  ivector_access(phivyy, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpy, 1, prm.mpmy, j), ivector_access(alphay, 1, prm.mpmy, j),
 		  ivector_access(kappay, 1, prm.mpmy, j), phiydum, ds, dt,
-		  v0_y[i][j - 1][k], v0_y[i][j][k],
-		  v0_y[i][j - 2][k],
-		  v0_y[i][j + 1][k]);
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k));
 	  ivector_access(phivzz, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpz, prm.zMin - prm.delta, 1000, k), ivector_access(alphaz, prm.zMin - prm.delta, 1000, k),
 		  ivector_access(dumpz, prm.zMin - prm.delta, 1000, k), phizdum, ds, dt,
-		  v0_z[i][j][k - 1], v0_z[i][j][k],
-		  v0_z[i][j][k - 2],
-		  v0_z[i][j][k + 1]);
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1), i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1));
 	  /* txy */
 	  phixdum = ivector_access(phivyx, 1, 1000, npml);
 	  phiydum = ivector_access(phivxy, 1, 1000, npml);
@@ -197,15 +194,15 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  ivector_access(phivyx, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpx, 1, prm.mpmx, i), ivector_access(alphax, 1, prm.mpmx, i),
 		  ivector_access(kappax, 1, prm.mpmx, i), phixdum, ds, dt,
-		  v0_y[i - 1][j][k], v0_y[i][j][k],
-		  v0_y[i - 2][j][k],
-		  v0_y[i + 1][j][k]);
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k));
 	  ivector_access(phivxy, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpy2, 1, prm.mpmy, j), ivector_access(alphay2, 1, prm.mpmy, j),
 		  ivector_access(kappay2, 1, prm.mpmy, j), phiydum, ds, dt,
-		  v0_x[i][j][k], v0_x[i][j + 1][k],
-		  v0_x[i][j - 1][k],
-		  v0_x[i][j + 2][k]);
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k));
 	  /* txz */
 	  phixdum = ivector_access(phivzx, 1, 1000, npml);
 	  phizdum = ivector_access(phivxz, 1, 1000, npml);
@@ -213,15 +210,15 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  ivector_access(phivzx, 1, 1000, npml) =
 	    CPML4(vpz, ivector_access(dumpx, 1, prm.mpmx, i), ivector_access(alphax, 1, prm.mpmx, i),
 		  ivector_access(kappax, 1, prm.mpmx, i), phixdum, ds, dt,
-		  v0_z[i - 1][j][k], v0_z[i][j][k],
-		  v0_z[i - 2][j][k],
-		  v0_z[i + 1][j][k]);
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k), i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k));
 	  ivector_access(phivxz, 1, 1000, npml) =
 	    CPML4(vpz, ivector_access(dumpz2, prm.zMin - prm.delta, prm.zMax0, k), ivector_access(alphaz2, prm.zMin - prm.delta, prm.zMax0, k),
 		  ivector_access(kappaz2, prm.zMin - prm.delta, prm.zMax0, k), phizdum, ds, dt,
-		  v0_x[i][j][k], v0_x[i][j][k + 1],
-		  v0_x[i][j][k - 1],
-		  v0_x[i][j][k + 2]);
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 2));
 	  /* tyz */
 	  phiydum = ivector_access(phivzy, 1, 1000, npml);
 	  phizdum = ivector_access(phivyz, 1, 1000, npml);
@@ -229,15 +226,15 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  ivector_access(phivzy, 1, 1000, npml) =
 	    CPML4(vpxyz, ivector_access(dumpy2, 1, prm.mpmy, j),
 		  ivector_access(alphay2, 1, prm.mpmy, j), ivector_access(kappay2, 1, prm.mpmy, j),
-		  phiydum, ds, dt, v0_z[i][j][k],
-		  v0_z[i][j + 1][k], v0_z[i][j - 1][k],
-		  v0_z[i][j + 2][k]);
+		  phiydum, ds, dt, i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k), i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k));
 	  ivector_access(phivyz, 1, 1000, npml) =
 	    CPML4(vpxyz, ivector_access(dumpz2, prm.zMin - prm.delta, prm.zMax0, k),
 		  ivector_access(alphaz2, prm.zMin - prm.delta, prm.zMax0, k), ivector_access(kappaz2, prm.zMin - prm.delta, prm.zMax0, k),
-		  phizdum, ds, dt, v0_y[i][j][k],
-		  v0_y[i][j][k + 1], v0_y[i][j][k - 1],
-		  v0_y[i][j][k + 2]);
+		  phizdum, ds, dt, i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 2));
 	}		/* End compute Absorbing Layers */
 
 	/* FREEABS      */
@@ -255,13 +252,13 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	    (kapx - 2. / 3. * mux) / (kapx +
 				      4. / 3. * mux) *
 	    (Diff4
-	     (ds, v0_x[i][j][k], v0_x[i + 1][j][k],
-	      v0_x[i - 1][j][k],
-	      v0_x[i + 2][j][k]) + Diff4(ds,
-					 v0_y[i][j - 1][k],
-					 v0_y[i][j][k],
-					 v0_y[i][j - 2][k],
-					 v0_y[i][j + 1][k])
+	     (ds, i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+	      i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+	      i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k)) + Diff4(ds,
+					 i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+					 i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+					 i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
+					 i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k))
 	     );
 
 	  /* txx, tyy */
@@ -272,15 +269,15 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  ivector_access(phivxx, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpx2, 1, prm.mpmx, i), ivector_access(alphax2, 1, prm.mpmx, i),
 		  ivector_access(kappax2, 1, prm.mpmx, i), phixdum, ds, dt,
-		  v0_x[i][j][k], v0_x[i + 1][j][k],
-		  v0_x[i - 1][j][k],
-		  v0_x[i + 2][j][k]);
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k));
 	  ivector_access(phivyy, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpy, 1, prm.mpmy, j), ivector_access(alphay, 1, prm.mpmy, j),
 		  ivector_access(kappay, 1, prm.mpmy, j), phiydum, ds, dt,
-		  v0_y[i][j - 1][k], v0_y[i][j][k],
-		  v0_y[i][j - 2][k],
-		  v0_y[i][j + 1][k]);
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k));
 	  /* special */
 	  b = exp(-
 		  (vpx * ivector_access(dumpz, prm.zMin - prm.delta, 1000, k) / ivector_access(dumpz, prm.zMin - prm.delta, 1000, k) +
@@ -302,15 +299,15 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  ivector_access(phivyx, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpx, 1, prm.mpmx, i), ivector_access(alphax, 1, prm.mpmx, i),
 		  ivector_access(kappax, 1, prm.mpmx, i), phixdum, ds, dt,
-		  v0_y[i - 1][j][k], v0_y[i][j][k],
-		  v0_y[i - 2][j][k],
-		  v0_y[i + 1][j][k]);
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
+		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k));
 	  ivector_access(phivxy, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpy2, 1, prm.mpmy, j), ivector_access(alphay2, 1, prm.mpmy, j),
 		  ivector_access(kappay2, 1, prm.mpmy, j), phiydum, ds, dt,
-		  v0_x[i][j][k], v0_x[i][j + 1][k],
-		  v0_x[i][j - 1][k],
-		  v0_x[i][j + 2][k]);
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k));
 	}
       }
     }
