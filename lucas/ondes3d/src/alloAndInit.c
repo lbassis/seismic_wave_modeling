@@ -654,6 +654,7 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
   /* Definition of the vectors used in the PML/CPML formulation */
   /* ****************************************************** */
   ABC->dumpx = dvector(1, MPMX);
+  printf("dumpx com tamanho %d\n", (MPMX - 1 + 1 + NR_END));
   ABC->dumpx2 = dvector(1, MPMX);
   ABC->dumpy = dvector(1, MPMY);
   ABC->dumpy2 = dvector(1, MPMY);
@@ -687,34 +688,34 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
   /*** initialize oefficients like you were in regular domain ***/
   for (imp = 1; imp <= MPMX; imp++) {
-    ABC->dumpx[imp] = 0.0;
-    ABC->dumpx2[imp] = 0.0;
+    ivector_access(ABC->dumpx, 1, MPMX, imp) = 0.0;
+    ivector_access(ABC->dumpx2, 1, MPMX, imp) = 0.0;
     if (ABCmethod == CPML) {
-      ABC->kappax[imp] = 1.0;
-      ABC->kappax2[imp] = 1.0;
-      ABC->alphax[imp] = 0.0;
-      ABC->alphax2[imp] = 0.0;
+      ivector_access(ABC->kappax, 1, MPMX, imp) = 1.0;
+      ivector_access(ABC->kappax2, 1, MPMX, imp) = 1.0;
+      ivector_access(ABC->alphax, 1, MPMX, imp) = 0.0;
+      ivector_access(ABC->alphax2, 1, MPMX, imp) = 0.0;
     }
   }
   for (jmp = 1; jmp <= MPMY; jmp++) {
-    ABC->dumpy[jmp] = 0.0;
-    ABC->dumpy2[jmp] = 0.0;
+    ivector_access(ABC->dumpy, 1, MPMY, jmp) = 0.0;
+    ivector_access(ABC->dumpy2, 1, MPMY, jmp) = 0.0;
     if (ABCmethod == CPML) {
-      ABC->kappay[jmp] = 1.0;
-      ABC->kappay2[jmp] = 1.0;
-      ABC->alphay[jmp] = 0.0;
-      ABC->alphay2[jmp] = 0.0;
+      ivector_access(ABC->kappay, 1, MPMY, jmp) = 1.0;
+      ivector_access(ABC->kappay2, 1, MPMY, jmp) = 1.0;
+      ivector_access(ABC->alphay, 1, MPMY, jmp) = 0.0;
+      ivector_access(ABC->alphay2, 1, MPMY, jmp) = 0.0;
     }
   }
 
   for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-    ABC->dumpz[k] = 0.0;
-    ABC->dumpz2[k] = 0.0;
+    ivector_access(ABC->dumpz, ZMIN-DELTA, ZMAX0, k) = 0.0;
+    ivector_access(ABC->dumpz2, ZMIN-DELTA, ZMAX0, k) = 0.0;
     if (ABCmethod == CPML) {
-      ABC->kappaz[k] = 1.0;
-      ABC->kappaz2[k] = 1.0;
-      ABC->alphaz[k] = 0.0;
-      ABC->alphaz2[k] = 0.0;
+      ivector_access(ABC->kappaz, ZMIN-DELTA, ZMAX0, k) = 1.0;
+      ivector_access(ABC->kappaz2, ZMIN-DELTA, ZMAX0, k) = 1.0;
+      ivector_access(ABC->alphaz, ZMIN-DELTA, ZMAX0, k) = 0.0;
+      ivector_access(ABC->alphaz2, ZMIN-DELTA, ZMAX0, k) = 0.0;
     }
   }
 
@@ -729,28 +730,28 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
     if (i <= XMIN + 1) {	/* For the left side */
       abscissa_in_PML = xoriginleft - xval;
       CompABCCoef(ABC->dumpx, ABC->alphax, ABC->kappax,
-		  imp, abscissa_in_PML, *ABC, PRM);
+		  imp, abscissa_in_PML, 1, PRM.mpmx, *ABC, PRM);
 
       abscissa_in_PML = xoriginleft - (xval + DS / 2.0);
       CompABCCoef(ABC->dumpx2, ABC->alphax2, ABC->kappax2,
-		  imp, abscissa_in_PML, *ABC, PRM);
+		  imp, abscissa_in_PML, 1, PRM.mpmx, *ABC, PRM);
     }
 
     if (i >= XMAX + 1) {	/* For the right side */
       abscissa_in_PML = xval - xoriginright;
       CompABCCoef(ABC->dumpx, ABC->alphax, ABC->kappax,
-		  imp, abscissa_in_PML, *ABC, PRM);
+		  imp, abscissa_in_PML, 1, PRM.mpmx, *ABC, PRM);
 
       abscissa_in_PML = xval + DS / 2.0 - xoriginright;
       CompABCCoef(ABC->dumpx2, ABC->alphax2, ABC->kappax2,
-		  imp, abscissa_in_PML, *ABC, PRM);
+		  imp, abscissa_in_PML, 1, PRM.mpmx, *ABC, PRM);
     }
 
     if (ABCmethod == CPML) {	/* CPML */
-      if (ABC->alphax[imp] < 0.0)
-	ABC->alphax[imp] = 0.0;
-      if (ABC->alphax2[imp] < 0.0)
-	ABC->alphax2[imp] = 0.0;
+      if (ivector_access(ABC->alphax, 1, MPMX, imp) < 0.0)
+	ivector_access(ABC->alphax, 1, MPMX, imp) = 0.0;
+      if (ivector_access(ABC->alphax2, 1, MPMX, imp) < 0.0)
+        ivector_access(ABC->alphax2, 1, MPMX, imp) = 0.0;
     }
 
   }				/* end of imp */
@@ -768,26 +769,26 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
     if (j <= YMIN + 1) {	/* For the front side */
       abscissa_in_PML = yoriginfront - yval;
       CompABCCoef(ABC->dumpy, ABC->alphay, ABC->kappay,
-		  jmp, abscissa_in_PML, *ABC, PRM);
+		  jmp, abscissa_in_PML, 1, PRM.mpmy, *ABC, PRM);
 
       abscissa_in_PML = yoriginfront - (yval + DS / 2.0);
       CompABCCoef(ABC->dumpy2, ABC->alphay2, ABC->kappay2,
-		  jmp, abscissa_in_PML, *ABC, PRM);
+		  jmp, abscissa_in_PML, 1, PRM.mpmy, *ABC, PRM);
     }
     if (j >= YMAX + 1) {	/* For the back side */
       abscissa_in_PML = yval - yoriginback;
       CompABCCoef(ABC->dumpy, ABC->alphay, ABC->kappay2,
-		  jmp, abscissa_in_PML, *ABC, PRM);
+		  jmp, abscissa_in_PML, 1, PRM.mpmy, *ABC, PRM);
 
       abscissa_in_PML = yval + DS / 2.0 - yoriginback;
       CompABCCoef(ABC->dumpy2, ABC->alphay2, ABC->kappay2,
-		  jmp, abscissa_in_PML, *ABC, PRM);
+		  jmp, abscissa_in_PML, 1, PRM.mpmy, *ABC, PRM);
     }
     if (ABCmethod == CPML) {	/* CPML */
-      if (ABC->alphay[jmp] < 0.0)
-	ABC->alphay[jmp] = 0.0;
-      if (ABC->alphay2[jmp] < 0.0)
-	ABC->alphay2[jmp] = 0.0;
+      if (ivector_access(ABC->alphay, 1, MPMY, jmp) < 0.0)
+	ivector_access(ABC->alphay, 1, MPMY, jmp) = 0.0;
+      if (ivector_access(ABC->alphay2, 1, MPMY, jmp) < 0.0)
+        ivector_access(ABC->alphay2, 1, MPMY, jmp) = 0.0;
     }
 
   }				/* end of jmp */
@@ -802,11 +803,11 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
     zval = DS * (k - 1);
     abscissa_in_PML = zoriginbottom - zval;
     CompABCCoef(ABC->dumpz, ABC->alphaz, ABC->kappaz,
-		k, abscissa_in_PML, *ABC, PRM);
+		k, abscissa_in_PML, PRM.zMin - PRM.delta, PRM.zMax0, *ABC, PRM);
 
     abscissa_in_PML = zoriginbottom - (zval + DS / 2.0);
     CompABCCoef(ABC->dumpz2, ABC->alphaz2, ABC->kappaz2,
-		k, abscissa_in_PML, *ABC, PRM);
+		k, abscissa_in_PML, PRM.zMin - PRM.delta, PRM.zMax0, *ABC, PRM);
   }				/* end for k */
 
   /* For the top side */
@@ -816,11 +817,11 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
       zval = DS * (k - 1);
       abscissa_in_PML = zval - zorigintop;
       CompABCCoef(ABC->dumpz, ABC->alphaz, ABC->kappaz,
-		  k, abscissa_in_PML, *ABC, PRM);
+		  k, abscissa_in_PML, PRM.zMin - PRM.delta, PRM.zMax0, *ABC, PRM);
 
       abscissa_in_PML = zval + DS / 2.0 - zorigintop;
       CompABCCoef(ABC->dumpz2, ABC->alphaz2, ABC->kappaz2,
-		  k, abscissa_in_PML, *ABC, PRM);
+		  k, abscissa_in_PML, PRM.zMin - PRM.delta, PRM.zMax0, *ABC, PRM);
 
       if (ABCmethod == CPML) {	/* CPML */
 	if (ABC->alphaz[k] < 0.0)
@@ -842,19 +843,22 @@ static void CompABCCoef(	/* outputs */
 			/* inputs */
 			int imp,
 			double abscissa_in_PML,
+			int min_index,
+			int max_index,
 			struct ABSORBING_BOUNDARY_CONDITION ABC,
 			struct PARAMETERS PRM)
 {
   double abscissa_normalized;
   if (abscissa_in_PML >= 0.0) {
     abscissa_normalized = abscissa_in_PML / (PRM.delta * PRM.ds);
-    dump[imp] = ABC.dump0 * pow(abscissa_normalized, ABC.nPower);
+
+    ivector_access(dump, min_index, max_index, imp) = ABC.dump0 * pow(abscissa_normalized, ABC.nPower);
 
     if (ABCmethod == CPML) {	/* CPML */
-      kappa[imp] =
+      ivector_access(kappa, min_index, max_index, imp) =
 	1.0 + (ABC.kappa0 - 1.0) * pow(abscissa_normalized,
 				       ABC.nPower);
-      alpha[imp] = ABC.alpha0 * (1.0 - abscissa_normalized);
+      ivector_access(alpha, min_index, max_index, imp) = ABC.alpha0 * (1.0 - abscissa_normalized);
     }
   }
 }				/* end function */

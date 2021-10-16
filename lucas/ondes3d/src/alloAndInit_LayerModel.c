@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "../include/nrutil.h"
+#include "../include/new_nrutil.h"
 #include "../include/struct.h"
 #include "../include/inlineFunctions.h"
 #include "../include/options.h"
@@ -90,7 +90,9 @@ static int Initk2ly(struct MEDIUM *MDM, struct PARAMETERS PRM)
 		ly0 = ly;
 	    }
 	}
-	MDM->k2ly0[k] = ly0;
+
+	//MDM->k2ly0[k] = ly0;
+	ivector_access(MDM->k2ly0, ZMIN-DELTA, ZMAX0, k) = ly0;
 
 	/* k2ly2 */
 	ly2 = 0;
@@ -99,7 +101,8 @@ static int Initk2ly(struct MEDIUM *MDM, struct PARAMETERS PRM)
 		ly2 = ly;
 	    }
 	}
-	MDM->k2ly2[k] = ly2;
+	//MDM->k2ly2[k] = ly2;
+	ivector_access(MDM->k2ly2, ZMIN-DELTA, ZMAX0, k) = ly2;
 #else
 	/* here a point represent a position */
 	/* NB : for KMINTERFACE we really need <= for the algorithm
@@ -114,7 +117,9 @@ static int Initk2ly(struct MEDIUM *MDM, struct PARAMETERS PRM)
 		ly0 = ly;
 	    }
 	}
-	MDM->k2ly0[k] = ly0;
+
+	//MDM->k2ly0[k] = ly0;
+	ivector_access(MDM->k2ly0, ZMIN-DELTA, ZMAX0, k) = ly0;
 
 	/* k2ly2 */
 	double z2;
@@ -128,12 +133,13 @@ static int Initk2ly(struct MEDIUM *MDM, struct PARAMETERS PRM)
 		ly2 = ly;
 	    }
 	}
-	MDM->k2ly2[k] = ly2;
+	//MDM->k2ly2[k] = ly2;
+	ivector_access(MDM->k2ly2, ZMIN-DELTA, ZMAX0, k) = ly2;
 #endif
 
 	if (VERBOSE > 4 && PRM.me == 0) {
 	    fprintf(stderr, "#### k=%i k2ly0=%i k2ly2=%i \n",
-		    k, MDM->k2ly0[k], MDM->k2ly2[k]);
+		    k, 	ivector_access(MDM->k2ly0, ZMIN-DELTA, ZMAX0, k), ivector_access(MDM->k2ly2, ZMIN-DELTA, ZMAX0, k));
 	}
 
     }
@@ -220,7 +226,6 @@ static int AppendLayer2MDM(struct MEDIUM *MDM, struct ANELASTICITY *ANL,
 	MDM->nLayer += 1;
 	NLAYER = MDM->nLayer;
 
-	printf("vai botar algo no laydep\n");
 	MDM->laydep = mydvectorRealloc(MDM->laydep, 0, NLAYER - 1);
 	MDM->rho0 = mydvectorRealloc(MDM->rho0, 0, NLAYER - 1);
 	MDM->mu0 = mydvectorRealloc(MDM->mu0, 0, NLAYER - 1);
@@ -523,12 +528,12 @@ int InitLayerModel(struct MEDIUM *MDM,
 
     /*** replace MDM with newMDM ***/
 	int prevNLAYER0 = MDM->nLayer;
-	free_dvector(MDM->laydep, 0, prevNLAYER0 - 1);
-	free_dvector(MDM->rho0, 0, prevNLAYER0 - 1);
-	free_dvector(MDM->mu0, 0, prevNLAYER0 - 1);
-	free_dvector(MDM->kap0, 0, prevNLAYER0 - 1);
-	free_ivector(MDM->k2ly0, ZMIN - DELTA, ZMAX0);
-	free_ivector(MDM->k2ly2, ZMIN - DELTA, ZMAX0);
+	free(MDM->laydep);
+	free(MDM->rho0);
+	free(MDM->mu0);
+	free(MDM->kap0);
+	free(MDM->k2ly0);
+	free(MDM->k2ly2);
 
 	MDM->nLayer = newMDM.nLayer;
 	MDM->nLayer2 = newMDM.nLayer2;
@@ -547,24 +552,15 @@ int InitLayerModel(struct MEDIUM *MDM,
 	MDM->kap2 = newMDM.kap2;
 
 	if (ANLmethod == ANOTHER) {
-	    free_dvector(ANL->q0, 0, prevNLAYER0 - 1);
-	    free_dvector(ANL->amp, 0, prevNLAYER0 - 1);
+	    free(ANL->q0);
+	    free(ANL->amp);
 
 	    ANL->q0 = newANL.q0;
 	    ANL->amp = newANL.amp;
 	    ANL->q2 = newANL.q2;
 	    ANL->amp2 = newANL.amp2;
 
-	} else if (ANLmethod == KRISTEKandMOCZO
-		   || ANLmethod == DAYandBRADLEY) {
-	    free_dvector(ANL->Qp0, 0, prevNLAYER0 - 1);
-	    free_dvector(ANL->Qs0, 0, prevNLAYER0 - 1);
-
-	    ANL->Qs0 = newANL.Qs0;
-	    ANL->Qp0 = newANL.Qp0;
-	    ANL->Qs2 = newANL.Qs2;
-	    ANL->Qp2 = newANL.Qp2;
-	}
+	} 
     }				/* end if interface */
 
     /* give some infos to user */

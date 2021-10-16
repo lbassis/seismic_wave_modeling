@@ -66,6 +66,8 @@ static void CompABCCoef(	/* outputs */
 			   /* inputs */
 			   int imp,
 			   double abscissa_in_PML,
+			   int min_index,
+			   int max_index,
 			   struct ABSORBING_BOUNDARY_CONDITION ABC,
 			   struct PARAMETERS PRM);
 
