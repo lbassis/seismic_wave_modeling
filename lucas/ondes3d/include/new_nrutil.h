@@ -4,6 +4,7 @@
 #define i3access(p, nrl, nrh, ncl, nch, ndl, ndh, i, j, k)  p[(i-(nrl))*((nch)-(ncl))*((ndh)-(ndl))+(j-(ncl))*((ndh)-(ndl))+(k-(ndl))]
 
 #define ivector_access(p, nl, nh, i)  p[(i) - (nl) + NR_END]
+#define ivector_address(p, nl, nh, i)  p+i-nl+NR_END
 
 static float sqrarg;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)

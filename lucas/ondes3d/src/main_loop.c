@@ -65,6 +65,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   int n_blocks_x = ncols/PRM->block_size;
   int n_blocks_y = nrows/PRM->block_size;
 
+  printf("nblocksx = %d, nblocksy = %d\n", n_blocks_x, n_blocks_y);
   int mpmz = PRM->zMax0 - (PRM->zMin - PRM->delta);
 
   struct starpu_data_filter x_filter = {.filter_func = starpu_block_filter_block, .nchildren = n_blocks_x};
@@ -138,9 +139,9 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   starpu_block_data_register(&v0_y_handle, STARPU_MAIN_RAM, (uintptr_t)v0->y, ncols, depth, nrows, ncols, depth, sizeof(v0->y[0]));
   starpu_block_data_register(&v0_z_handle, STARPU_MAIN_RAM, (uintptr_t)v0->z, ncols, depth, nrows, ncols, depth, sizeof(v0->z[0]));
 
-  starpu_data_map_filters(v0_x_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(v0_y_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(v0_z_handle, 2, &x_filter, &y_filter);
+  //starpu_data_map_filters(v0_x_handle, 2, &x_filter, &y_filter);
+  //starpu_data_map_filters(v0_y_handle, 2, &x_filter, &y_filter);
+  //starpu_data_map_filters(v0_z_handle, 2, &x_filter, &y_filter);
 
   // compute stress handles:
   // t0->xx, t0->yy, t0->zz, t0->xy, t0->xz, t0->yz -> o t0 sempre mexe soh em i,j,k, soh o v0 que pode precisar dos vizinhos
@@ -181,67 +182,77 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 		       STARPU_VALUE, &(SRC->iSrc), sizeof(SRC->iSrc),
 		       0);
 
-    //return 0;
 
+    //loop compute intermediates
+    ////________________________________________
+    /// ATENCAO
+    ///
+    /// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
+    ///
+    //__________________________________________
+    for (i_block = 0; i_block < n_blocks_y; i_block++) {
+      for (j_block = 0; j_block < n_blocks_x; j_block++) {
+    
+    	i = i_block*PRM->block_size;
+    	j = j_block*PRM->block_size;
+    
+    	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM,
+    	(uintptr_t)&i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta),
+    	 depth, sizeof(double));
+    
+    	// muito questionavel
+	printf("i = %d, j = %d\n", i, j);
+    	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
+	printf("o first npml eh %ld\n", first_npml);
 
-    // loop compute intermediates
-    //////________________________________________
-    ///// ATENCAO
-    /////
-    ///// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
-    /////
-    ////__________________________________________
-    //for (i_block = 1; i_block <= n_blocks_y; i_block++) {
-    //  for (j_block = 1; j_block <= n_blocks_x; j_block++) {
-    //
-    //	i = i_block*PRM->block_size;
-    //	j = j_block*PRM->block_size;
-    //
-    //	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM,
-    //	(uintptr_t)&i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, 0),
-    //	 depth, sizeof(double));
-    //
-    //	// muito questionavel
-    //	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, 0);
-    //
-    //	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxx+first_npml), depth, sizeof(ABC->phivxx[0]));
-    //	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyy+first_npml), depth, sizeof(ABC->phivyy[0]));
-    //	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzz+first_npml), depth, sizeof(ABC->phivzz[0]));
-    //	starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyx+first_npml), depth, sizeof(ABC->phivyx[0]));
-    //	starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxy+first_npml), depth, sizeof(ABC->phivxy[0]));
-    //	starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzx+first_npml), depth, sizeof(ABC->phivzx[0]));
-    //	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxz+first_npml), depth, sizeof(ABC->phivxz[0]));
-    //	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzy+first_npml), depth, sizeof(ABC->phivzy[0]));
-    //	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyz+first_npml), depth, sizeof(ABC->phivyz[0]));
-    //	// fim do muito questionavel
-    //
-    //	starpu_task_insert(&intermediates_cl,
-    //			   STARPU_W, phivxx_handle, STARPU_W, phivyy_handle, STARPU_W, phivzz_handle,
-    //			   STARPU_W, phivyx_handle, STARPU_W, phivxy_handle, STARPU_W, phivzx_handle,
-    //			   STARPU_W, phivxz_handle, STARPU_W, phivzy_handle, STARPU_W, phivyz_handle,
-    //			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle,
-    //			   STARPU_R, kap0_handle, STARPU_R, kap2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
-    //			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
-    //			   STARPU_R, alphax_handle, STARPU_R, alphax2_handle, STARPU_R, alphay_handle, STARPU_R, alphay2_handle, STARPU_R, alphaz_handle, STARPU_R, alphaz2_handle,
-    //			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle, STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle,
-    //			   STARPU_R, ipml_handle, STARPU_R, v0_x_handle, STARPU_R, v0_y_handle, STARPU_R, v0_z_handle,
-    //			   STARPU_VALUE, &i, sizeof(i),
-    //			   STARPU_VALUE, &j, sizeof(j),
-    //			   STARPU_VALUE, &first_npml, sizeof(first_npml),
-    //			   STARPU_VALUE, PRM, sizeof(*PRM),
-    //			   0);
-    //  }
-    //}
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //
+	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxx[0]));
+    	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyy[0]));
+    	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzz[0]));
+    	starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyx[0]));
+    	starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxy[0]));
+    	starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzx[0]));
+    	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxz[0]));
+    	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzy[0]));
+    	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyz[0]));
+    	
+    	//starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxx+first_npml+1), depth, sizeof(ABC->phivxx[0]));
+    	//starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyy+first_npml+1), depth, sizeof(ABC->phivyy[0]));
+    	//starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzz+first_npml+1), depth, sizeof(ABC->phivzz[0]));
+    	//starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyx+first_npml+1), depth, sizeof(ABC->phivyx[0]));
+    	//starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxy+first_npml+1), depth, sizeof(ABC->phivxy[0]));
+    	//starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzx+first_npml+1), depth, sizeof(ABC->phivzx[0]));
+    	//starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxz+first_npml+1), depth, sizeof(ABC->phivxz[0]));
+    	//starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzy+first_npml+1), depth, sizeof(ABC->phivzy[0]));
+    	//starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyz+first_npml+1), depth, sizeof(ABC->phivyz[0]));
+    	// fim do muito questionavel
+    
+    	starpu_task_insert(&intermediates_cl,
+    			   STARPU_W, phivxx_handle, STARPU_W, phivyy_handle, STARPU_W, phivzz_handle,
+    			   STARPU_W, phivyx_handle, STARPU_W, phivxy_handle, STARPU_W, phivzx_handle,
+    			   STARPU_W, phivxz_handle, STARPU_W, phivzy_handle, STARPU_W, phivyz_handle,
+    			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle,
+    			   STARPU_R, kap0_handle, STARPU_R, kap2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
+    			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
+    			   STARPU_R, alphax_handle, STARPU_R, alphax2_handle, STARPU_R, alphay_handle, STARPU_R, alphay2_handle, STARPU_R, alphaz_handle, STARPU_R, alphaz2_handle,
+    			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle, STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle,
+    			   STARPU_R, ipml_handle, STARPU_R, v0_x_handle, STARPU_R, v0_y_handle, STARPU_R, v0_z_handle,
+    			   STARPU_VALUE, &i_block, sizeof(i_block),
+    			   STARPU_VALUE, &j_block, sizeof(j_block),
+    			   STARPU_VALUE, &first_npml, sizeof(first_npml),
+    			   STARPU_VALUE, PRM, sizeof(*PRM),
+    			   0);
+      }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     //// loop compute stress
     ////////________________________________________
     /////// ATENCAO
