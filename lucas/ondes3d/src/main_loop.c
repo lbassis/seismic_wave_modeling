@@ -10,6 +10,7 @@
 struct starpu_codelet seis_moment_cl = {
 					.cpu_funcs = {seis_moment_task},
 					.nbuffers = 16,
+					.name = "seis_moment",
 					.modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_R,
 						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
@@ -19,6 +20,7 @@ struct starpu_codelet seis_moment_cl = {
 struct starpu_codelet intermediates_cl = {
 					  .cpu_funcs = {compute_intermediates_task},
 					  .nbuffers = 39,
+						.name = "intermediates",
 					  .modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
 						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
@@ -29,6 +31,7 @@ struct starpu_codelet intermediates_cl = {
 struct starpu_codelet stress_cl = {
 				   .cpu_funcs = {compute_stress_task},
 				   .nbuffers = 30,
+					 .name = "stress",
 				   .modes = {STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
 					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
@@ -39,6 +42,7 @@ struct starpu_codelet stress_cl = {
 struct starpu_codelet velo_cl = {
 				 .cpu_funcs = {compute_velo_task},
 				 .nbuffers = 48,
+				 .name = "velo",
 				 .modes = {STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W, STARPU_W, STARPU_W,
 					   STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
 					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
