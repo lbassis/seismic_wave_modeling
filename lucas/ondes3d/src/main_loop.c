@@ -195,16 +195,16 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     
     	i = i_block*PRM->block_size;
     	j = j_block*PRM->block_size;
-    
-    	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM,
-    	(uintptr_t)&i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta),
-    	 depth, sizeof(double));
-    
+
+
+	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (prm->mpmx+3)*(prm->mpmy+3)*(prm->zMax0 - (prm->zMin - prm->delta)), sizeof(ABC->ipml[0][0][0]));
+
+    	
     	// muito questionavel
 	printf("i = %d, j = %d\n", i, j);
     	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
 	printf("o first npml eh %ld\n", first_npml);
-
+	
 	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxx[0]));
     	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyy[0]));
     	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzz[0]));
@@ -214,7 +214,31 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxz[0]));
     	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzy[0]));
     	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyz[0]));
-    	
+
+
+	// potencialmente certo mas desnecessariamente complexo
+	
+    	//starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM,
+	//			    (uintptr_t)&i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta),
+	//			    depth, sizeof(double));
+    	//
+    	//// muito questionavel
+	//printf("i = %d, j = %d\n", i, j);
+    	//long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
+	//printf("o first npml eh %ld\n", first_npml);
+	//
+	//starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxx[0]));
+    	//starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyy[0]));
+    	//starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzz[0]));
+    	//starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyx[0]));
+    	//starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxy[0]));
+    	//starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzx, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzx[0]));
+    	//starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivxz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivxz[0]));
+    	//starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivzy, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivzy[0]));
+    	//starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)ivector_address(ABC->phivyz, 1, ABC->npml, first_npml), depth, sizeof(ABC->phivyz[0]));
+
+	// errado certamente
+	
     	//starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxx+first_npml+1), depth, sizeof(ABC->phivxx[0]));
     	//starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyy+first_npml+1), depth, sizeof(ABC->phivyy[0]));
     	//starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzz+first_npml+1), depth, sizeof(ABC->phivzz[0]));
