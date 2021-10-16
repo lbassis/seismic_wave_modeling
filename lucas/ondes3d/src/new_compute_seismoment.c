@@ -7,7 +7,6 @@
 
 void seis_moment_task(void *buffers[], void *cl_arg) {
 
-  printf("seis moment task\n");
   // unpack structures
   double *fx = (double *)STARPU_BLOCK_GET_PTR(buffers[0]);
   double *fy = (double *)STARPU_BLOCK_GET_PTR(buffers[1]);
@@ -19,17 +18,17 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
   double *xweight = (double *)STARPU_VECTOR_GET_PTR(buffers[7]);
   double *yweight = (double *)STARPU_VECTOR_GET_PTR(buffers[8]);
   double *zweight = (double *)STARPU_VECTOR_GET_PTR(buffers[9]);
-  double *insrc = (double *)STARPU_VECTOR_GET_PTR(buffers[10]);
-  double *ixhypo = (double *)STARPU_VECTOR_GET_PTR(buffers[11]);
-  double *iyhypo = (double *)STARPU_VECTOR_GET_PTR(buffers[12]);
-  double *izhypo = (double *)STARPU_VECTOR_GET_PTR(buffers[13]);
-  double *i2imp_array = (double *)STARPU_VECTOR_GET_PTR(buffers[14]);
-  double *j2jmp_array = (double *)STARPU_VECTOR_GET_PTR(buffers[15]);
+  int *insrc = (int *)STARPU_VECTOR_GET_PTR(buffers[10]);
+  int *ixhypo = (int *)STARPU_VECTOR_GET_PTR(buffers[11]);
+  int *iyhypo = (int *)STARPU_VECTOR_GET_PTR(buffers[12]);
+  int *izhypo = (int *)STARPU_VECTOR_GET_PTR(buffers[13]);
+  int *i2imp_array = (int *)STARPU_VECTOR_GET_PTR(buffers[14]);
+  int *j2jmp_array = (int *)STARPU_VECTOR_GET_PTR(buffers[15]);
 
   int iDur, iSrc, dtbiem;
   double time, ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &time, &prm, &iDur, &iSrc);
+  starpu_codelet_unpack_args(cl_arg, &time, &prm, &dtbiem, &iDur, &iSrc);
 
   const int XMIN = prm.xMin;
   const int XMAX = prm.xMax;
@@ -46,7 +45,6 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
   ds = prm.ds;
   dt = prm.dt;
 
-  printf("pegou tudo\n");
   // computeseismoment
   int it, is, iw;
   int i, j, k;
@@ -93,16 +91,11 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
 	  }
 
 	  
-	  //imp = i2imp_array[i];
 	  imp = ivector_access(prm.i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, i);
-	  //jmp1 = j2jmp_array[j - 1];
 	  jmp1 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j-1);
-	  //jmp2 = j2jmp_array[j];
 	  jmp2 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j);
-	  //jmp3 = j2jmp_array[j + 1];
 	  jmp3 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j+1);
 
-	  printf("blzzz\n");
 	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp3, k) += 0.5 * mo * pxy * weight;
 	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp1, k) -= 0.5 * mo * pxy * weight;
 	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k + 1) += 0.5 * mo * pxz * weight;

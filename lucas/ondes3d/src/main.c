@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
   PRM.px = 1;
   PRM.py = 1;
   VerifFunction(ReadPrmFile(&PRM, &MDM, &ABC, &ANL, &OUT, PRMFILE), "read parameter file ", PRM);
+  VerifFunction(ReadSrc(&SRC, PRM), "read sources file ", PRM);
 
   VerifFunction(InitPartDomain(&PRM, &OUT), "split domain MPI", PRM);
 
