@@ -2529,6 +2529,7 @@ char *File2str(const char *flname)
     int i = 1;
     size = 1;
     out = malloc(i * STRL * sizeof(char));
+    out[0] = '\0';
     while (fscanf(fp, "%s", &cur) != EOF) {
 	size += strlen(cur);
 	if (size >= STRL - 2) {
