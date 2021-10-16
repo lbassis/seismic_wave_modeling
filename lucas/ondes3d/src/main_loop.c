@@ -166,7 +166,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
   /* loops */
   int it;
-  for (it = 0; it < PRM->tMax; it++) {
+  for (it = 0; it < 1/*PRM->tMax*/; it++) {
     // seismoment
     time = PRM->dt * it;
     starpu_insert_task(&seis_moment_cl,
