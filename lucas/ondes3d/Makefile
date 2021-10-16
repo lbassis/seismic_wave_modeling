@@ -21,3 +21,10 @@ $(PREFIX): $(OBJS)
 
 clean:
 	rm -f *.o  *~ ./ondes3d
+
+valgrind:
+	valgrind ./ondes3d 33
+
+valgrind-gdb:
+	valgrind --vgdb=yes --vgdb-error=0 ./ondes3d 33 &
+	(echo "target remote | vgdb"; cat) | gdb
