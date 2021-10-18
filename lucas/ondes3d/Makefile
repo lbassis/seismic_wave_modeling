@@ -1,7 +1,7 @@
 #CFLAGS          =   $(TESTFLAGS)  $(OPTI)  $(MODEL)
 STARPU_VERSION=1.3
 
-CFLAGS += -g
+CFLAGS += -g -O0
 CFLAGS += $(shell pkg-config --cflags starpu-$(STARPU_VERSION))
 LDLIBS += $(shell pkg-config --libs starpu-$(STARPU_VERSION))
 LDLIBS += -Wl,-rpath -Wl,$(shell pkg-config --variable=libdir starpu-$(STARPU_VERSION))

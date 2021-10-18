@@ -290,6 +290,13 @@ int AllocateFields(struct VELOCITY *v0,
   const int MPMX = PRM.mpmx;
   const int MPMY = PRM.mpmy;
 
+  int nrows = PRM.mpmx + 4;
+  int ncols = PRM.mpmy + 4;
+  int n_blocks_x = ncols/PRM.block_size;
+  int n_blocks_y = nrows/PRM.block_size;
+  PRM.n_blocks_x = n_blocks_x;
+  PRM.n_blocks_y = n_blocks_y;
+
   /* others */
   int i, j, k, imp, jmp;
   enum typePlace place;
@@ -330,25 +337,38 @@ int AllocateFields(struct VELOCITY *v0,
 #endif
   /* Velocity */
   ABC->nPower = NPOWER;
-  ABC->npmlv = 0;
+
   ABC->ipml = i3tensor(-1, MPMX + 2, -1, MPMY + 2, ZMIN - DELTA, ZMAX0);
 
-  for (imp = -1; imp <= MPMX + 2; imp++) {
-    //i = PRM.imp2i_array[imp];
-    i = ivector_access(PRM.imp2i_array, -1, MPMX + 2, imp);
-    for (jmp = -1; jmp <= MPMY + 2; jmp++) {
-      //j = PRM.jmp2j_array[jmp];
-      j = ivector_access(PRM.jmp2j_array, -1, MPMY + 2, jmp);
-      for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
-	i3access(ABC->ipml, -1, MPMX+2, -1, MPMY+2, ZMIN-DELTA, ZMAX0, imp, jmp, k) = -1;
-	place = WhereAmI(i, j, k, PRM);
-	if (place == ABSORBINGLAYER || place == FREEABS) {
-	  ABC->npmlv += 1;
-	  i3access(ABC->ipml, -1, MPMX+2, -1, MPMY+2, ZMIN-DELTA, ZMAX0, imp, jmp, k) = ABC->npmlv;
-	}
+  ABC->phiv = (struct phiv_s*)malloc(PRM.n_blocks_y * PRM.n_blocks_x * sizeof(struct phiv_s));
+  int depth = PRM.zMax0 - (PRM.zMin - PRM.delta) + 1;
+  for (int i_block = 0; i_block < PRM.n_blocks_y; i_block++) {
+    for (int j_block = 0; j_block < PRM.n_blocks_x; j_block++) {
+      ABC->npmlv = 0;
+      ABC->phiv[i_block * PRM.n_blocks_x + j_block].base_ptr = calloc(9 * PRM.block_size * PRM.block_size * depth, sizeof(double));
+      ABC->phiv[i_block * PRM.n_blocks_x + j_block].size = 9 * PRM.block_size * PRM.block_size * depth;
+      ABC->phiv[i_block * PRM.n_blocks_x + j_block].offset = PRM.block_size * PRM.block_size * depth;
+      COMPUTE_ADDRESS_PHIV_S(ABC->phiv[i_block * PRM.n_blocks_x + j_block]);
+      for(imp = -1 + PRM.block_size * i_block; imp < PRM.block_size * (i_block+1); imp++ ){
+        i = ivector_access(PRM.imp2i_array, -1, MPMX + 2, imp);
+        for(jmp = -1 + PRM.block_size * j_block; jmp < PRM.block_size * (j_block+1); jmp++ ){
+          j = ivector_access(PRM.jmp2j_array, -1, MPMY + 2, jmp);
+          for (k = ZMIN - DELTA; k <= ZMAX0; k++) {
+            i3access(ABC->ipml, -1, MPMX+2, -1, MPMY+2, ZMIN-DELTA, ZMAX0, imp, jmp, k) = -1;
+            place = WhereAmI(i, j, k, PRM);
+            if (place == ABSORBINGLAYER || place == FREEABS) {
+              ABC->npmlv += 1;
+              int* ppp = &i3access(ABC->ipml, -1, MPMX+2, -1, MPMY+2, ZMIN-DELTA, ZMAX0, imp, jmp, k);
+              *ppp = ABC->npmlv;
+
+            }
+          }
+        }
       }
     }
   }
+
+
   if (PRM.me == 0) {
     if (ABCmethod == CPML)
       printf("\nNumber of points in the CPML : %li\n", ABC->npmlv);
@@ -356,22 +376,6 @@ int AllocateFields(struct VELOCITY *v0,
       printf("\nNumber of points in the PML : %li\n", ABC->npmlt);
 
   }
-
-  if (ABCmethod == CPML) {
-
-    ABC->phivxx = mydvector0(1, ABC->npmlv);
-    ABC->phivxy = mydvector0(1, ABC->npmlv);
-    ABC->phivxz = mydvector0(1, ABC->npmlv);
-
-    ABC->phivyx = mydvector0(1, ABC->npmlv);
-    ABC->phivyy = mydvector0(1, ABC->npmlv);
-    ABC->phivyz = mydvector0(1, ABC->npmlv);
-
-    ABC->phivzx = mydvector0(1, ABC->npmlv);
-    ABC->phivzy = mydvector0(1, ABC->npmlv);
-    ABC->phivzz = mydvector0(1, ABC->npmlv);
-
-  }				/* end of if PML */
 
   /* Stress */
   ABC->npmlt = ABC->npmlv;
@@ -1065,19 +1069,13 @@ int DeallocateAll(int STATION_STEP,
   free(ABC->dumpz2);
 
   if (ABCmethod == CPML) {
+    for (int i_block = 0; i_block < PRM->n_blocks_y; i_block++) {
+      for (int j_block = 0; j_block < PRM->n_blocks_x; j_block++) {
+        free(ABC->phiv[i_block * PRM->n_blocks_x + j_block].base_ptr);
+      }
+    }
+    free(ABC->phiv);
 
-    free(ABC->phivxx);
-    free(ABC->phivyy);
-    free(ABC->phivzz);
-
-    free(ABC->phivxy);
-    free(ABC->phivyx);
-
-    free(ABC->phivxz);
-    free(ABC->phivzx);
-
-    free(ABC->phivyz);
-    free(ABC->phivzy);
 
     free(ABC->phitxxx);
     free(ABC->phitxyy);
