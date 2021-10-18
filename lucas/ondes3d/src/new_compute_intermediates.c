@@ -56,12 +56,13 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
   double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[38]);
 
   long int first_npml;
-  int i_block, j_block;
+  int i_block, j_block, nb_blocks_dim;
   int i, j, k, imp, jmp;
   double ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &first_npml, &prm);
-    
+  starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &nb_blocks_dim, &first_npml, &prm);
+
+  int block_size = prm.block_size;
   //computeintermediates
   
   /* approximations of a value in the corner of the cube */
@@ -86,12 +87,13 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 
 
   /* loop */
-  for (i = 0; i < prm.block_size; i++) {
-    for (j = 0; j < prm.block_size; j++) {
+  for (i = i_block*block_size; i < (i_block+1)*prm.block_size; i++) {
+    for (j = i_block*block_size; j < (j_block+1)*prm.block_size; j++) {
 
       // A FAZER: CONFERIR SE NAO EH UMA DAS 4 BORDAS GERAIS
-      if (i == 0 || i == prm.block_size-1 || j == 0 || j == prm.block_size-1)
+      if (i == 0 || i == nb_blocks_dim-1 || j == 0 || j == nb_blocks_dim-1) {
 	continue;
+      }
 
       jmp = ivector_access(prm.jmp2j_array, -1, prm.mpmy + 2, j);
       imp = ivector_access(prm.imp2i_array, -1, prm.mpmx + 2, i);

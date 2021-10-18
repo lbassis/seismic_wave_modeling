@@ -228,6 +228,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   STARPU_R, ipml_handle, STARPU_R, v0_x_handle, STARPU_R, v0_y_handle, STARPU_R, v0_z_handle,
     			   STARPU_VALUE, &i_block, sizeof(i_block),
     			   STARPU_VALUE, &j_block, sizeof(j_block),
+			   STARPU_VALUE, &n_blocks_x, sizeof(n_blocks_x),
     			   STARPU_VALUE, &first_npml, sizeof(first_npml),
     			   STARPU_VALUE, PRM, sizeof(*PRM),
     			   0);
@@ -237,7 +238,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     
     
     
-    //// loop compute stress
+    // loop compute stress
     ////////________________________________________
     /////// ATENCAO
     ///////
@@ -250,23 +251,19 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     //	i = i_block*PRM->block_size;
     //	j = j_block*PRM->block_size;
     //
-    //	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM,
-    //	(uintptr_t)&i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, 0),
-    //	 depth, sizeof(double));
+    //	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (PRM->mpmx+3)*(PRM->mpmy+3)*(PRM->zMax0 - (PRM->zMin - PRM->delta)), sizeof(ABC->ipml[0]));
     //
-    //	// muito questionavel
-    //	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, 0);
+    //	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
     //
-    //	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxx+first_npml), depth, sizeof(ABC->phivxx[0]));
-    //	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyy+first_npml), depth, sizeof(ABC->phivyy[0]));
-    //	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzz+first_npml), depth, sizeof(ABC->phivzz[0]));
-    //	starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyx+first_npml), depth, sizeof(ABC->phivyx[0]));
-    //	starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxy+first_npml), depth, sizeof(ABC->phivxy[0]));
-    //	starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzx+first_npml), depth, sizeof(ABC->phivzx[0]));
-    //	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivxz+first_npml), depth, sizeof(ABC->phivxz[0]));
-    //	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivzy+first_npml), depth, sizeof(ABC->phivzy[0]));
-    //	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phivyz+first_npml), depth, sizeof(ABC->phivyz[0]));
-    //	// fim do muito questionavel
+    //	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxx, depth, sizeof(ABC->phivxx[0]));
+    //	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyy, depth, sizeof(ABC->phivyy[0]));
+    //	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzz, depth, sizeof(ABC->phivzz[0]));
+    //	starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyx, depth, sizeof(ABC->phivyx[0]));
+    //	starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxy, depth, sizeof(ABC->phivxy[0]));
+    //	starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzx, depth, sizeof(ABC->phivzx[0]));
+    //	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxz, depth, sizeof(ABC->phivxz[0]));
+    //	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzy, depth, sizeof(ABC->phivzy[0]));
+    //	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyz, depth, sizeof(ABC->phivyz[0]));
     //
     //	starpu_data_handle_t block_xx, block_yy, block_zz, block_xy, block_xz, block_yz;
     //	block_xx = starpu_data_get_sub_data(t0_xx_handle, 2, i, j);
