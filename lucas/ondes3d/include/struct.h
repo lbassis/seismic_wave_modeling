@@ -138,6 +138,9 @@ struct PARAMETERS {
 
     /* lucas */
     int block_size;
+    int n_blocks_y;
+    int n_blocks_x;
+    int depth;
 };
 
 /*** MEDIUM MDM ***/
@@ -169,6 +172,31 @@ struct MEDIUM {
 
 };
 
+struct phiv_s{
+  double* base_ptr;
+  int size;
+  int offset;
+  double *xx;
+  double *yy;
+  double *zz;		/* for CPML; contributions to txx;tyy; tzz */
+  double *xy;
+  double *yx;		/* contributions to txy */
+  double *xz;
+  double *zx;		/* contributions to txz */
+  double *yz;
+  double *zy;		/* contributions to tyz */
+};
+
+#define COMPUTE_ADDRESS_PHIV_S(phiv) phiv.xx = phiv.base_ptr;\
+                                     phiv.yy = phiv.base_ptr + phiv.offset;\
+                                     phiv.zz = phiv.base_ptr + 2*phiv.offset;\
+                                     phiv.xy = phiv.base_ptr + 3*phiv.offset;\
+                                     phiv.yx = phiv.base_ptr + 4*phiv.offset;\
+                                     phiv.xz = phiv.base_ptr + 5*phiv.offset;\
+                                     phiv.zx = phiv.base_ptr + 6*phiv.offset;\
+                                     phiv.yz = phiv.base_ptr + 7*phiv.offset;\
+                                     phiv.zy = phiv.base_ptr + 8*phiv.offset;
+
 /*** Absorbing Boundary Condition ***/
 enum typePML { PML, CPML };
 struct ABSORBING_BOUNDARY_CONDITION {
@@ -190,15 +218,7 @@ struct ABSORBING_BOUNDARY_CONDITION {
     double fd;
     double alpha0;
     double kappa0;
-    double *phivxx;
-    double *phivyy;
-    double *phivzz;		/* for CPML; contributions to txx;tyy; tzz */
-    double *phivxy;
-    double *phivyx;		/* contributions to txy */
-    double *phivxz;
-    double *phivzx;		/* contributions to txz */
-    double *phivyz;
-    double *phivzy;		/* contributions to tyz */
+    struct phiv_s *phiv; //List of phiv blocks
 
     double *phitxxx;
     double *phitxyy;

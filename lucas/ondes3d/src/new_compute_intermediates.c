@@ -8,52 +8,45 @@
 void compute_intermediates_task(void *buffers[], void *cl_arg) {
 
   //unpack structures
-  double *phivxx = (double *)STARPU_VECTOR_GET_PTR(buffers[0]);
-  double *phivyy = (double *)STARPU_VECTOR_GET_PTR(buffers[1]);
-  double *phivzz = (double *)STARPU_VECTOR_GET_PTR(buffers[2]);
-  double *phivyx = (double *)STARPU_VECTOR_GET_PTR(buffers[3]);
-  double *phivxy = (double *)STARPU_VECTOR_GET_PTR(buffers[4]);
-  double *phivzx = (double *)STARPU_VECTOR_GET_PTR(buffers[5]);
-  double *phivxz = (double *)STARPU_VECTOR_GET_PTR(buffers[6]);
-  double *phivzy = (double *)STARPU_VECTOR_GET_PTR(buffers[7]);
-  double *phivyz = (double *)STARPU_VECTOR_GET_PTR(buffers[8]);
 
-  int *k2ly0 = (int *)STARPU_VECTOR_GET_PTR(buffers[9]);
-  int *k2ly2 = (int *)STARPU_VECTOR_GET_PTR(buffers[10]);
 
-  double *mu0 = (double *)STARPU_VECTOR_GET_PTR(buffers[11]);
-  double *mu2 = (double *)STARPU_VECTOR_GET_PTR(buffers[12]);
-  double *kap0 = (double *)STARPU_VECTOR_GET_PTR(buffers[13]);
-  double *kap2 = (double *)STARPU_VECTOR_GET_PTR(buffers[14]);
-  double *rho0 = (double *)STARPU_VECTOR_GET_PTR(buffers[15]);
-  double *rho2 = (double *)STARPU_VECTOR_GET_PTR(buffers[16]);
 
-  double *dumpx = (double *)STARPU_VECTOR_GET_PTR(buffers[17]);
-  double *dumpx2 = (double *)STARPU_VECTOR_GET_PTR(buffers[18]);
-  double *dumpy = (double *)STARPU_VECTOR_GET_PTR(buffers[19]);
-  double *dumpy2 = (double *)STARPU_VECTOR_GET_PTR(buffers[20]);
-  double *dumpz = (double *)STARPU_VECTOR_GET_PTR(buffers[21]);
-  double *dumpz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[22]);
+  int *k2ly0 = (int *)STARPU_VECTOR_GET_PTR(buffers[1]);
+  int *k2ly2 = (int *)STARPU_VECTOR_GET_PTR(buffers[2]);
 
-  double *alphax = (double *)STARPU_VECTOR_GET_PTR(buffers[23]);
-  double *alphax2 = (double *)STARPU_VECTOR_GET_PTR(buffers[24]);
-  double *alphay = (double *)STARPU_VECTOR_GET_PTR(buffers[25]);
-  double *alphay2 = (double *)STARPU_VECTOR_GET_PTR(buffers[26]);
-  double *alphaz = (double *)STARPU_VECTOR_GET_PTR(buffers[27]);
-  double *alphaz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[28]);
+  double *mu0 = (double *)STARPU_VECTOR_GET_PTR(buffers[3]);
+  double *mu2 = (double *)STARPU_VECTOR_GET_PTR(buffers[4]);
+  double *kap0 = (double *)STARPU_VECTOR_GET_PTR(buffers[5]);
+  double *kap2 = (double *)STARPU_VECTOR_GET_PTR(buffers[6]);
+  double *rho0 = (double *)STARPU_VECTOR_GET_PTR(buffers[7]);
+  double *rho2 = (double *)STARPU_VECTOR_GET_PTR(buffers[8]);
 
-  double *kappax = (double *)STARPU_VECTOR_GET_PTR(buffers[29]);
-  double *kappax2 = (double *)STARPU_VECTOR_GET_PTR(buffers[30]);
-  double *kappay = (double *)STARPU_VECTOR_GET_PTR(buffers[31]);
-  double *kappay2 = (double *)STARPU_VECTOR_GET_PTR(buffers[32]);
-  double *kappaz = (double *)STARPU_VECTOR_GET_PTR(buffers[33]);
-  double *kappaz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[34]);
+  double *dumpx = (double *)STARPU_VECTOR_GET_PTR(buffers[9]);
+  double *dumpx2 = (double *)STARPU_VECTOR_GET_PTR(buffers[10]);
+  double *dumpy = (double *)STARPU_VECTOR_GET_PTR(buffers[11]);
+  double *dumpy2 = (double *)STARPU_VECTOR_GET_PTR(buffers[12]);
+  double *dumpz = (double *)STARPU_VECTOR_GET_PTR(buffers[13]);
+  double *dumpz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[14]);
 
-  int *ipml = (int *)STARPU_VECTOR_GET_PTR(buffers[35]);
+  double *alphax = (double *)STARPU_VECTOR_GET_PTR(buffers[15]);
+  double *alphax2 = (double *)STARPU_VECTOR_GET_PTR(buffers[16]);
+  double *alphay = (double *)STARPU_VECTOR_GET_PTR(buffers[17]);
+  double *alphay2 = (double *)STARPU_VECTOR_GET_PTR(buffers[18]);
+  double *alphaz = (double *)STARPU_VECTOR_GET_PTR(buffers[19]);
+  double *alphaz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[20]);
 
-  double *v0_x = (double *)STARPU_BLOCK_GET_PTR(buffers[36]);
-  double *v0_y = (double *)STARPU_BLOCK_GET_PTR(buffers[37]);
-  double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[38]);
+  double *kappax = (double *)STARPU_VECTOR_GET_PTR(buffers[21]);
+  double *kappax2 = (double *)STARPU_VECTOR_GET_PTR(buffers[22]);
+  double *kappay = (double *)STARPU_VECTOR_GET_PTR(buffers[23]);
+  double *kappay2 = (double *)STARPU_VECTOR_GET_PTR(buffers[24]);
+  double *kappaz = (double *)STARPU_VECTOR_GET_PTR(buffers[25]);
+  double *kappaz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[26]);
+
+  int *ipml = (int *)STARPU_VECTOR_GET_PTR(buffers[27]);
+
+  double *v0_x = (double *)STARPU_BLOCK_GET_PTR(buffers[28]);
+  double *v0_y = (double *)STARPU_BLOCK_GET_PTR(buffers[29]);
+  double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[30]);
 
   long int first_npml;
   int i_block, j_block;
@@ -61,9 +54,16 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
   double ds, dt;
   struct PARAMETERS prm;
   starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &first_npml, &prm);
-    
+
+  double *phiv_base_ptr = (double *)STARPU_VECTOR_GET_PTR(buffers[0]);
+  struct phiv_s phiv;
+  phiv.base_ptr = phiv_base_ptr;
+  phiv.size = 9 * prm.block_size * prm.block_size * prm.depth;
+  phiv.offset = prm.block_size * prm.block_size * prm.depth;
+  COMPUTE_ADDRESS_PHIV_S(phiv);
+
   //computeintermediates
-  
+
   /* approximations of a value in the corner of the cube */
   double rhox, rhoy, rhoz, rhoxyz;	/* rho at +0 and +ds/2 */
   double kapxyz, kapxy, kapxz, kapx, kapy, kapz, muxy, muxz, mux, muy, muz, muxyz;
@@ -126,7 +126,7 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  structure :
 	  + PML/CPML
 	  -- common initialisations
-	  -- ABSORBING LAYER 
+	  -- ABSORBING LAYER
 	  -- FREEABS
 
 	  \*=====================================================*/
@@ -165,71 +165,71 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	  /* txx, tyy, tzz */
 
 	  // nao sei o tamanho do vetor aqui, mas isso nao muda em nada entao pus 1000
-	  phixdum = ivector_access(phivxx, 1, 1000, npml);
-	  phiydum = ivector_access(phivyy, 1, 1000, npml);
-	  phizdum = ivector_access(phivzz, 1, 1000, npml);
-	  
-	  ivector_access(phivxx, 1, 1000, npml) =
+	  phixdum = ivector_access(phiv.xx, 1, 1000, npml);
+	  phiydum = ivector_access(phiv.yy, 1, 1000, npml);
+	  phizdum = ivector_access(phiv.zz, 1, 1000, npml);
+
+	  ivector_access(phiv.xx, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpx2, 1, prm.mpmx, i), ivector_access(alphax2, 1, prm.mpmx, i),
 		  ivector_access(kappax2, 1, prm.mpmx, i), phixdum, ds, dt,
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k));
-	  ivector_access(phivyy, 1, 1000, npml) =
+	  ivector_access(phiv.yy, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpy, 1, prm.mpmy, j), ivector_access(alphay, 1, prm.mpmy, j),
 		  ivector_access(kappay, 1, prm.mpmy, j), phiydum, ds, dt,
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k));
-	  ivector_access(phivzz, 1, 1000, npml) =
+	  ivector_access(phiv.zz, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpz, prm.zMin - prm.delta, 1000, k), ivector_access(alphaz, prm.zMin - prm.delta, 1000, k),
 		  ivector_access(dumpz, prm.zMin - prm.delta, 1000, k), phizdum, ds, dt,
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1), i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1));
 	  /* txy */
-	  phixdum = ivector_access(phivyx, 1, 1000, npml);
-	  phiydum = ivector_access(phivxy, 1, 1000, npml);
+	  phixdum = ivector_access(phiv.yx, 1, 1000, npml);
+	  phiydum = ivector_access(phiv.xy, 1, 1000, npml);
 
-	  ivector_access(phivyx, 1, 1000, npml) =
+	  ivector_access(phiv.yx, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpx, 1, prm.mpmx, i), ivector_access(alphax, 1, prm.mpmx, i),
 		  ivector_access(kappax, 1, prm.mpmx, i), phixdum, ds, dt,
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k));
-	  ivector_access(phivxy, 1, 1000, npml) =
+	  ivector_access(phiv.xy, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpy2, 1, prm.mpmy, j), ivector_access(alphay2, 1, prm.mpmy, j),
 		  ivector_access(kappay2, 1, prm.mpmy, j), phiydum, ds, dt,
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k));
 	  /* txz */
-	  phixdum = ivector_access(phivzx, 1, 1000, npml);
-	  phizdum = ivector_access(phivxz, 1, 1000, npml);
+	  phixdum = ivector_access(phiv.zx, 1, 1000, npml);
+	  phizdum = ivector_access(phiv.xz, 1, 1000, npml);
 
-	  ivector_access(phivzx, 1, 1000, npml) =
+	  ivector_access(phiv.zx, 1, 1000, npml) =
 	    CPML4(vpz, ivector_access(dumpx, 1, prm.mpmx, i), ivector_access(alphax, 1, prm.mpmx, i),
 		  ivector_access(kappax, 1, prm.mpmx, i), phixdum, ds, dt,
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k), i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k));
-	  ivector_access(phivxz, 1, 1000, npml) =
+	  ivector_access(phiv.xz, 1, 1000, npml) =
 	    CPML4(vpz, ivector_access(dumpz2, prm.zMin - prm.delta, prm.zMax0, k), ivector_access(alphaz2, prm.zMin - prm.delta, prm.zMax0, k),
 		  ivector_access(kappaz2, prm.zMin - prm.delta, prm.zMax0, k), phizdum, ds, dt,
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 2));
 	  /* tyz */
-	  phiydum = ivector_access(phivzy, 1, 1000, npml);
-	  phizdum = ivector_access(phivyz, 1, 1000, npml);
+	  phiydum = ivector_access(phiv.zy, 1, 1000, npml);
+	  phizdum = ivector_access(phiv.yz, 1, 1000, npml);
 
-	  ivector_access(phivzy, 1, 1000, npml) =
+	  ivector_access(phiv.zy, 1, 1000, npml) =
 	    CPML4(vpxyz, ivector_access(dumpy2, 1, prm.mpmy, j),
 		  ivector_access(alphay2, 1, prm.mpmy, j), ivector_access(kappay2, 1, prm.mpmy, j),
 		  phiydum, ds, dt, i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k), i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
 		  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k));
-	  ivector_access(phivyz, 1, 1000, npml) =
+	  ivector_access(phiv.yz, 1, 1000, npml) =
 	    CPML4(vpxyz, ivector_access(dumpz2, prm.zMin - prm.delta, prm.zMax0, k),
 		  ivector_access(alphaz2, prm.zMin - prm.delta, prm.zMax0, k), ivector_access(kappaz2, prm.zMin - prm.delta, prm.zMax0, k),
 		  phizdum, ds, dt, i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
@@ -239,8 +239,8 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 
 	/* FREEABS      */
 	/* ------------ */
-	/* We only need to compute t0xx(k=1),t0yy(k=1),t0xy(k=1) 
-	 * So each coefficient will be computed only for those part 
+	/* We only need to compute t0xx(k=1),t0yy(k=1),t0xy(k=1)
+	 * So each coefficient will be computed only for those part
 	 *
 	 * Expressions are simply obtain from approximation of dz(v0.z) in an elastic medium :
 	 * dt(t0.zz)|z=0 = 0 = lam *(dx(v0.x) + dy(v0.y) + dz(v0.z)) + 2*mu * dz(v0.z);
@@ -262,17 +262,17 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	     );
 
 	  /* txx, tyy */
-	  phixdum = ivector_access(phivxx, 1, 1000, npml);
-	  phiydum = ivector_access(phivyy, 1, 1000, npml);
-	  phizdum = ivector_access(phivzz, 1, 1000, npml);
+	  phixdum = ivector_access(phiv.xx, 1, 1000, npml);
+	  phiydum = ivector_access(phiv.yy, 1, 1000, npml);
+	  phizdum = ivector_access(phiv.zz, 1, 1000, npml);
 	  /* (copy&paste) */
-	  ivector_access(phivxx, 1, 1000, npml) =
+	  ivector_access(phiv.xx, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpx2, 1, prm.mpmx, i), ivector_access(alphax2, 1, prm.mpmx, i),
 		  ivector_access(kappax2, 1, prm.mpmx, i), phixdum, ds, dt,
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k));
-	  ivector_access(phivyy, 1, 1000, npml) =
+	  ivector_access(phiv.yy, 1, 1000, npml) =
 	    CPML4(vpx, ivector_access(dumpy, 1, prm.mpmy, j), ivector_access(alphay, 1, prm.mpmy, j),
 		  ivector_access(kappay, 1, prm.mpmy, j), phiydum, ds, dt,
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
@@ -290,19 +290,19 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	       (vpx * ivector_access(dumpz, prm.zMin - prm.delta, 1000, k) +
 		ivector_access(dumpz, prm.zMin - prm.delta, 1000, k) * ivector_access(alphaz, prm.zMin - prm.delta, 1000, k)));
 	  }
-	  ivector_access(phivzz, 1, 1000, npml) = b * phizdum + a * (dzV0z);
+	  ivector_access(phiv.zz, 1, 1000, npml) = b * phizdum + a * (dzV0z);
 
 	  /* txy ( copy&paste) */
-	  phixdum = ivector_access(phivyx, 1, 1000, npml);
-	  phiydum = ivector_access(phivxy, 1, 1000, npml);
+	  phixdum = ivector_access(phiv.yx, 1, 1000, npml);
+	  phiydum = ivector_access(phiv.xy, 1, 1000, npml);
 
-	  ivector_access(phivyx, 1, 1000, npml) =
+	  ivector_access(phiv.yx, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpx, 1, prm.mpmx, i), ivector_access(alphax, 1, prm.mpmx, i),
 		  ivector_access(kappax, 1, prm.mpmx, i), phixdum, ds, dt,
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k), i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
 		  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k));
-	  ivector_access(phivxy, 1, 1000, npml) =
+	  ivector_access(phiv.xy, 1, 1000, npml) =
 	    CPML4(vpy, ivector_access(dumpy2, 1, prm.mpmy, j), ivector_access(alphay2, 1, prm.mpmy, j),
 		  ivector_access(kappay2, 1, prm.mpmy, j), phiydum, ds, dt,
 		  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k), i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),

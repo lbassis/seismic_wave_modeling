@@ -51,12 +51,12 @@ void dump_vectors(struct ABSORBING_BOUNDARY_CONDITION *abc, struct MEDIUM *mdm, 
   const int DELTA = PRM.delta;
 
   int i;
-
+/*
   for (i = 1; i <= abc->npmlv; i++) {
     fprintf(out, "%f %f %f %f %f %f %f %f %f\n", abc->phivxx[i], abc->phivxy[i], abc->phivxz[i], abc->phivyx[i],
 	    abc->phivyy[i], abc->phivyz[i], abc->phivzx[i], abc->phivzy[i], abc->phivzz[i]);
   }
-
+*/
   for (i = 1; i <= abc->npmlt; i++) {
     fprintf(out, "%f %f %f %f %f %f %f %f %f\n", abc->phitxxx[i], abc->phitxyy[i], abc->phitxzz[i], abc->phitxyx[i],
 	    abc->phityyy[i], abc->phityzz[i], abc->phitxzx[i], abc->phityzy[i], abc->phitzzz[i]);

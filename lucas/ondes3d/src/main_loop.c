@@ -6,51 +6,72 @@
 #include "../include/new_compute_intermediates.h"
 #include "../include/new_compute_stress.h"
 #include "../include/new_compute_velo.h"
+#include "../include/inlineFunctions.h"
+
+enum starpu_data_access_mode modes_seis[16] =
+{
+		STARPU_W, STARPU_W, STARPU_W, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R
+};
 
 struct starpu_codelet seis_moment_cl = {
 					.cpu_funcs = {seis_moment_task},
 					.nbuffers = 16,
 					.name = "seis_moment",
-					.modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_R,
-						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						  STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						  STARPU_R, STARPU_R, STARPU_R, STARPU_R},
+					.dyn_modes = modes_seis,
+};
+
+enum starpu_data_access_mode modes_intermediates[31] =
+{
+	STARPU_W,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R
 };
 
 struct starpu_codelet intermediates_cl = {
 					  .cpu_funcs = {compute_intermediates_task},
-					  .nbuffers = 39,
+					  .nbuffers = 31,
 						.name = "intermediates",
-					  .modes = {STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
-						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						    STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-						    STARPU_R, STARPU_R, STARPU_R},
+					  .dyn_modes = modes_intermediates
+};
+
+enum starpu_data_access_mode modes_stress[30] =
+{
+	STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R
 };
 
 struct starpu_codelet stress_cl = {
 				   .cpu_funcs = {compute_stress_task},
 				   .nbuffers = 30,
 					 .name = "stress",
-				   .modes = {STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					     STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R}
+				   .dyn_modes = modes_stress,
+};
+
+enum starpu_data_access_mode modes_valo[48] =
+{
+	STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W, STARPU_W, STARPU_W,
+			STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 };
 
 struct starpu_codelet velo_cl = {
 				 .cpu_funcs = {compute_velo_task},
 				 .nbuffers = 48,
 				 .name = "velo",
-				 .modes = {STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W, STARPU_W, STARPU_W,
-					   STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-					   STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,}
+				 .dyn_modes = modes_valo
 };
 
 
@@ -68,7 +89,9 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
   int n_blocks_x = ncols/PRM->block_size;
   int n_blocks_y = nrows/PRM->block_size;
-
+	PRM->n_blocks_x = n_blocks_x;
+	PRM->n_blocks_y = n_blocks_y;
+	PRM->depth = depth;
   printf("nblocksx = %d, nblocksy = %d\n", n_blocks_x, n_blocks_y);
   int mpmz = PRM->zMax0 - (PRM->zMin - PRM->delta);
 
@@ -105,7 +128,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   starpu_data_handle_t dumpx_handle, dumpx2_handle, dumpy_handle, dumpy2_handle, dumpz_handle, dumpz2_handle;
   starpu_data_handle_t alphax_handle, alphax2_handle, alphay_handle, alphay2_handle, alphaz_handle, alphaz2_handle;
   starpu_data_handle_t kappax_handle, kappax2_handle, kappay_handle, kappay2_handle, kappaz_handle, kappaz2_handle;
-  starpu_data_handle_t phivxx_handle, phivyy_handle, phivzz_handle, phivyx_handle, phivxy_handle, phivzx_handle, phivxz_handle, phivzy_handle, phivyz_handle;
+  starpu_data_handle_t phiv_handle;
   starpu_data_handle_t v0_x_handle, v0_y_handle, v0_z_handle;
 
   starpu_vector_data_register(&k2ly0_handle,  STARPU_MAIN_RAM, (uintptr_t)MDM->k2ly0, PRM->zMax0 - (PRM->zMin - PRM->delta) + 1, sizeof(MDM->k2ly0[0]));
@@ -194,9 +217,10 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     /// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
     ///
     //__________________________________________
+		starpu_task_wait_for_all();
     for (i_block = 0; i_block < n_blocks_y; i_block++) {
       for (j_block = 0; j_block < n_blocks_x; j_block++) {
-    
+
     	i = i_block*PRM->block_size;
     	j = j_block*PRM->block_size;
 
@@ -205,21 +229,13 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
     	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
 
-	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxx, depth, sizeof(ABC->phivxx[0]));
-	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyy, depth, sizeof(ABC->phivyy[0]));
-	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzz, depth, sizeof(ABC->phivzz[0]));
-	starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyx, depth, sizeof(ABC->phivyx[0]));
-	starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxy, depth, sizeof(ABC->phivxy[0]));
-	starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzx, depth, sizeof(ABC->phivzx[0]));
-	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxz, depth, sizeof(ABC->phivxz[0]));
-	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzy, depth, sizeof(ABC->phivzy[0]));
-	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyz, depth, sizeof(ABC->phivyz[0]));
+	starpu_vector_data_register(&phiv_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phiv[i_block * PRM->n_blocks_x + j_block].base_ptr,
+	                             ABC->phiv[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
+
 
 
     	starpu_task_insert(&intermediates_cl,
-    			   STARPU_W, phivxx_handle, STARPU_W, phivyy_handle, STARPU_W, phivzz_handle,
-    			   STARPU_W, phivyx_handle, STARPU_W, phivxy_handle, STARPU_W, phivzx_handle,
-    			   STARPU_W, phivxz_handle, STARPU_W, phivzy_handle, STARPU_W, phivyz_handle,
+    			   STARPU_W, phiv_handle,
     			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle,
     			   STARPU_R, kap0_handle, STARPU_R, kap2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
     			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
@@ -232,11 +248,37 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   STARPU_VALUE, PRM, sizeof(*PRM),
     			   0);
       }
-    }    
-    
-    
-    
-    
+    }
+		starpu_task_wait_for_all();
+		//Lets Dump phiv.xx
+		/*FILE* f = fopen("/tmp/dump_ondes_sp", "w");
+		int imp, jmp, k, i, j, place, *ipml;
+		for (int i_block = 0; i_block < PRM->n_blocks_y; i_block++) {
+			for (int j_block = 0; j_block < PRM->n_blocks_x; j_block++) {
+				for(imp = -1 + PRM->block_size * i_block; imp < PRM->block_size * (i_block+1); imp++ ){
+					i = ivector_access(PRM->imp2i_array, -1, PRM->mpmx + 2, imp);
+					for(jmp = -1 + PRM->block_size * j_block; jmp < PRM->block_size * (j_block+1); jmp++ ){
+						j = ivector_access(PRM->jmp2j_array, -1, PRM->mpmy + 2, jmp);
+						for (k = PRM->zMin - PRM->delta; k <= PRM->zMax0; k++) {
+							place = WhereAmI(i, j, k, *PRM);
+							double ret = -2;
+							if ((place == OUTSIDE) || (place == LIMIT)) {
+							  continue;
+							}
+							if (place == ABSORBINGLAYER || place == FREEABS) {
+								ipml = &i3access(ABC->ipml, -1, PRM->mpmx+2, -1, PRM->mpmy+2, PRM->zMin-PRM->delta, PRM->zMax0, imp, jmp, k);
+								ret = ivector_access(ABC->phiv[i_block * PRM->n_blocks_x + j_block].xy, 1, 1000, *ipml);
+							}
+							fprintf(f, "%d,%d,%d,%lf\n", imp, jmp, k, ret);
+						}
+					}
+				}
+			}
+		}
+		fclose(f);*/
+
+
+
     //// loop compute stress
     ////////________________________________________
     /////// ATENCAO
