@@ -39,18 +39,16 @@ struct starpu_codelet intermediates_cl = {
 					  .dyn_modes = modes_intermediates
 };
 
-enum starpu_data_access_mode modes_stress[30] =
+enum starpu_data_access_mode modes_stress[22] =
 {
-	STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R
-};
+ STARPU_W, STARPU_W, STARPU_RW, STARPU_W, STARPU_RW, STARPU_RW,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R};
 
 struct starpu_codelet stress_cl = {
 				   .cpu_funcs = {compute_stress_task},
-				   .nbuffers = 30,
+				   .nbuffers = 22,
 					 .name = "stress",
 				   .dyn_modes = modes_stress,
 };
@@ -233,7 +231,6 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 	                             ABC->phiv[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
 
 
-
     	starpu_task_insert(&intermediates_cl,
     			   STARPU_W, phiv_handle,
     			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle,
@@ -244,7 +241,6 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   STARPU_R, ipml_handle, STARPU_R, v0_x_handle, STARPU_R, v0_y_handle, STARPU_R, v0_z_handle,
     			   STARPU_VALUE, &i_block, sizeof(i_block),
     			   STARPU_VALUE, &j_block, sizeof(j_block),
-			   STARPU_VALUE, &n_blocks_x, sizeof(n_blocks_x),
     			   STARPU_VALUE, &first_npml, sizeof(first_npml),
     			   STARPU_VALUE, PRM, sizeof(*PRM),
     			   0);
@@ -279,57 +275,42 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 		fclose(f);*/
 
 
-
     //// loop compute stress
-    ////////________________________________________
-    /////// ATENCAO
-    ///////
-    /////// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
-    ///////
-    //////__________________________________________
-    //for (i_block = 1; i_block <= n_blocks_y; i_block++) {
-    //  for (j_block = 1; j_block <= n_blocks_x; j_block++) {
-    //
-    //	i = i_block*PRM->block_size;
-    //	j = j_block*PRM->block_size;
-    //
-    //	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (PRM->mpmx+3)*(PRM->mpmy+3)*(PRM->zMax0 - (PRM->zMin - PRM->delta)), sizeof(ABC->ipml[0]));
-    //
-    //	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
-    //
-    //	starpu_vector_data_register(&phivxx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxx, depth, sizeof(ABC->phivxx[0]));
-    //	starpu_vector_data_register(&phivyy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyy, depth, sizeof(ABC->phivyy[0]));
-    //	starpu_vector_data_register(&phivzz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzz, depth, sizeof(ABC->phivzz[0]));
-    //	starpu_vector_data_register(&phivyx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyx, depth, sizeof(ABC->phivyx[0]));
-    //	starpu_vector_data_register(&phivxy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxy, depth, sizeof(ABC->phivxy[0]));
-    //	starpu_vector_data_register(&phivzx_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzx, depth, sizeof(ABC->phivzx[0]));
-    //	starpu_vector_data_register(&phivxz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivxz, depth, sizeof(ABC->phivxz[0]));
-    //	starpu_vector_data_register(&phivzy_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivzy, depth, sizeof(ABC->phivzy[0]));
-    //	starpu_vector_data_register(&phivyz_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phivyz, depth, sizeof(ABC->phivyz[0]));
-    //
-    //	starpu_data_handle_t block_xx, block_yy, block_zz, block_xy, block_xz, block_yz;
-    //	block_xx = starpu_data_get_sub_data(t0_xx_handle, 2, i, j);
-    //	block_yy = starpu_data_get_sub_data(t0_yy_handle, 2, i, j);
-    //	block_zz = starpu_data_get_sub_data(t0_zz_handle, 2, i, j);
-    //	block_xy = starpu_data_get_sub_data(t0_xy_handle, 2, i, j);
-    //	block_xz = starpu_data_get_sub_data(t0_xz_handle, 2, i, j);
-    //	block_yz = starpu_data_get_sub_data(t0_yz_handle, 2, i, j);
-    //
-    //	starpu_task_insert(&stress_cl,
-    //			   STARPU_W, block_xx, STARPU_W, block_yy, STARPU_RW, block_zz, STARPU_W, block_xy, STARPU_RW, block_xz, STARPU_RW, block_yz,
-    //			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle, STARPU_R, kap0_handle,
-    //			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle, STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle,
-    //			   STARPU_R, phivxx_handle, STARPU_R, phivyy_handle, STARPU_R, phivzz_handle,
-    //			   STARPU_R, phivyx_handle, STARPU_R, phivxy_handle, STARPU_R, phivzx_handle,
-    //			   STARPU_R, phivxz_handle, STARPU_R, phivzy_handle, STARPU_R, phivyz_handle,
-    //			   STARPU_R, ipml_handle, STARPU_R, v0_x_handle, STARPU_R, v0_y_handle, STARPU_R, v0_z_handle,
-    //			   STARPU_VALUE, &i, sizeof(i),
-    //			   STARPU_VALUE, &j, sizeof(j),
-    //			   STARPU_VALUE, &first_npml, sizeof(first_npml),
-    //			   STARPU_VALUE, PRM, sizeof(*PRM),
-    //			   0);
-    //  }
-    //}
+		printf("deu %d blocos\n", n_blocks_x);
+    for (i_block = 0; i_block < n_blocks_y; i_block++) {
+      for (j_block = 0; j_block < n_blocks_x; j_block++) {
+
+    	i = i_block*PRM->block_size;
+    	j = j_block*PRM->block_size;
+    
+    	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (PRM->mpmx+3)*(PRM->mpmy+3)*(PRM->zMax0 - (PRM->zMin - PRM->delta)), sizeof(ABC->ipml[0]));
+    
+    	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
+
+	starpu_vector_data_register(&phiv_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phiv[i_block * PRM->n_blocks_x + j_block].base_ptr,
+	                             ABC->phiv[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
+
+    	starpu_data_handle_t block_xx, block_yy, block_zz, block_xy, block_xz, block_yz;
+    	block_xx = starpu_data_get_sub_data(t0_xx_handle, 2, i_block, j_block);
+    	block_yy = starpu_data_get_sub_data(t0_yy_handle, 2, i_block, j_block);
+    	block_zz = starpu_data_get_sub_data(t0_zz_handle, 2, i_block, j_block);
+    	block_xy = starpu_data_get_sub_data(t0_xy_handle, 2, i_block, j_block);
+    	block_xz = starpu_data_get_sub_data(t0_xz_handle, 2, i_block, j_block);
+    	block_yz = starpu_data_get_sub_data(t0_yz_handle, 2, i_block, j_block);
+    
+    	starpu_task_insert(&stress_cl,
+    			   STARPU_W, block_xx, STARPU_W, block_yy, STARPU_RW, block_zz, STARPU_W, block_xy, STARPU_RW, block_xz, STARPU_RW, block_yz,
+    			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle, STARPU_R, kap0_handle,
+    			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle,
+			   STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle, STARPU_R, phiv_handle,
+    			   STARPU_R, ipml_handle, STARPU_R, v0_x_handle, STARPU_R, v0_y_handle, STARPU_R, v0_z_handle,
+    			   STARPU_VALUE, &i, sizeof(i),
+    			   STARPU_VALUE, &j, sizeof(j),
+    			   STARPU_VALUE, &first_npml, sizeof(first_npml),
+    			   STARPU_VALUE, PRM, sizeof(*PRM),
+    			   0);
+      }
+    }
     //
     //
     //

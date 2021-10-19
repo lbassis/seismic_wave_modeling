@@ -28,31 +28,30 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   double *kappaz = (double *)STARPU_VECTOR_GET_PTR(buffers[15]);
   double *kappaz2 = (double *)STARPU_VECTOR_GET_PTR(buffers[16]);
 
-  double *phivxx = (double *)STARPU_VECTOR_GET_PTR(buffers[17]);
-  double *phivyy = (double *)STARPU_VECTOR_GET_PTR(buffers[18]);
-  double *phivzz = (double *)STARPU_VECTOR_GET_PTR(buffers[19]);
-  double *phivyx = (double *)STARPU_VECTOR_GET_PTR(buffers[20]);
-  double *phivxy = (double *)STARPU_VECTOR_GET_PTR(buffers[21]);
-  double *phivzx = (double *)STARPU_VECTOR_GET_PTR(buffers[22]);
-  double *phivxz = (double *)STARPU_VECTOR_GET_PTR(buffers[23]);
-  double *phivzy = (double *)STARPU_VECTOR_GET_PTR(buffers[24]);
-  double *phivyz = (double *)STARPU_VECTOR_GET_PTR(buffers[25]);
+  double *phiv_base_ptr = (double *)STARPU_VECTOR_GET_PTR(buffers[17]);
 
-  int *ipml = (int *)STARPU_VECTOR_GET_PTR(buffers[26]);
+  int *ipml = (int *)STARPU_VECTOR_GET_PTR(buffers[18]);
 
-  double *v0_x = (double *)STARPU_BLOCK_GET_PTR(buffers[27]);
-  double *v0_y = (double *)STARPU_BLOCK_GET_PTR(buffers[28]);
-  double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[29]);
+  double *v0_x = (double *)STARPU_BLOCK_GET_PTR(buffers[19]);
+  double *v0_y = (double *)STARPU_BLOCK_GET_PTR(buffers[20]);
+  double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[21]);
 
   long int first_npml;
-  int i_block, j_block, nb_blocks_dim;
+  int i_block, j_block;
   int i, j, k, imp, jmp;
   int inner_i, inner_j;
   double ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &nb_blocks_dim, &first_npml, &prm);
+  starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &first_npml, &prm);
 
   int block_size = prm.block_size;
+
+  struct phiv_s phiv;
+  phiv.base_ptr = phiv_base_ptr;
+  phiv.size = 9 * prm.block_size * prm.block_size * prm.depth;
+  phiv.offset = prm.block_size * prm.block_size * prm.depth;
+  COMPUTE_ADDRESS_PHIV_S(phiv);
+
   //computestress
   /* approximations of a value in the corner of the cube */
   double kapxyz, kapxy, kapxz, kapx, kapy, kapz, muxy, muxz, mux, muy, muz, muxyz;
@@ -67,13 +66,14 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   dt = prm.dt;
 
   /* loop */
+  //printf("alo block size %d\n", block_size);
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
-
+      
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
       
-      if (i == 0 || i == nb_blocks_dim-1 || j == 0 || j == nb_blocks_dim-1) {
+      if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
 	continue;
       }
 
@@ -81,7 +81,6 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
       imp = ivector_access(prm.imp2i_array, -1, prm.mpmx + 2, i);
 
       for (k = prm.zMin - prm.delta; k <= prm.zMax0; k++) {
-	printf("eita\n");
 	/* INITIALISATIONS */
 	place = WhereAmI(imp, jmp, k, prm);
 
@@ -91,7 +90,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	}
 	/* find the right npml number */
 	if ((place == ABSORBINGLAYER) || (place == FREEABS)) {
-	  npml = ipml[k];
+	  npml = first_npml+k-(prm.zMin - prm.delta);
 	}
 	/* medium */
 
@@ -246,27 +245,27 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	  b2 = kapx - 2. * mux / 3.;
 
 	  i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-	    dt * b2 * (phivyy[npml] +
-		       phivzz[npml]) +
-	    dt * b1 * phivxx[npml];
+	    dt * b2 * (ivector_access(phiv.yy, 1, 1000, npml) +
+		       ivector_access(phiv.zz, 1, 1000, npml)) +
+	    dt * b1 * ivector_access(phiv.xx, 1, 1000, npml);
 	  i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-	    dt * b2 * (phivxx[npml] +
-		       phivzz[npml]) +
-	    dt * b1 * phivyy[npml];
+	    dt * b2 * (ivector_access(phiv.xx, 1, 1000, npml) +
+		       ivector_access(phiv.zz, 1, 1000, npml)) +
+	    dt * b1 * ivector_access(phiv.yy, 1, 1000, npml);
 	  i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-	    dt * b2 * (phivxx[npml] +
-		       phivyy[npml]) +
-	    dt * b1 * phivzz[npml];
+	    dt * b2 * (ivector_access(phiv.xx, 1, 1000, npml) +
+		       ivector_access(phiv.yy, 1, 1000, npml)) +
+	    dt * b1 * ivector_access(phiv.zz, 1, 1000, npml);
 
 	  i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-	    dt * muy * (phivyx[npml] +
-			phivxy[npml]);
+	    dt * muy * (ivector_access(phiv.yx, 1, 1000, npml) +
+			ivector_access(phiv.xy, 1, 1000, npml));
 	  i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-	    dt * muz * (phivzx[npml] +
-			phivxz[npml]);
+	    dt * muz * (ivector_access(phiv.zx, 1, 1000, npml) +
+			ivector_access(phiv.xz, 1, 1000, npml));
 	  i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-	    dt * muxyz * (phivzy[npml] +
-			  phivyz[npml]);
+	    dt * muxyz * (ivector_access(phiv.zy, 1, 1000, npml) +
+			  ivector_access(phiv.yz, 1, 1000, npml));
 	}
 	/* ************************************** */
 	/*  FREESURFACE and FREEABS common part   */
@@ -403,16 +402,16 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 
 
 	      i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-		dt * b2 * (phivyy[npml] +
-			   phivzz[npml]) +
-		dt * b1 * phivxx[npml];
+		dt * b2 * (ivector_access(phiv.yy, 1, 1000, npml) +
+			   ivector_access(phiv.zz, 1, 1000, npml)) +
+		dt * b1 * ivector_access(phiv.xx, 1, 1000, npml);
 	      i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-		dt * b2 * (phivxx[npml] +
-			   phivzz[npml]) +
-		dt * b1 * phivyy[npml];
+		dt * b2 * (ivector_access(phiv.xx, 1, 1000, npml) +
+			   ivector_access(phiv.zz, 1, 1000, npml)) +
+		dt * b1 * ivector_access(phiv.yy, 1, 1000, npml);
 	      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
-		dt * muy * (phivyx[npml] +
-			    phivxy[npml]);
+		dt * muy * (ivector_access(phiv.yx, 1, 1000, npml) +
+			    ivector_access(phiv.xy, 1, 1000, npml));
 	    }
 
 	  }	/* end if k == 1 */

@@ -49,17 +49,18 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
   double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[30]);
 
   long int first_npml;
-  int i_block, j_block, nb_blocks_dim;
+  int i_block, j_block;
   int i, j, k, imp, jmp;
   int inner_i, inner_j;
   double ds, dt;
   struct PARAMETERS prm;
-  starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &nb_blocks_dim, &first_npml, &prm);
+  starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &first_npml, &prm);
 
   int block_size = prm.block_size;
   double *phiv_base_ptr = (double *)STARPU_VECTOR_GET_PTR(buffers[0]);
   struct phiv_s phiv;
   phiv.base_ptr = phiv_base_ptr;
+  
   phiv.size = 9 * prm.block_size * prm.block_size * prm.depth;
   phiv.offset = prm.block_size * prm.block_size * prm.depth;
   COMPUTE_ADDRESS_PHIV_S(phiv);
@@ -94,7 +95,7 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
 
-      if (i == 0 || i == nb_blocks_dim-1 || j == 0 || j == nb_blocks_dim-1) {
+      if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
 	continue;
       }
 
