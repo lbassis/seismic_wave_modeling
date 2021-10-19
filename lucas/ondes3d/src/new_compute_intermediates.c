@@ -51,6 +51,7 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
   long int first_npml;
   int i_block, j_block, nb_blocks_dim;
   int i, j, k, imp, jmp;
+  int inner_i, inner_j;
   double ds, dt;
   struct PARAMETERS prm;
   starpu_codelet_unpack_args(cl_arg, &i_block, &j_block, &nb_blocks_dim, &first_npml, &prm);
@@ -87,10 +88,12 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 
 
   /* loop */
-  for (i = i_block*block_size; i < (i_block+1)*prm.block_size; i++) {
-    for (j = i_block*block_size; j < (j_block+1)*prm.block_size; j++) {
+  for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
+    for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
 
-      // A FAZER: CONFERIR SE NAO EH UMA DAS 4 BORDAS GERAIS
+      i = block_size*i_block+inner_i;
+      j = block_size*j_block+inner_j;
+
       if (i == 0 || i == nb_blocks_dim-1 || j == 0 || j == nb_blocks_dim-1) {
 	continue;
       }
