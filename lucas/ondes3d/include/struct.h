@@ -197,7 +197,7 @@ struct phiv_s{
                                      phiv.yz = phiv.base_ptr + 7*phiv.offset;\
                                      phiv.zy = phiv.base_ptr + 8*phiv.offset;
 
-struct phiv_t{
+struct phit_s{
   double* base_ptr;
   int size;
   int offset;

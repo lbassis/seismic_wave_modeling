@@ -53,23 +53,22 @@ struct starpu_codelet stress_cl = {
 				   .dyn_modes = modes_stress,
 };
 
-enum starpu_data_access_mode modes_valo[48] =
+enum starpu_data_access_mode modes_velo[40] =
 {
-	STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W, STARPU_W, STARPU_W,
-			STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W, STARPU_W,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
-			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_RW, STARPU_RW, STARPU_RW, STARPU_W,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 };
 
 struct starpu_codelet velo_cl = {
 				 .cpu_funcs = {compute_velo_task},
-				 .nbuffers = 48,
+				 .nbuffers = 40,
 				 .name = "velo",
-				 .dyn_modes = modes_valo
+				 .dyn_modes = modes_velo
 };
 
 
@@ -187,7 +186,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   starpu_data_map_filters(t0_yz_handle, 2, &x_filter, &y_filter);
 
   // compute velo handles:
-  starpu_data_handle_t phitxxx_handle, phitxyy_handle, phitxzz_handle, phitxyx_handle, phityyy_handle, phityzz_handle, phitxzx_handle, phityzy_handle, phitzzz_handle;
+  starpu_data_handle_t phit_handle;
 
   /* loops */
   int it;
@@ -311,68 +310,48 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   0);
       }
     }
-    //
-    //
-    //
-    //
-    //
-    //
-    //
-    //// loop compute velo
-    ////////________________________________________
-    /////// ATENCAO
-    ///////
-    /////// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
-    ///////
-    //////__________________________________________
-    //for (i_block = 1; i_block <= n_blocks_y; i_block++) {
-    //  for (j_block = 1; j_block <= n_blocks_x; j_block++) {
-    //
-    //	i = i_block*PRM->block_size;
-    //	j = j_block*PRM->block_size;
-    //
-    //	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM,
-    //	(uintptr_t)&i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, 0),
-    //	 depth, sizeof(double));
-    //
-    //	// muito questionavel
-    //	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, 0);
-    //
-    //	starpu_vector_data_register(&phitxxx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phitxxx+first_npml), depth, sizeof(ABC->phitxxx[0]));
-    //	starpu_vector_data_register(&phitxyy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phitxyy+first_npml), depth, sizeof(ABC->phitxyy[0]));
-    //	starpu_vector_data_register(&phitxzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phitxzz+first_npml), depth, sizeof(ABC->phitxzz[0]));
-    //	starpu_vector_data_register(&phitxyx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phitxyx+first_npml), depth, sizeof(ABC->phitxyx[0]));
-    //	starpu_vector_data_register(&phityyy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phityyy+first_npml), depth, sizeof(ABC->phityyy[0]));
-    //	starpu_vector_data_register(&phityzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phityzz+first_npml), depth, sizeof(ABC->phityzz[0]));
-    //	starpu_vector_data_register(&phitxzx_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phitxzx+first_npml), depth, sizeof(ABC->phitxzx[0]));
-    //	starpu_vector_data_register(&phityzy_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phityzy+first_npml), depth, sizeof(ABC->phityzy[0]));
-    //	starpu_vector_data_register(&phitzzz_handle, STARPU_MAIN_RAM, (uintptr_t)(ABC->phitzzz+first_npml), depth, sizeof(ABC->phitzzz[0]));
-    //	// fim do muito questionavel
-    //
-    //	starpu_data_handle_t block_v0_x, block_v0_y, block_v0_z;
-    //	block_v0_x = starpu_data_get_sub_data(v0_x_handle, 2, i, j);
-    //	block_v0_y = starpu_data_get_sub_data(v0_y_handle, 2, i, j);
-    //	block_v0_z = starpu_data_get_sub_data(v0_z_handle, 2, i, j);
-    //
-    //	starpu_task_insert(&velo_cl,
-    //			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z,
-    //			   STARPU_W, phitxxx_handle, STARPU_W, phitxyy_handle, STARPU_W, phitxzz_handle,
-    //			   STARPU_W, phitxyx_handle, STARPU_W, phityyy_handle, STARPU_W, phityzz_handle,
-    //			   STARPU_W, phitxzx_handle, STARPU_W, phityzy_handle, STARPU_W, phitzzz_handle,
-    //			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
-    //			   STARPU_R, mu0_handle, STARPU_R, mu2_handle, STARPU_R, kap0_handle, STARPU_R, kap2_handle,
-    //			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
-    //			   STARPU_R, alphax_handle, STARPU_R, alphax2_handle, STARPU_R, alphay_handle, STARPU_R, alphay2_handle, STARPU_R, alphaz_handle, STARPU_R, alphaz2_handle,
-    //			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle, STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle,
-    //			   STARPU_R, ipml_handle, STARPU_R, t0_xx_handle, STARPU_R, t0_yy_handle, STARPU_R, t0_zz_handle,
-    //			   STARPU_R, t0_xy_handle, STARPU_R, t0_xz_handle, STARPU_R, t0_yz_handle, STARPU_R, src_fx_handle, STARPU_R, src_fy_handle, STARPU_R, src_fz_handle,
-    //			   STARPU_VALUE, &i, sizeof(i),
-    //			   STARPU_VALUE, &j, sizeof(j),
-    //			   STARPU_VALUE, &first_npml, sizeof(first_npml),
-    //			   STARPU_VALUE, PRM, sizeof(*PRM),
-    //			   0);
-    //  }
-    //}
+
+    // loop compute velo
+    //////________________________________________
+    ///// ATENCAO
+    /////
+    ///// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
+    /////
+    ////__________________________________________
+    for (i_block = 1; i_block <= n_blocks_y; i_block++) {
+      for (j_block = 1; j_block <= n_blocks_x; j_block++) {
+    
+    	i = i_block*PRM->block_size;
+    	j = j_block*PRM->block_size;
+    
+    	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (PRM->mpmx+3)*(PRM->mpmy+3)*(PRM->zMax0 - (PRM->zMin - PRM->delta)), sizeof(ABC->ipml[0]));
+    
+    	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
+
+	starpu_vector_data_register(&phit_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phit[i_block * PRM->n_blocks_x + j_block].base_ptr,
+	                             ABC->phit[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
+    
+    	starpu_data_handle_t block_v0_x, block_v0_y, block_v0_z;
+    	block_v0_x = starpu_data_get_sub_data(v0_x_handle, 2, i, j);
+    	block_v0_y = starpu_data_get_sub_data(v0_y_handle, 2, i, j);
+    	block_v0_z = starpu_data_get_sub_data(v0_z_handle, 2, i, j);
+    
+    	starpu_task_insert(&velo_cl,
+    			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z, STARPU_W, phit_handle,
+    			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
+    			   STARPU_R, mu0_handle, STARPU_R, mu2_handle, STARPU_R, kap0_handle, STARPU_R, kap2_handle,
+    			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
+    			   STARPU_R, alphax_handle, STARPU_R, alphax2_handle, STARPU_R, alphay_handle, STARPU_R, alphay2_handle, STARPU_R, alphaz_handle, STARPU_R, alphaz2_handle,
+    			   STARPU_R, kappax_handle, STARPU_R, kappax2_handle, STARPU_R, kappay_handle, STARPU_R, kappay2_handle, STARPU_R, kappaz_handle, STARPU_R, kappaz2_handle,
+    			   STARPU_R, ipml_handle, STARPU_R, t0_xx_handle, STARPU_R, t0_yy_handle, STARPU_R, t0_zz_handle,
+    			   STARPU_R, t0_xy_handle, STARPU_R, t0_xz_handle, STARPU_R, t0_yz_handle, STARPU_R, src_fx_handle, STARPU_R, src_fy_handle, STARPU_R, src_fz_handle,
+    			   STARPU_VALUE, &i, sizeof(i),
+    			   STARPU_VALUE, &j, sizeof(j),
+    			   STARPU_VALUE, &first_npml, sizeof(first_npml),
+    			   STARPU_VALUE, PRM, sizeof(*PRM),
+    			   0);
+      }
+    }
     starpu_task_wait_for_all();
   }
 }

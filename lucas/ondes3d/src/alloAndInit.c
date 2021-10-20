@@ -1073,19 +1073,7 @@ int DeallocateAll(int STATION_STEP,
       }
     }
     free(ABC->phiv);
-
-
-    free(ABC->phitxxx);
-    free(ABC->phitxyy);
-    free(ABC->phitxzz);
-
-    free(ABC->phitxyx);
-    free(ABC->phityyy);
-    free(ABC->phityzz);
-
-    free(ABC->phitxzx);
-    free(ABC->phityzy);
-    free(ABC->phitzzz);
+    free(ABC->phit);
 
     free(ABC->kappax);
     free(ABC->kappax2);
