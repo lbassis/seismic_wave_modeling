@@ -213,15 +213,15 @@ struct phit_s{
   double *zzz;		/* contributions to vz */
 };
 
-#define COMPUTE_ADDRESS_PHIT_S(phit) phiv.xxx = phit.base_ptr;\
-                                     phiv.xyy = phit.base_ptr + phit.offset;\
-                                     phiv.xzz = phit.base_ptr + 2*phit.offset;\
-                                     phiv.xyx = phit.base_ptr + 3*phit.offset;\
-                                     phiv.yyy = phit.base_ptr + 4*phit.offset;\
-                                     phiv.yzz = phit.base_ptr + 5*phit.offset;\
-                                     phiv.xzx = phit.base_ptr + 6*phit.offset;\
-                                     phiv.yzy = phit.base_ptr + 7*phit.offset;\
-                                     phiv.zzz = phit.base_ptr + 8*phit.offset;
+#define COMPUTE_ADDRESS_PHIT_S(phit) phit.xxx = phit.base_ptr;\
+                                     phit.xyy = phit.base_ptr + phit.offset;\
+                                     phit.xzz = phit.base_ptr + 2*phit.offset;\
+                                     phit.xyx = phit.base_ptr + 3*phit.offset;\
+                                     phit.yyy = phit.base_ptr + 4*phit.offset;\
+                                     phit.yzz = phit.base_ptr + 5*phit.offset;\
+                                     phit.xzx = phit.base_ptr + 6*phit.offset;\
+                                     phit.yzy = phit.base_ptr + 7*phit.offset;\
+                                     phit.zzz = phit.base_ptr + 8*phit.offset;
 
 
 
