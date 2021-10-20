@@ -382,16 +382,14 @@ int AllocateFields(struct VELOCITY *v0,
 
   if (ABCmethod == CPML) {
 
-    ABC->phitxxx = mydvector0(1, ABC->npmlt);
-    ABC->phitxyy = mydvector0(1, ABC->npmlt);
-    ABC->phitxzz = mydvector0(1, ABC->npmlt);
-    ABC->phitxyx = mydvector0(1, ABC->npmlt);
-    ABC->phityyy = mydvector0(1, ABC->npmlt);
-    ABC->phityzz = mydvector0(1, ABC->npmlt);
-    ABC->phitxzx = mydvector0(1, ABC->npmlt);
-    ABC->phityzy = mydvector0(1, ABC->npmlt);
-    ABC->phitzzz = mydvector0(1, ABC->npmlt);
-
+    ABC->phit = (struct phit_s*)malloc(PRM.n_blocks_y * PRM.n_blocks_x * sizeof(struct phit_s));
+    for (int i_block = 0; i_block < PRM.n_blocks_y; i_block++) {
+      for (int j_block = 0; j_block < PRM.n_blocks_x; j_block++) {
+	ABC->phit[i_block * PRM.n_blocks_x + j_block].base_ptr = calloc(9 * PRM.block_size * PRM.block_size * depth, sizeof(double));
+	ABC->phit[i_block * PRM.n_blocks_x + j_block].size = 9 * PRM.block_size * PRM.block_size * depth;
+	ABC->phit[i_block * PRM.n_blocks_x + j_block].offset = PRM.block_size * PRM.block_size * depth;
+      }
+    }
   }				/* end of if PML */
 
 #if (VERBOSE > 2)

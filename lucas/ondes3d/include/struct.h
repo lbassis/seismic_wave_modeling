@@ -197,6 +197,34 @@ struct phiv_s{
                                      phiv.yz = phiv.base_ptr + 7*phiv.offset;\
                                      phiv.zy = phiv.base_ptr + 8*phiv.offset;
 
+struct phiv_t{
+  double* base_ptr;
+  int size;
+  int offset;
+
+  double *xxx;
+  double *xyy;
+  double *xzz;		/* for CPML; contributions to vx */
+  double *xyx;
+  double *yyy;
+  double *yzz;		/* contributions to vy */
+  double *xzx;
+  double *yzy;
+  double *zzz;		/* contributions to vz */
+};
+
+#define COMPUTE_ADDRESS_PHIT_S(phit) phiv.xxx = phit.base_ptr;\
+                                     phiv.xyy = phit.base_ptr + phit.offset;\
+                                     phiv.xzz = phit.base_ptr + 2*phit.offset;\
+                                     phiv.xyx = phit.base_ptr + 3*phit.offset;\
+                                     phiv.yyy = phit.base_ptr + 4*phit.offset;\
+                                     phiv.yzz = phit.base_ptr + 5*phit.offset;\
+                                     phiv.xzx = phit.base_ptr + 6*phit.offset;\
+                                     phiv.yzy = phit.base_ptr + 7*phit.offset;\
+                                     phiv.zzz = phit.base_ptr + 8*phit.offset;
+
+
+
 /*** Absorbing Boundary Condition ***/
 enum typePML { PML, CPML };
 struct ABSORBING_BOUNDARY_CONDITION {
@@ -219,17 +247,8 @@ struct ABSORBING_BOUNDARY_CONDITION {
     double alpha0;
     double kappa0;
     struct phiv_s *phiv; //List of phiv blocks
-
-    double *phitxxx;
-    double *phitxyy;
-    double *phitxzz;		/* for CPML; contributions to vx */
-    double *phitxyx;
-    double *phityyy;
-    double *phityzz;		/* contributions to vy */
-    double *phitxzx;
-    double *phityzy;
-    double *phitzzz;		/* contributions to vz */
-
+    struct phit_s *phit; //List of phit blocks
+  
     double *kappax;
     double *kappay;
     double *kappaz;		/* modifications of the derivative */
