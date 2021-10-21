@@ -473,7 +473,7 @@ void compute_velo_k1(void *buffers[], void *cl_arg) {
   dt = prm.dt;
 
   /* loop */
-  for (inner_i = prm.block_size-1; inner_i >= 0; inner_i--) {
+  for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
       
       i = block_size*i_block+inner_i;
@@ -608,7 +608,7 @@ void compute_velo_k2(void *buffers[], void *cl_arg) {
 
   /* loop */
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
-    for (inner_j = prm.block_size-1; inner_j <= 0; inner_j) {
+    for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
       
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
