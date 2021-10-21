@@ -200,19 +200,12 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   starpu_block_data_register(&t0_xz_handle, STARPU_MAIN_RAM, (uintptr_t)t0->xz, ncols, depth, nrows, ncols, depth, sizeof(t0->xz[0]));
   starpu_block_data_register(&t0_yz_handle, STARPU_MAIN_RAM, (uintptr_t)t0->yz, ncols, depth, nrows, ncols, depth, sizeof(t0->yz[0]));
 
-  starpu_data_map_filters(t0_xx_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(t0_yy_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(t0_zz_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(t0_xy_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(t0_xz_handle, 2, &x_filter, &y_filter);
-  starpu_data_map_filters(t0_yz_handle, 2, &x_filter, &y_filter);
-
   // compute velo handles:
   starpu_data_handle_t phit_handle;
 
   /* loops */
   int it;
-  for (it = 0; it < 1/*PRM->tMax*/; it++) {
+  for (it = 0; it < PRM->tMax; it++) {
     // seismoment
     time = PRM->dt * it;
     starpu_insert_task(&seis_moment_cl,
@@ -261,37 +254,15 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   0);
       }
     }
-		starpu_task_wait_for_all();
-		//Lets Dump phiv.xx
-		/*FILE* f = fopen("/tmp/dump_ondes_sp", "w");
-		int imp, jmp, k, i, j, place, *ipml;
-		for (int i_block = 0; i_block < PRM->n_blocks_y; i_block++) {
-			for (int j_block = 0; j_block < PRM->n_blocks_x; j_block++) {
-				for(imp = -1 + PRM->block_size * i_block; imp < PRM->block_size * (i_block+1); imp++ ){
-					i = ivector_access(PRM->imp2i_array, -1, PRM->mpmx + 2, imp);
-					for(jmp = -1 + PRM->block_size * j_block; jmp < PRM->block_size * (j_block+1); jmp++ ){
-						j = ivector_access(PRM->jmp2j_array, -1, PRM->mpmy + 2, jmp);
-						for (k = PRM->zMin - PRM->delta; k <= PRM->zMax0; k++) {
-							place = WhereAmI(i, j, k, *PRM);
-							double ret = -2;
-							if ((place == OUTSIDE) || (place == LIMIT)) {
-							  continue;
-							}
-							if (place == ABSORBINGLAYER || place == FREEABS) {
-								ipml = &i3access(ABC->ipml, -1, PRM->mpmx+2, -1, PRM->mpmy+2, PRM->zMin-PRM->delta, PRM->zMax0, imp, jmp, k);
-								ret = ivector_access(ABC->phiv[i_block * PRM->n_blocks_x + j_block].xy, 1, 1000, *ipml);
-							}
-							fprintf(f, "%d,%d,%d,%lf\n", imp, jmp, k, ret);
-						}
-					}
-				}
-			}
-		}
-		fclose(f);*/
-
-
+    
     //// loop compute stress
-		printf("deu %d blocos\n", n_blocks_x);
+    starpu_data_map_filters(t0_xx_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(t0_yy_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(t0_zz_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(t0_xy_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(t0_xz_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(t0_yz_handle, 2, &x_filter, &y_filter);
+
     for (i_block = 0; i_block < n_blocks_y; i_block++) {
       for (j_block = 0; j_block < n_blocks_x; j_block++) {
 
@@ -328,8 +299,6 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     }
 
     // loop compute velo
-    
-    
     starpu_data_unpartition(t0_xx_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_yy_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_zz_handle, STARPU_MAIN_RAM);
@@ -406,9 +375,12 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
 
       }
-
       
     }
+    starpu_data_unpartition(v0_x_handle, STARPU_MAIN_RAM);
+    starpu_data_unpartition(v0_y_handle, STARPU_MAIN_RAM);
+    starpu_data_unpartition(v0_z_handle, STARPU_MAIN_RAM);
+
     starpu_task_wait_for_all();
   }
 }
