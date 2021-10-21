@@ -337,6 +337,9 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     starpu_data_unpartition(t0_xz_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_yz_handle, STARPU_MAIN_RAM);
 
+    starpu_data_map_filters(v0_x_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(v0_y_handle, 2, &x_filter, &y_filter);
+    starpu_data_map_filters(v0_z_handle, 2, &x_filter, &y_filter);
 
     for (i_block = 0; i_block < n_blocks_y; i_block++) {
       for (j_block = 0; j_block < n_blocks_x; j_block++) {
@@ -353,19 +356,16 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     
     	starpu_data_handle_t block_v0_x, block_v0_y, block_v0_z, prev_i, next_i, prev_j, next_j;
 	
-	starpu_data_map_filters(v0_x_handle, 2, &x_filter, &y_filter);
-	starpu_data_map_filters(v0_y_handle, 2, &x_filter, &y_filter);
-	starpu_data_map_filters(v0_z_handle, 2, &x_filter, &y_filter);
-
+	
     	block_v0_x = starpu_data_get_sub_data(v0_x_handle, 2, i_block, j_block);
     	block_v0_y = starpu_data_get_sub_data(v0_y_handle, 2, i_block, j_block);
     	block_v0_z = starpu_data_get_sub_data(v0_z_handle, 2, i_block, j_block);
 
 	prev_i = (i_block != 0) ? starpu_data_get_sub_data(v0_z_handle, 2, i_block-1, j_block) : block_v0_z;
 	prev_j = (j_block != 0) ? starpu_data_get_sub_data(v0_y_handle, 2, i_block, j_block-1) : block_v0_y;
-	next_i = (i_block != n_blocks_y) ? starpu_data_get_sub_data(v0_x_handle, 2, i_block+1, j_block) : block_v0_x;
-	next_j = (j_block != n_blocks_x) ? starpu_data_get_sub_data(v0_z_handle, 2, i_block, j_block+1) : block_v0_z;
-    
+	next_i = (i_block != n_blocks_y-1) ? starpu_data_get_sub_data(v0_x_handle, 2, i_block+1, j_block) : block_v0_x;
+	next_j = (j_block != n_blocks_x-1) ? starpu_data_get_sub_data(v0_z_handle, 2, i_block, j_block+1) : block_v0_z;
+    	
     	starpu_task_insert(&velo_cl,
     			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z, STARPU_W, phit_handle,
     			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
@@ -380,7 +380,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   STARPU_VALUE, &first_npml, sizeof(first_npml),
     			   STARPU_VALUE, PRM, sizeof(*PRM),
     			   0);
-
+	
 	starpu_task_insert(&velo_k1_cl,
     			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z,
     			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
