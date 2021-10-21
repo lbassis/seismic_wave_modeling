@@ -71,6 +71,33 @@ struct starpu_codelet velo_cl = {
 				 .dyn_modes = modes_velo
 };
 
+enum starpu_data_access_mode modes_velo_k1[14] =
+{
+ STARPU_RW, STARPU_RW, STARPU_RW,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, 
+};
+
+struct starpu_codelet velo_k1_cl = {
+				 .cpu_funcs = {compute_velo_k1},
+				 .nbuffers = 14,
+				 .name = "velok1",
+				 .dyn_modes = modes_velo_k1
+};
+
+enum starpu_data_access_mode modes_velo_k2[12] =
+{
+ STARPU_RW, STARPU_RW, STARPU_RW, STARPU_R, STARPU_R, STARPU_R, 
+ STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
+};
+
+struct starpu_codelet velo_k2_cl = {
+				 .cpu_funcs = {compute_velo_k2},
+				 .nbuffers = 12,
+				 .name = "velok2",
+				 .dyn_modes = modes_velo_k2
+};
+
 
 void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 	       struct MEDIUM *MDM, struct STRESS *t0, struct VELOCITY *v0, struct PARAMETERS *PRM) {
@@ -158,7 +185,6 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   starpu_vector_data_register(&kappaz_handle,  STARPU_MAIN_RAM, (uintptr_t)ABC->kappaz,  mpmz, sizeof(ABC->kappax[0]));
   starpu_vector_data_register(&kappaz2_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->kappaz2, mpmz, sizeof(ABC->kappax[0]));
 
-  // register handle to be partitioned
   starpu_block_data_register(&v0_x_handle, STARPU_MAIN_RAM, (uintptr_t)v0->x, ncols, depth, nrows, ncols, depth, sizeof(v0->x[0]));
   starpu_block_data_register(&v0_y_handle, STARPU_MAIN_RAM, (uintptr_t)v0->y, ncols, depth, nrows, ncols, depth, sizeof(v0->y[0]));
   starpu_block_data_register(&v0_z_handle, STARPU_MAIN_RAM, (uintptr_t)v0->z, ncols, depth, nrows, ncols, depth, sizeof(v0->z[0]));
@@ -204,13 +230,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
 
     //loop compute intermediates
-    ////________________________________________
-    /// ATENCAO
-    ///
-    /// GERALMENTE COMECA COM I = 1, MAS NOS BLOCOS NAO DEVE SER ASSIM
-    ///
-    //__________________________________________
-		starpu_task_wait_for_all();
+    starpu_task_wait_for_all();
     for (i_block = 0; i_block < n_blocks_y; i_block++) {
       for (j_block = 0; j_block < n_blocks_x; j_block++) {
 
@@ -308,12 +328,15 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     }
 
     // loop compute velo
+    
+    
     starpu_data_unpartition(t0_xx_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_yy_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_zz_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_xy_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_xz_handle, STARPU_MAIN_RAM);
     starpu_data_unpartition(t0_yz_handle, STARPU_MAIN_RAM);
+
 
     for (i_block = 0; i_block < n_blocks_y; i_block++) {
       for (j_block = 0; j_block < n_blocks_x; j_block++) {
@@ -328,8 +351,8 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 	starpu_vector_data_register(&phit_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phit[i_block * PRM->n_blocks_x + j_block].base_ptr,
 	                             ABC->phit[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
     
-    	starpu_data_handle_t block_v0_x, block_v0_y, block_v0_z;
-
+    	starpu_data_handle_t block_v0_x, block_v0_y, block_v0_z, prev_i, next_i, prev_j, next_j;
+	
 	starpu_data_map_filters(v0_x_handle, 2, &x_filter, &y_filter);
 	starpu_data_map_filters(v0_y_handle, 2, &x_filter, &y_filter);
 	starpu_data_map_filters(v0_z_handle, 2, &x_filter, &y_filter);
@@ -337,6 +360,11 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     	block_v0_x = starpu_data_get_sub_data(v0_x_handle, 2, i_block, j_block);
     	block_v0_y = starpu_data_get_sub_data(v0_y_handle, 2, i_block, j_block);
     	block_v0_z = starpu_data_get_sub_data(v0_z_handle, 2, i_block, j_block);
+
+	prev_i = (i_block != 0) ? starpu_data_get_sub_data(v0_z_handle, 2, i_block-1, j_block) : block_v0_z;
+	prev_j = (j_block != 0) ? starpu_data_get_sub_data(v0_y_handle, 2, i_block, j_block-1) : block_v0_y;
+	next_i = (i_block != n_blocks_y) ? starpu_data_get_sub_data(v0_x_handle, 2, i_block+1, j_block) : block_v0_x;
+	next_j = (j_block != n_blocks_x) ? starpu_data_get_sub_data(v0_z_handle, 2, i_block, j_block+1) : block_v0_z;
     
     	starpu_task_insert(&velo_cl,
     			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z, STARPU_W, phit_handle,
@@ -352,7 +380,34 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   STARPU_VALUE, &first_npml, sizeof(first_npml),
     			   STARPU_VALUE, PRM, sizeof(*PRM),
     			   0);
+
+	starpu_task_insert(&velo_k1_cl,
+    			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z,
+    			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
+    			   STARPU_R, mu0_handle, STARPU_R, kap0_handle,
+			   STARPU_R, src_fx_handle, STARPU_R, src_fy_handle, STARPU_R, src_fz_handle,
+			   STARPU_R, next_i, STARPU_R, prev_j,
+    			   STARPU_VALUE, &i, sizeof(i),
+    			   STARPU_VALUE, &j, sizeof(j),
+    			   STARPU_VALUE, &first_npml, sizeof(first_npml),
+    			   STARPU_VALUE, PRM, sizeof(*PRM),
+    			   0);
+	
+	starpu_task_insert(&velo_k2_cl,
+    			   STARPU_RW, block_v0_x, STARPU_RW, block_v0_y, STARPU_RW, block_v0_z,
+    			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
+			   STARPU_R, src_fx_handle, STARPU_R, src_fy_handle, STARPU_R, src_fz_handle,
+			   STARPU_R, prev_i, STARPU_R, next_j,
+    			   STARPU_VALUE, &i, sizeof(i),
+    			   STARPU_VALUE, &j, sizeof(j),
+    			   STARPU_VALUE, &first_npml, sizeof(first_npml),
+    			   STARPU_VALUE, PRM, sizeof(*PRM),
+    			   0);
+
+
       }
+
+      
     }
     starpu_task_wait_for_all();
   }
