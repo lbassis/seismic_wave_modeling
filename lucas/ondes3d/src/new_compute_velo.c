@@ -101,7 +101,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
   ds = prm.ds;
   dt = prm.dt;
 
-    /* loop */
+  /* loop */
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
       
@@ -162,59 +162,59 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 	if (place == REGULAR || place == ABSORBINGLAYER) {
 	  /* Computation of Vx,Vy and Vz */
 	  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += staggardv4(bx,
-				      ivector_access(kappax, 1, prm.mpmx, i),
-				      ivector_access(kappay, 1, prm.mpmy, j),
-				      ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k), dt,
-				      ds,
-				      i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
-				      i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
-				      i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
-				      place, ABCmethod);
+															     ivector_access(kappax, 1, prm.mpmx, i),
+															     ivector_access(kappay, 1, prm.mpmy, j),
+															     ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k), dt,
+															     ds,
+															     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+															     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
+															     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
+															     place, ABCmethod);
 
 	  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += staggardv4(by,
-				      ivector_access(kappax2, 1, prm.mpmx, i),
-				      ivector_access(kappay2, 1, prm.mpmy, j),
-				      ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k), dt,
-				      ds, i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
-				      i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k),
-				      i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
-				      i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
-				      i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
-				      place, ABCmethod);
+															     ivector_access(kappax2, 1, prm.mpmx, i),
+															     ivector_access(kappay2, 1, prm.mpmy, j),
+															     ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k), dt,
+															     ds, i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+															     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k),
+															     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+															     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+															     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
+															     place, ABCmethod);
 
 	  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += staggardv4(bz,
-				      ivector_access(kappax2, 1, prm.mpmx, i),
-				      ivector_access(kappay, 1, prm.mpmy, j),
-				      ivector_access(kappaz2, prm.zMin - prm.delta, prm.zMax0, k), dt,
-				      ds, i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
-				      i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
-				      i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
-				      i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-				      i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
-				      i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
-				      i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 2),
-				      place, ABCmethod);
+															     ivector_access(kappax2, 1, prm.mpmx, i),
+															     ivector_access(kappay, 1, prm.mpmy, j),
+															     ivector_access(kappaz2, prm.zMin - prm.delta, prm.zMax0, k), dt,
+															     ds, i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+															     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
+															     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+															     i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+															     i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
+															     i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+															     i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 2),
+															     place, ABCmethod);
 	}		/* end REGULAR and ABSORBINGLAYER */
 
 	/* ********************************** */
@@ -237,105 +237,52 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 	  /* k=1 */
 	  /*-----*/
 	  if (k == 1) {
-	    /* v0->x, v0->y (copied & pasted) */
+	    	/* v0->x, v0->y (copied & pasted) */
 	    i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += staggardv4(bx,
-					ivector_access(kappax, 1, prm.mpmx, i),
-					ivector_access(kappay, 1, prm.mpmy, j),
-					ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k),
-					dt, ds,
-					i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
-					i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-					i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
-					i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
-					i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
-					i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-					i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
-					i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
-					place, ABCmethod);
+		     ivector_access(kappax, 1, prm.mpmx, i),
+		     ivector_access(kappay, 1, prm.mpmy, j),
+		     ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k),
+		     dt, ds,
+		     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+		     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 2, j, k),
+		     i3access(t0_xx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 2, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+		     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+		     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
+		     i3access(t0_xz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
+		     place, ABCmethod);
 
 	    i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += staggardv4(by,
-					ivector_access(kappax2, 1, prm.mpmx, i),
-					ivector_access(kappay2, 1, prm.mpmy, j),
-					ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k),
-					dt, ds,
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
-					i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k),
-					i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-					i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
-					i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
-					i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k),
-					i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
-					i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
-					i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
-					i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
-					place, ABCmethod);
-	    /* v0->z */
-	    /* expression is obtained considering :
-	     *  0- Elastic Formulation approximation (no anelasticity part taken into account)
-	     *  1- a 2nd order of approximation for vz
-	     *  2- we are searching vz(k=1) as dz(vz)|z=0 consistent with the followings expressions :
-	     *
-	     *  (dt(tzz)|z=0) = 0 = ( (kappa-2/3 mu)*( dx(vx) + dy(vy) ) + (kappa + 4/3 mu) * dz(vz) )|z=0
-	     *
-	     *  and 2nd Order of deviration
-	     *
-	     *  dz(vz)|z=0 = (vz(z=+3/2*ds) - vz(ds/2))/dz
-	     *
-	     *  so vz(k=1) can be determined with vy, vx, and vz(k=0).
-	     */
-	    kapx = kap0[ly0];
-	    mux = mu0[ly0];
-
-	    kapy = kap0[ly0];
-	    muy = mu0[ly0];
-
-	    i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) =
-	      i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k-1)
-	      - (kapx - 2. / 3. * mux) / (kapx +
-					  4. / 3. *
-					  mux) *
-	      (i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i+1, inner_j, k) - i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k))
-	      - (kapy - 2. / 3. * mux) / (kapy +
-					  4. / 3. *
-					  muy) *
-	      (i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) - i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j-1, k));
-
+		     ivector_access(kappax2, 1, prm.mpmx, i),
+		     ivector_access(kappay2, 1, prm.mpmy, j),
+		     ivector_access(kappaz, prm.zMin - prm.delta, prm.zMax0, k),
+		     dt, ds,
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 1, j, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i - 1, j, k),
+		     i3access(t0_xy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i + 2, j, k),
+		     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 1, k),
+		     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j - 1, k),
+		     i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j + 2, k),
+		     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 1),
+		     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k),
+		     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k - 2),
+		     i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k + 1),
+		     place, ABCmethod);
 	  }	/* end k = 1 */
 
 	  /* k=2 */
 	  /*-----*/
-	  /*
-	   * 2nd order approximation.
-	   * Details :
-	   * Cf."Simulating Seismic Wave propagation in 3D elastic Media Using staggered-Grid Finite Difference"
-	   *  [ Robert W.Graves, p. 1099 ]
-	   *   Bulletin of the Seismological Society of America Vol 4. August 1996
-	   */
 	  if (k == 2) {
-	    i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) = i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1)
-	      - (i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
-		 i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i - 1, inner_j, k - 1))
-	      - (i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
-		 i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2) + i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2) -
-		 i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i - 1, inner_j, k - 2));
-
-	    i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) = i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1)
-	      - (i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j + 1, k - 1) -
-		 i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1))
-	      - (i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
-		 i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2) + i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j + 1, k - 2)
-		 - i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2));
-
 	  }
-
 	}		/* end FREE SURFACE and FREEABS COMMON PART */
-
+	
 
 	/* ***************************** */
 	/* ABSORBING LAYER & FREEABS part */
@@ -461,12 +408,279 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 	 * Add Source PART                histfile *
 	 *=========================================*/
 	/* Ajout des Sources.hist */
-	if (source == HISTFILE) {
+	if (source == HISTFILE && k != 1 && k != 2) {
 	  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += bx * i3access(fx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
 	  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += by * i3access(fy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
 	  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += bz * i3access(fz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
 	}		/* end of if source */
       }		/* end for k */
+    }
+  }
+}
+
+void compute_velo_k1(void *buffers[], void *cl_arg) {
+
+  //unpack structures
+  double *v0_x = (double *)STARPU_BLOCK_GET_PTR(buffers[0]);
+  double *v0_y = (double *)STARPU_BLOCK_GET_PTR(buffers[1]);
+  double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[2]);
+
+  int *k2ly0 = (int *)STARPU_VECTOR_GET_PTR(buffers[3]);
+  int *k2ly2 = (int *)STARPU_VECTOR_GET_PTR(buffers[4]);
+  int *rho0 = (int *)STARPU_VECTOR_GET_PTR(buffers[5]);
+  int *rho2 = (int *)STARPU_VECTOR_GET_PTR(buffers[6]);
+  double *mu0 = (double *)STARPU_VECTOR_GET_PTR(buffers[7]);
+  double *kap0 = (double *)STARPU_VECTOR_GET_PTR(buffers[8]);
+
+  double *fx = (double *)STARPU_BLOCK_GET_PTR(buffers[9]);
+  double *fy = (double *)STARPU_BLOCK_GET_PTR(buffers[10]);
+  double *fz = (double *)STARPU_BLOCK_GET_PTR(buffers[11]);
+
+  double *next_i = (double *)STARPU_BLOCK_GET_PTR(buffers[12]);
+  double *prev_j = (double *)STARPU_BLOCK_GET_PTR(buffers[13]);
+
+  long int first_npml;
+  int i, j, k, imp, jmp;
+  int inner_i, inner_j;
+  double ds, dt;
+  struct PARAMETERS prm;
+  starpu_codelet_unpack_args(cl_arg, &i, &j, &first_npml, &prm);
+
+  int block_size = prm.block_size;
+  int i_block = i%prm.block_size;
+  int j_block = j%prm.block_size;
+
+  //compute velocity
+  /* approximations of a value in the corner of the cube */
+  int ly0, ly2;		/* layer xy (+0) or z (+ds/2) */
+  double kapx, kapy, mux, muy;
+  double rhoxy, rhoxz;	/* density  */
+
+  /*  */
+  double bx, by, bz;		/* inverses of rho */
+
+  /*  */
+  enum typePlace place;	/* What type of cell  */
+  long int npml;		/* index in Absorbing Layer */
+  /* intermediates */
+
+  /* source == VELO */
+  double rho;			/* density at [imp][jmp][k] */
+
+  double i_plus_one, j_less_one;
+  /* mapping */
+  ds = prm.ds;
+  dt = prm.dt;
+
+  /* loop */
+  for (inner_i = prm.block_size-1; inner_i >= 0; inner_i--) {
+    for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
+      
+      i = block_size*i_block+inner_i;
+      j = block_size*j_block+inner_j;
+      
+      if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
+	continue;
+      }
+
+      jmp = ivector_access(prm.jmp2j_array, -1, prm.mpmy + 2, j);
+      imp = ivector_access(prm.imp2i_array, -1, prm.mpmx + 2, i);
+
+      k = 1;
+      /* INITIALISATIONS */
+      place = WhereAmI(imp, jmp, k, prm);
+
+      npml = first_npml+k-(prm.zMin - prm.delta);
+
+      /*=====================================================*\
+	ELASTIC PART :
+
+	(nothing to do for regular domain, or only FreeSurface domain)
+	structure :
+	+ PML/CPML
+	-- common initialisations
+	-- REGULAR & ABSORBING LAYER common part
+	-- FREESURFACE & FREEABS common part
+
+	-- ABSORBING LAYER & FREEABS special part
+	\*=====================================================*/
+      /*******************************************/
+      /* COMMON INITIALISATIONS                  */
+      /*******************************************/
+      ly0 = ivector_access(k2ly0, prm.zMin-prm.delta, prm.zMax0, k);
+      ly2 = ivector_access(k2ly2, prm.zMin-prm.delta, prm.zMax0, k);;
+
+      bx = 1.0 / rho0[ly0];
+      by = 1.0 / rho0[ly0];
+
+      rhoxz = rho2[ly2];
+      bz = 1.0 / rhoxz;
+
+      /* ********************************** */
+      /* FREE SURFACE & FREEABS COMMON PART */
+      /* ********************************** */
+      if (place == FREESURFACE || place == FREEABS) {
+
+	kapx = kap0[ly0];
+	mux = mu0[ly0];
+
+	kapy = kap0[ly0];
+	muy = mu0[ly0];
+
+	if (inner_i == block_size-1) {
+	  i_plus_one = i3access(next_i, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, 0, inner_j, k);
+	}
+	else {
+	  i_plus_one = i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i+1, inner_j, k);
+	}
+
+	if (inner_j == 0) {
+	  j_less_one = i3access(prev_j, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, block_size-1, k);
+	}
+	else {
+	  j_less_one = i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j-1, k);
+	}
+	
+	i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) =
+	  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k-1)
+	  - (kapx - 2. / 3. * mux) / (kapx + 4. / 3. * mux) *
+	  (i_plus_one - i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k))
+	  - (kapy - 2. / 3. * mux) / (kapy + 4. / 3. * muy) *
+	  (i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) - j_less_one);
+
+      	/* end k = 1 */
+      }		/* end FREE SURFACE and FREEABS COMMON PART */
+
+      /*=========================================*
+       * Add Source PART                histfile *
+       *=========================================*/
+      /* Ajout des Sources.hist */
+      if (source == HISTFILE) {
+	i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += bx * i3access(fx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
+	i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += by * i3access(fy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
+	i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += bz * i3access(fz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
+      }		/* end of if source */
+    }
+  }
+}
+
+
+void compute_velo_k2(void *buffers[], void *cl_arg) {
+
+  //unpack structures
+  double *v0_x = (double *)STARPU_BLOCK_GET_PTR(buffers[0]);
+  double *v0_y = (double *)STARPU_BLOCK_GET_PTR(buffers[1]);
+  double *v0_z = (double *)STARPU_BLOCK_GET_PTR(buffers[2]);
+
+  int *k2ly0 = (int *)STARPU_VECTOR_GET_PTR(buffers[3]);
+  int *k2ly2 = (int *)STARPU_VECTOR_GET_PTR(buffers[4]);
+  int *rho0 = (int *)STARPU_VECTOR_GET_PTR(buffers[5]);
+  int *rho2 = (int *)STARPU_VECTOR_GET_PTR(buffers[6]);
+
+  double *fx = (double *)STARPU_BLOCK_GET_PTR(buffers[7]);
+  double *fy = (double *)STARPU_BLOCK_GET_PTR(buffers[8]);
+  double *fz = (double *)STARPU_BLOCK_GET_PTR(buffers[9]);
+
+  double *prev_i = (double *)STARPU_BLOCK_GET_PTR(buffers[10]);
+  double *next_j = (double *)STARPU_BLOCK_GET_PTR(buffers[11]);
+
+  long int first_npml;
+  int i, j, k, imp, jmp;
+  int inner_i, inner_j;
+  double ds, dt;
+  struct PARAMETERS prm;
+  starpu_codelet_unpack_args(cl_arg, &i, &j, &first_npml, &prm);
+
+  int block_size = prm.block_size;
+  int i_block = i%prm.block_size;
+  int j_block = j%prm.block_size;
+
+  //compute velocity
+  /*  */
+  enum typePlace place;	/* What type of cell  */
+  int ly0, ly2;		/* layer xy (+0) or z (+ds/2) */
+  double bx, by, bz;		/* inverses of rho */
+  double rhoxy, rhoxz;	/* density  */
+  double i_less_one1, i_less_one2, j_plus_one1, j_plus_one2;
+  /* mapping */
+  ds = prm.ds;
+  dt = prm.dt;
+
+  /* loop */
+  for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
+    for (inner_j = prm.block_size-1; inner_j <= 0; inner_j) {
+      
+      i = block_size*i_block+inner_i;
+      j = block_size*j_block+inner_j;
+      
+      if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
+	continue;
+      }
+
+      jmp = ivector_access(prm.jmp2j_array, -1, prm.mpmy + 2, j);
+      imp = ivector_access(prm.imp2i_array, -1, prm.mpmx + 2, i);
+
+      k = 2;
+      /* INITIALISATIONS */
+      place = WhereAmI(imp, jmp, k, prm);
+
+      ly0 = ivector_access(k2ly0, prm.zMin-prm.delta, prm.zMax0, k);
+      ly2 = ivector_access(k2ly2, prm.zMin-prm.delta, prm.zMax0, k);;
+
+      bx = 1.0 / rho0[ly0];
+      by = 1.0 / rho0[ly0];
+
+      rhoxz = rho2[ly2];
+      bz = 1.0 / rhoxz;
+
+      if (place == FREESURFACE || place == FREEABS) {
+
+	// this is disgusting but i'm so tired
+	
+	if (inner_i == 0) { // both need to be taken from its neighboor
+	  i_less_one1 = i3access(prev_i, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, block_size-1, inner_j, k-1);
+	  i_less_one2 = i3access(prev_i, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, block_size-1, inner_j, k-2);
+	}
+	else { // at least i-1 is local
+	  i_less_one1 = i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i-1, inner_j, k-1);
+	  i_less_one2 = i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i-1, inner_j, k-2);
+	}
+
+	if (inner_j == block_size-1) { // both need to be taken from its neighboor
+	  j_plus_one1 = i3access(next_j, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, 0, k-1);
+	  j_plus_one2 = i3access(next_j, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, 0, k-2);
+	}
+	else { // at least j+1 is local
+	  j_plus_one1 = i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j+1, k-1);
+	  j_plus_one2 = i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j+1, k-2);
+	}	
+
+	
+	i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) = i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1)
+	  - (i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
+	     i_less_one1)
+	  - (i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
+	     i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2) + i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2) -
+	     i_less_one2);
+
+	i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) = i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1)
+	  - (j_plus_one1 -
+	     i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1))
+	  - (i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
+	     i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2) + j_plus_one2
+	     - i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 2));
+
+      }		/* end FREE SURFACE and FREEABS COMMON PART */
+
+      /*=========================================*
+       * Add Source PART                histfile *
+       *=========================================*/
+      /* Ajout des Sources.hist */
+      if (source == HISTFILE) {
+	i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += bx * i3access(fx, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
+	i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += by * i3access(fy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
+	i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) += bz * i3access(fz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j, k) * dt / ds;
+      }		/* end of if source */
     }
   }
 }
