@@ -6,6 +6,7 @@
 #include "../include/new_compute_intermediates.h"
 #include "../include/new_compute_stress.h"
 #include "../include/new_compute_velo.h"
+#include "../include/memory_dump.h"
 #include "../include/inlineFunctions.h"
 
 enum starpu_data_access_mode modes_seis[16] =
@@ -205,7 +206,7 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
   /* loops */
   int it;
-  for (it = 0; it < PRM->tMax; it++) {
+  for (it = 1; it < PRM->tMax; it++) {
     // seismoment
     time = PRM->dt * it;
     starpu_insert_task(&seis_moment_cl,
@@ -220,12 +221,12 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 		       STARPU_VALUE, &(SRC->iDur), sizeof(SRC->iDur),
 		       STARPU_VALUE, &(SRC->iSrc), sizeof(SRC->iSrc),
 		       0);
-
+    return 0;
 
     //loop compute intermediates
     starpu_task_wait_for_all();
-    for (i_block = 0; i_block < n_blocks_y; i_block++) {
-      for (j_block = 0; j_block < n_blocks_x; j_block++) {
+    for (i_block = 0; i_block < 1; i_block++) {//i_block < n_blocks_y; i_block++) {
+      for (j_block = 0; j_block < 1; j_block++) {//n_blocks_x; j_block++) {
 
     	i = i_block*PRM->block_size;
     	j = j_block*PRM->block_size;
@@ -254,7 +255,8 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   0);
       }
     }
-    
+    starpu_task_wait_for_all();
+    return;
     //// loop compute stress
     starpu_data_map_filters(t0_xx_handle, 2, &x_filter, &y_filter);
     starpu_data_map_filters(t0_yy_handle, 2, &x_filter, &y_filter);
@@ -263,8 +265,8 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     starpu_data_map_filters(t0_xz_handle, 2, &x_filter, &y_filter);
     starpu_data_map_filters(t0_yz_handle, 2, &x_filter, &y_filter);
 
-    for (i_block = 0; i_block < n_blocks_y; i_block++) {
-      for (j_block = 0; j_block < n_blocks_x; j_block++) {
+    for (i_block = 0; i_block < 1; i_block++) {//n_blocks_y; i_block++) {
+      for (j_block = 0; j_block < 1; j_block++) {//n_blocks_x; j_block++) {
 
     	i = i_block*PRM->block_size;
     	j = j_block*PRM->block_size;
@@ -383,4 +385,20 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
     starpu_task_wait_for_all();
   }
+
+  starpu_data_unregister(v0_x_handle);
+  starpu_data_unregister(v0_y_handle);
+  starpu_data_unregister(v0_z_handle);
+
+  starpu_data_unregister(t0_xx_handle);
+  starpu_data_unregister(t0_yy_handle);
+  starpu_data_unregister(t0_zz_handle);
+  starpu_data_unregister(t0_xy_handle);
+  starpu_data_unregister(t0_xz_handle);
+  starpu_data_unregister(t0_yz_handle);
+
+  FILE *out = fopen("output_lucas.txt", "w+");
+  dump_tensors(v0, t0, ABC, SRC, *PRM, out);
+  fclose(out);
+
 }
