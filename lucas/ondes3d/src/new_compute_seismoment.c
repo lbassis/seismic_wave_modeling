@@ -25,8 +25,8 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
   int *i2imp_array = (int *)STARPU_VECTOR_GET_PTR(buffers[14]);
   int *j2jmp_array = (int *)STARPU_VECTOR_GET_PTR(buffers[15]);
 
-  int iDur, iSrc, dtbiem;
-  double time, ds, dt;
+  int iDur, iSrc;
+  double time, dtbiem, ds, dt;
   struct PARAMETERS prm;
   starpu_codelet_unpack_args(cl_arg, &time, &prm, &dtbiem, &iDur, &iSrc);
 
@@ -58,7 +58,7 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
   if (it < iDur) {
     for (is = 0; is < iSrc; is++) {
       if (insrc[is] == 1) {
-	mo = vel[is*iSrc+it] * dt;
+	mo = imatrix_access(vel, 0, iSrc-1, 0, iDur, is, it) * dt;
 	pxx = radxx(strike[is], dip[is], rake[is]);
 	pyy = radyy(strike[is], dip[is], rake[is]);
 	pzz = radzz(strike[is], dip[is], rake[is]);
@@ -89,7 +89,6 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
 	    k = izhypo[is] + 1;
 	    weight = weight * zweight[is];
 	  }
-
 	  
 	  imp = ivector_access(prm.i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, i);
 	  jmp1 = ivector_access(prm.j2jmp_array, YMIN - DELTA, YMAX + 2 * DELTA + 2, j-1);
@@ -141,7 +140,10 @@ void seis_moment_task(void *buffers[], void *cl_arg) {
 	  //imp = i2imp_array[i + 1];
 	  imp = ivector_access(prm.i2imp_array, XMIN - DELTA, XMAX + 2 * DELTA + 2, i+1);
 
-	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pxx * weight;	  
+	  i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k) += 0.5 * mo * pxx * weight;
+
+	  //printf("fx = %f, fy = %f, fz = %f\n", i3access(fx, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k),
+	  //i3access(fy, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k), i3access(fz, 1, MPMX, 1, MPMY, ZMIN - DELTA, ZMAX0, imp, jmp2, k));
 	}		/* end of iw (weighting) */
       }		        /* end of if SRC.insrc */
     }			/* end of is (each source) */
