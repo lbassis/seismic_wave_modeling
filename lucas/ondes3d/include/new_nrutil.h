@@ -3,6 +3,9 @@
 
 #define i3access(p, nrl, nrh, ncl, nch, ndl, ndh, i, j, k)  p[(i-(nrl))*((nch)-(ncl)+1)*((ndh)-(ndl)+1)+(j-(ncl))*((ndh)-(ndl)+1)+(k-(ndl))]
 
+#define imatrix_access(m, nrl, nrh, ncl, nch, i, j) m[(i-(nrl))*((nch)-(ncl)+1)+(j-(ncl))]
+
+#define ivector_access(p, nl, nh, i)  p[(i) - (nl) + NR_END]
 #define ivector_access(p, nl, nh, i)  p[(i) - (nl) + NR_END]
 #define ivector_address(p, nl, nh, i)  p+i-nl+NR_END
 
