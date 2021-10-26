@@ -57,7 +57,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   double kapxyz, kapxy, kapxz, kapx, kapy, kapz, muxy, muxz, mux, muy, muz, muxyz;
   double b1, b2;
   int ly0, ly2;		/* layer index */
-  
+
   /*  */
   enum typePlace place;	/* What type of cell  */
   long int npml;
@@ -69,10 +69,10 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
   //printf("alo block size %d\n", block_size);
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
-      
+
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
-      
+
       if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
 	continue;
       }
@@ -90,7 +90,8 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	}
 	/* find the right npml number */
 	if ((place == ABSORBINGLAYER) || (place == FREEABS)) {
-	  npml = first_npml+k-(prm.zMin - prm.delta);
+	  //npml = first_npml+k-(prm.zMin - prm.delta);
+    npml = i3access(ipml, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin-prm.delta, prm.zMax0, i, j, k);
 	}
 	/* medium */
 
@@ -110,7 +111,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 
 
 	/*=====================================================*\
-	  ELASTIC PART : 
+	  ELASTIC PART :
 
 	  structure :
 	  -- common elastic initialisation
@@ -125,13 +126,13 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	  /* REGULAR & ABSORBING LAYER initialisations */
 	  /*********************************************/
 
-	  /* NB : 
+	  /* NB :
 	   * We Modify the derivative in CPML using kappa and alpha.
-	   * In regular domain or when PML is used, we do not modify derivatives, 
+	   * In regular domain or when PML is used, we do not modify derivatives,
 	   * that is to say :
 	   * kapCPML = 1.
 	   * aCPML = 0.,
-	   * 
+	   *
 	   * So kapCPML and aCMPL are ingnored in Regular domain and PML formulation,
 	   * there is no need to make a special case for them
 	   */
@@ -271,19 +272,19 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	/*  FREESURFACE and FREEABS common part   */
 	/* ************************************** */
 	/* # Description :
-	 * -- k=0 
+	 * -- k=0
 	 * we keep 4th order approximation of t0 for k=0 (just before the free surface),
 	 * so we need values of the 2 above cells : k=1 (fully), k=2(partially).
-	 * Partially, since only t0->xz(k=0) and t0->yz(k=0) depend on v0.x(k=2) and v0.y(k=2) 
+	 * Partially, since only t0->xz(k=0) and t0->yz(k=0) depend on v0.x(k=2) and v0.y(k=2)
 	 * Details of those v0.x,v0.y can be found in the Function ComputeVelocity
 	 * -- k=1 (freeSurface)
-	 * 
+	 *
 	 * # From local index to z coordinates
-	 * for k=1, t0->xx,t0->yy,t0->zz, t0->xy -> z=0; 
+	 * for k=1, t0->xx,t0->yy,t0->zz, t0->xy -> z=0;
 	 *          t0->xz,t0->yz            -> z=DS/2.
-	 * for k=2, t0->xx,t0->yy,t0->zz, t0->xy -> z=DS 
-	 *          t0->xz,t0->yz            -> z=3*DS/2. 
-	 *          we only need to compute t0->zz, t0->xz and t0->yz 
+	 * for k=2, t0->xx,t0->yy,t0->zz, t0->xy -> z=DS
+	 *          t0->xz,t0->yz            -> z=3*DS/2.
+	 *          we only need to compute t0->zz, t0->xz and t0->yz
 	 *          (for v0.z(k=0), v0.x(k=1), v0.y(k=1) respectively)
 	 * # Equations
 	 * Cf."Simulating Seismic Wave propagation in 3D elastic Media Using staggered-Grid Finite Difference"
@@ -297,7 +298,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	    i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, 1) = -i3access(t0_yz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, 0);
 	    i3access(t0_zz, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, 1) = 0.;
 
-	    /* for t0->xx, t0->yy, we consider elastic formulation 
+	    /* for t0->xx, t0->yy, we consider elastic formulation
 	     * giving dt(tzz)|z=0 = 0 => vz,t0->xx and t0->yy formulation
 	     * Cf. eqn 98 to 100 p.13, Technical Note : Formulation of Finite Difference Method [ Hideo Aochi ]
 	     */
@@ -318,7 +319,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 			 (i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i+2, j, k) -
 			  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i -
 			       1, j, k))) / (ds *
-					 
+
 					     ivector_access(kappax2, 1, prm.mpmx, i))
 	      +
 	      b2 * dt * ((9. / 8.) *
@@ -329,7 +330,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 			 (i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j+1, k) -
 			  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j -
 				  2, k))) / (ds *
-					 
+
 					     ivector_access(kappay, 1, prm.mpmy, j));
 
 	    i3access(t0_yy, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) +=
@@ -341,7 +342,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 			 (i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j+1, k) -
 			  i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i, j -
 				  2, k))) / (ds *
-					 
+
 					     ivector_access(kappay, 1, prm.mpmy, j))
 	      +
 	      b2 * dt * ((9. / 8.) *
@@ -352,7 +353,7 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 			 (i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i+2, j, k) -
 			  i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, i -
 			       1, j, k))) / (ds *
-					 
+
 					     ivector_access(kappax2, 1, prm.mpmx, i));
 
 	    /* t0->xy computed like usual */
@@ -381,8 +382,8 @@ void compute_stress_task(void *buffers[], void *cl_arg) {
 	/* FREEABS special part  */
 	/*********************** */
 	if (place == FREEABS) {
-	  /* Nothing to do for imposed values 
-	   *  (since k=0 and k=-1  already contains PML/CPML) 
+	  /* Nothing to do for imposed values
+	   *  (since k=0 and k=-1  already contains PML/CPML)
 	   * what's left is : for k=1, t0->xx, t0->yy and t0->xy
 	   */
 	  if (k == 1) {

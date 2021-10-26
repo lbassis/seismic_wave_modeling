@@ -71,7 +71,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 
   struct phit_s phit;
   phit.base_ptr = phit_base_ptr;
-  
+
   phit.size = 9 * prm.block_size * prm.block_size * prm.depth;
   phit.offset = prm.block_size * prm.block_size * prm.depth;
   COMPUTE_ADDRESS_PHIT_S(phit);
@@ -104,10 +104,10 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
   /* loop */
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
-      
+
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
-      
+
       if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
 	continue;
       }
@@ -128,7 +128,8 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 	  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) = 0.;
 	  continue;
 	} else if (place == ABSORBINGLAYER || place == FREEABS) {
-	  npml = first_npml+k-(prm.zMin - prm.delta);
+	  //npml = first_npml+k-(prm.zMin - prm.delta);
+    npml = i3access(ipml, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin-prm.delta, prm.zMax0, i, j, k);
 	}
 
 	/*=====================================================*\
@@ -282,7 +283,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 	  if (k == 2) {
 	  }
 	}		/* end FREE SURFACE and FREEABS COMMON PART */
-	
+
 
 	/* ***************************** */
 	/* ABSORBING LAYER & FREEABS part */
@@ -295,7 +296,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 	if ((place == ABSORBINGLAYER) ||
 	    (place == FREEABS && k == prm.zMax0 - 1)) {
 	  /* initialize */
-	  
+
 	  vp = RhoMuKap2Vp(rho0[ly0], mu0[ly0], kap0[ly0]);	/* vx */
 
 	  muxy = mu0[ly0];	/* vy */
@@ -304,7 +305,7 @@ void compute_velo_task(void *buffers[], void *cl_arg) {
 
 	  muxz = mu2[ly2];	/* vz */
 	  kapxz = kap2[ly2];
-	  
+
 	  vpxy = RhoMuKap2Vp(rhoxy, muxy, kapxy);	/* vy */
 	  vpxz = RhoMuKap2Vp(rhoxz, muxz, kapxz);	/* vz */
 
@@ -475,10 +476,10 @@ void compute_velo_k1(void *buffers[], void *cl_arg) {
   /* loop */
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
-      
+
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
-      
+
       if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
 	continue;
       }
@@ -540,7 +541,7 @@ void compute_velo_k1(void *buffers[], void *cl_arg) {
 	else {
 	  j_less_one = i3access(v0_y, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j-1, k);
 	}
-	
+
 	i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) =
 	  i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k-1)
 	  - (kapx - 2. / 3. * mux) / (kapx + 4. / 3. * mux) *
@@ -609,10 +610,10 @@ void compute_velo_k2(void *buffers[], void *cl_arg) {
   /* loop */
   for (inner_i = 0; inner_i < prm.block_size; inner_i++) {
     for (inner_j = 0; inner_j < prm.block_size; inner_j++) {
-      
+
       i = block_size*i_block+inner_i;
       j = block_size*j_block+inner_j;
-      
+
       if (i == 0 || i >= prm.mpmx || j == 0 || j >= prm.mpmx) {
 	continue;
       }
@@ -636,7 +637,7 @@ void compute_velo_k2(void *buffers[], void *cl_arg) {
       if (place == FREESURFACE || place == FREEABS) {
 
 	// this is disgusting but i'm so tired
-	
+
 	if (inner_i == 0) { // both need to be taken from its neighboor
 	  i_less_one1 = i3access(prev_i, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, block_size-1, inner_j, k-1);
 	  i_less_one2 = i3access(prev_i, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, block_size-1, inner_j, k-2);
@@ -653,9 +654,9 @@ void compute_velo_k2(void *buffers[], void *cl_arg) {
 	else { // at least j+1 is local
 	  j_plus_one1 = i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j+1, k-1);
 	  j_plus_one2 = i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j+1, k-2);
-	}	
+	}
 
-	
+
 	i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k) = i3access(v0_x, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1)
 	  - (i3access(v0_z, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin - prm.delta, prm.zMax0, inner_i, inner_j, k - 1) -
 	     i_less_one1)

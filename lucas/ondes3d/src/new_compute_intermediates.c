@@ -60,7 +60,7 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
   double *phiv_base_ptr = (double *)STARPU_VECTOR_GET_PTR(buffers[0]);
   struct phiv_s phiv;
   phiv.base_ptr = phiv_base_ptr;
-  
+
   phiv.size = 9 * prm.block_size * prm.block_size * prm.depth;
   phiv.offset = prm.block_size * prm.block_size * prm.depth;
   COMPUTE_ADDRESS_PHIV_S(phiv);
@@ -113,7 +113,8 @@ void compute_intermediates_task(void *buffers[], void *cl_arg) {
 	}
 	/* find the right npml number */
 	if ((place == ABSORBINGLAYER) || (place == FREEABS)) {
-	  npml = first_npml+k-(prm.zMin - prm.delta);
+	  //npml = first_npml+k-(prm.zMin - prm.delta);
+    npml = i3access(ipml, -1, prm.mpmx+2, -1, prm.mpmy+2, prm.zMin-prm.delta, prm.zMax0, i, j, k);
 	}
 	/* medium */
 	/* Warning : k2ly0 & k2ly2
