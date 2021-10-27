@@ -345,10 +345,6 @@ int AllocateFields(struct VELOCITY *v0,
   for (int i_block = 0; i_block < PRM.n_blocks_y; i_block++) {
     for (int j_block = 0; j_block < PRM.n_blocks_x; j_block++) {
       ABC->npmlv = 0;
-      ABC->phiv[i_block * PRM.n_blocks_x + j_block].base_ptr = calloc(9 * PRM.block_size * PRM.block_size * depth, sizeof(double));
-      ABC->phiv[i_block * PRM.n_blocks_x + j_block].size = 9 * PRM.block_size * PRM.block_size * depth;
-      ABC->phiv[i_block * PRM.n_blocks_x + j_block].offset = PRM.block_size * PRM.block_size * depth;
-      COMPUTE_ADDRESS_PHIV_S(ABC->phiv[i_block * PRM.n_blocks_x + j_block]);
       for(imp = -1 + PRM.block_size * i_block; imp < PRM.block_size * (i_block+1); imp++ ){
         i = ivector_access(PRM.imp2i_array, -1, MPMX + 2, imp);
         for(jmp = -1 + PRM.block_size * j_block; jmp < PRM.block_size * (j_block+1); jmp++ ){
@@ -360,14 +356,16 @@ int AllocateFields(struct VELOCITY *v0,
               ABC->npmlv += 1;
               int* ppp = &i3access(ABC->ipml, -1, MPMX+2, -1, MPMY+2, ZMIN-DELTA, ZMAX0, imp, jmp, k);
               *ppp = ABC->npmlv;
-
             }
           }
         }
       }
+      ABC->phiv[i_block * PRM.n_blocks_x + j_block].base_ptr = calloc(9 * (ABC->npmlv+2), sizeof(double));
+      ABC->phiv[i_block * PRM.n_blocks_x + j_block].size = 9 * (ABC->npmlv+2);
+      ABC->phiv[i_block * PRM.n_blocks_x + j_block].offset = (ABC->npmlv+2);
+      COMPUTE_ADDRESS_PHIV_S(ABC->phiv[i_block * PRM.n_blocks_x + j_block]);
     }
   }
-
 
   if (PRM.me == 0) {
     if (ABCmethod == CPML)
@@ -656,7 +654,6 @@ int InitializeABC(struct ABSORBING_BOUNDARY_CONDITION *ABC,
   /* Definition of the vectors used in the PML/CPML formulation */
   /* ****************************************************** */
   ABC->dumpx = dvector(1, MPMX);
-  printf("dumpx com tamanho %d\n", (MPMX - 1 + 1 + NR_END));
   ABC->dumpx2 = dvector(1, MPMX);
   ABC->dumpy = dvector(1, MPMY);
   ABC->dumpy2 = dvector(1, MPMY);
