@@ -6,7 +6,6 @@
 #define imatrix_access(m, nrl, nrh, ncl, nch, i, j) m[(i-(nrl))*((nch)-(ncl)+1)+(j-(ncl))]
 
 #define ivector_access(p, nl, nh, i)  p[(i) - (nl) + NR_END]
-#define ivector_access(p, nl, nh, i)  p[(i) - (nl) + NR_END]
 #define ivector_address(p, nl, nh, i)  p+i-nl+NR_END
 
 static float sqrarg;
