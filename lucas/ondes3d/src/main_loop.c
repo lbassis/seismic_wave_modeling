@@ -26,7 +26,7 @@ struct starpu_codelet seis_moment_cl = {
 
 enum starpu_data_access_mode modes_intermediates[31] =
 {
-	STARPU_W,
+	STARPU_RW,
 			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
 			STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R, STARPU_R,
@@ -224,23 +224,26 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
 
     //loop compute intermediates
     starpu_task_wait_for_all();
-    for (i_block = 0; i_block < 1; i_block++) {//i_block < n_blocks_y; i_block++) {
-      for (j_block = 0; j_block < 1; j_block++) {//n_blocks_x; j_block++) {
+    for (i_block = 0; i_block < n_blocks_y; i_block++) {
+      for (j_block = 0; j_block < n_blocks_x; j_block++) {
 
     	i = i_block*PRM->block_size;
     	j = j_block*PRM->block_size;
 
 
-	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (PRM->mpmx+3)*(PRM->mpmy+3)*(PRM->zMax0 - (PRM->zMin - PRM->delta)), sizeof(ABC->ipml[0]));
+	starpu_vector_data_register(&ipml_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->ipml, (PRM->mpmx+4)*(PRM->mpmy+4)*(PRM->zMax0 - (PRM->zMin - PRM->delta)), sizeof(ABC->ipml[0]));
 
     	long int first_npml = i3access(ABC->ipml, -1, PRM->block_size + 2, -1, PRM->block_size + 2, PRM->zMin - PRM->delta, PRM->zMax0, i, j, PRM->zMin - PRM->delta);
 
 	starpu_vector_data_register(&phiv_handle, STARPU_MAIN_RAM, (uintptr_t)ABC->phiv[i_block * PRM->n_blocks_x + j_block].base_ptr,
-	                             ABC->phiv[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
+				    ABC->phiv[i_block * PRM->n_blocks_x + j_block].size, sizeof(double));
 
+	int phiv_size = ABC->phiv[i_block * PRM->n_blocks_x + j_block].size;
+	int phiv_offset = ABC->phiv[i_block * PRM->n_blocks_x + j_block].offset;
 
+	
     	starpu_task_insert(&intermediates_cl,
-    			   STARPU_W, phiv_handle,
+    			   STARPU_RW, phiv_handle,
     			   STARPU_R, k2ly0_handle, STARPU_R, k2ly2_handle, STARPU_R, mu0_handle, STARPU_R, mu2_handle,
     			   STARPU_R, kap0_handle, STARPU_R, kap2_handle, STARPU_R, rho0_handle, STARPU_R, rho2_handle,
     			   STARPU_R, dumpx_handle, STARPU_R, dumpx2_handle, STARPU_R, dumpy_handle, STARPU_R, dumpy2_handle, STARPU_R, dumpz_handle, STARPU_R, dumpz2_handle,
@@ -251,11 +254,15 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
     			   STARPU_VALUE, &j_block, sizeof(j_block),
     			   STARPU_VALUE, &first_npml, sizeof(first_npml),
     			   STARPU_VALUE, PRM, sizeof(*PRM),
+			   STARPU_VALUE, &phiv_size, sizeof(int),
+			   STARPU_VALUE, &phiv_offset, sizeof(int),
     			   0);
+	starpu_task_wait_for_all();
       }
     }
     starpu_task_wait_for_all();
-
+    return;
+    
     //// loop compute stress
     starpu_data_map_filters(t0_xx_handle, 2, &x_filter, &y_filter);
     starpu_data_map_filters(t0_yy_handle, 2, &x_filter, &y_filter);
