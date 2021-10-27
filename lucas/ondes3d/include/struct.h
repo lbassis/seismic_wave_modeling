@@ -5,7 +5,7 @@
 static const double un = 1.;
 static const double NPOWER = 2.;
 static const double f0 = 1.;
-static const int DELTA_VAL = 10;
+static const int DELTA_VAL = 2;
 static const double REFLECT = 0.001;
 
 

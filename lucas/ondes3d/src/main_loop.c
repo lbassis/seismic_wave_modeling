@@ -139,8 +139,8 @@ void main_loop(struct SOURCE *SRC, struct ABSORBING_BOUNDARY_CONDITION *ABC,
   starpu_vector_data_register(&src_ixhypo_handle, STARPU_MAIN_RAM, (uintptr_t)SRC->ixhypo, SRC->iSrc, sizeof(SRC->ixhypo[0]));
   starpu_vector_data_register(&src_iyhypo_handle, STARPU_MAIN_RAM, (uintptr_t)SRC->iyhypo, SRC->iSrc, sizeof(SRC->iyhypo[0]));
   starpu_vector_data_register(&src_izhypo_handle, STARPU_MAIN_RAM, (uintptr_t)SRC->izhypo, SRC->iSrc, sizeof(SRC->izhypo[0]));
-  starpu_vector_data_register(&prm_i2imp_handle, STARPU_MAIN_RAM, (uintptr_t)PRM->i2imp_array, ((PRM->xMax+2*PRM->delta+2) - (PRM->xMin - PRM->delta) + 1) , sizeof(PRM->i2imp_array[0]));
-  starpu_vector_data_register(&prm_j2jmp_handle, STARPU_MAIN_RAM, (uintptr_t)PRM->j2jmp_array, ((PRM->yMax+2*PRM->delta+2) - (PRM->yMin - PRM->delta) + 1) , sizeof(PRM->j2jmp_array[0]));
+  starpu_vector_data_register(&prm_i2imp_handle, STARPU_MAIN_RAM, (uintptr_t)PRM->i2imp_array, PRM->mpmx+4 , sizeof(PRM->i2imp_array[0]));
+  starpu_vector_data_register(&prm_j2jmp_handle, STARPU_MAIN_RAM, (uintptr_t)PRM->j2jmp_array, PRM->mpmy+4 , sizeof(PRM->j2jmp_array[0]));
 
   starpu_block_data_register(&src_fx_handle, STARPU_MAIN_RAM, (uintptr_t)SRC->fx, ncols, depth, nrows, ncols, depth, sizeof(SRC->fx[0]));
   starpu_block_data_register(&src_fy_handle, STARPU_MAIN_RAM, (uintptr_t)SRC->fy, ncols, depth, nrows, ncols, depth, sizeof(SRC->fy[0]));
