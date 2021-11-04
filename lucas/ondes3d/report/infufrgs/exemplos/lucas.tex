@@ -257,7 +257,7 @@ conceito pode ser expandido para o espaço tridimensional.
 \begin{figure}[!htb]
     \caption{Representação de um \textit{stencil} 2D com quatro vizinhos}
     \begin{center}
-      \includegraphics[width=6em]{stencil}
+      \includegraphics[width=9em]{stencil}
     \end{center}
     \label{fig:stencil}
     \legend{Fonte: Autor}
@@ -281,6 +281,26 @@ não suporta o estabelecimento de dependências entre os dados, é necessário q
 de velocidades. Dessa maneira, apesar da solução atual alcançar uma aceleração graças ao paralelismo introduzido, a quantidade de operações que podem ser executadas simultaneamente
 é menor do que seria possível. O paralelismo baseado em tarefas busca explorar as dependências entre os dados para alcançar esse nível maior de independência entre as etapas do
 algoritmo.
+
+\subsection{Condições de borda}
+
+Ao simular a propagação de uma onda, é necessário considerar os reflexos por ela criados. No entanto, o método de diferenças finitas, utilizado pelo \textit{Ondes3D}, exige que as suas
+equações sejam resolvidas em um domínio discretizado restrito. Dessa maneira, ao modelar a propagação de ondas, é necessário utilizar técnicas que permitam absorver as ondas nos limites
+do domínio estudado de maneira que seus reflexos não interfiram nos cálculos internos.
+
+Berenger \cite{PML} desenvolveu uma técnica voltada para absorção de ondas eletromagnéticas, chamada de \textit{Perfectly Matched Layers} (\textit{PML}). Diferentemente
+das outras técnicas existentes até então, o emprego de \textit{PML}s permite a construção de uma camada de absorção que teoricamente não produz reflexo algum independentemente
+da frequência e do ângulo de incidência das ondas recebidas. Experimentos realizados na época mostraram que, apesar de uma pequena quantidade de reflexos ter sido detectada,
+sua magnitude poderia ser reduzida adequando alguns parâmetros. Além disso, o emprego da técnica de \textit{PML}s permite a utilização de camadas de absorção menos espessas, o que
+reduz a computação necessária ao simular a propagação de ondas.
+
+No entanto, o coeficiente de reflexão das \textit{PML}s só é nulo antes da discretização do domínio e com ondas de incidência não rasante, isto é, com um angulo de incidência
+diferente de $90$°, o que torna essa técnica inadequada quando, por exemplo, existem fontes de ondas muito próximas dos limites do domínio. Roden e Gedney \cite{CPML} propuseram
+um novo método chamado \textit{Convolutional Perfect Matched Layers}, que utiliza uma convolução recursiva para atenuar a reflexão de ondas de incidência rasante.
+
+A aplicação \textit{Ondes3D} utiliza ambas as técnicas acima descritas em diferentes experimentos. No caso do experimento de \textit{Chuetsu-Oki}, no qual esse trabalho se baseia, a técnica
+empregada é a das \textit{CPML}s.
+
 
 \section{Paralelismo baseado em tarefas}
 
@@ -314,7 +334,7 @@ possível é mostrado na Figura \ref{fig:intermediates_cl}.
 \begin{figure}[!htb]
     \caption{Definição do \textit{codelet} da função \textit{computeIntermediates}}
     \begin{center}
-      \includegraphics[width=25em]{intermediates_cl}
+      \includegraphics[width=32em]{intermediates_cl}
     \end{center}
     \label{fig:intermediates_cl}
     \legend{Fonte: Autor}
@@ -336,7 +356,7 @@ na divisão de uma matriz em sub-matrizes (também chamadas de blocos) de menor 
 \begin{figure}[!htb]
     \caption{Decomposição da matriz A em blocos}
     \begin{center}
-      \includegraphics[width=15em]{tiled_matrix}
+      \includegraphics[width=20em]{tiled_matrix}
     \end{center}
     \label{fig:tiled_matrix}
     \legend{Fonte: Autor}
@@ -354,7 +374,7 @@ de linha podem exigir uma reescrita completa da cache.
 \begin{figure}[!htb]
     \caption{Algoritmo de multiplicação de matrizes por blocos}
     \begin{center}
-      \includegraphics[width=25em]{gemm}
+      \includegraphics[width=33em]{gemm}
     \end{center}
     \label{fig:gemm}
     \legend{Fonte: Autor}
@@ -378,7 +398,7 @@ igual à do domínio.
 \begin{figure}[!htb]
     \caption{Representação do espaço particionado em nove blocos}
     \begin{center}
-      \includegraphics[width=10em]{cuboids}
+      \includegraphics[width=15em]{cuboids}
     \end{center}
     \label{fig:cuboids}
     \legend{Fonte: Autor}
@@ -391,7 +411,7 @@ vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min
 \begin{figure}[!htb]
     \caption{Laço principal da aplicação original}
     \begin{center}
-      \includegraphics[width=28em]{main_loop}
+      \includegraphics[width=25em]{main_loop}
     \end{center}
     \label{fig:main_loop}
     \legend{Fonte: Autor}
@@ -423,7 +443,7 @@ mas o conceito pode ser expandido para três dimensões.
 \begin{figure}[!htb]
     \caption{Representação do uso de células fantasma}
     \begin{center}
-      \includegraphics[width=16em]{ghost_cells}
+      \includegraphics[width=20em]{ghost_cells}
     \end{center}
     \label{fig:ghost_cells}
     \legend{Fonte: Autor}
