@@ -1,0 +1,110 @@
+% This file was created with JabRef 2.9.2.
+% Encoding: UTF8
+
+@INPROCEEDINGS{boito,
+
+  author={Boito, Francieli Zanon and Bez, Jean Luca and Dupros, Fabrice and Dantas, Mario A. R. and Navaux, Philippe O. A. and Aochi, Hideo},
+
+  booktitle={2017 25th Euromicro International Conference on Parallel, Distributed and Network-based Processing (PDP)}, 
+
+  title={High Performance I/O for Seismic Wave Propagation Simulations}, 
+
+  year={2017},
+
+  volume={},
+
+  number={},
+
+  pages={31-38},
+
+  doi={10.1109/PDP.2017.92}}
+
+@inproceedings{dupros:hal-00797682,
+  TITLE = {{On scalability issues of the elastodynamics equations on multicore platforms}},
+  AUTHOR = {Dupros, Fabrice and Do, Hiep-Thuan and Aochi, Hideo},
+  URL = {https://hal-brgm.archives-ouvertes.fr/hal-00797682},
+  BOOKTITLE = {{ICCS 2013 : International conference on computational cience}},
+  ADDRESS = {Barcelone, Spain},
+  PUBLISHER = {{Elsever}},
+  SERIES = {Procedia Computer Science},
+  PAGES = {9 p.},
+  YEAR = {2013},
+  MONTH = Jun,
+  DOI = {10.1109/PDP.2014.37},
+  HAL_ID = {hal-00797682},
+  HAL_VERSION = {v1},
+}
+
+@INPROCEEDINGS{victor,
+author={Martínez, Víctor and Michéa, David and Dupros, Fabrice and Aumage, Olivier and Thibault, Samuel and Aochi, Hideo and Navaux, Philippe O.A.},
+booktitle={2015 27th International Symposium on Computer Architecture and High Performance Computing (SBAC-PAD)},
+title={Towards Seismic Wave Modeling on Heterogeneous Many-Core Architectures Using Task-Based Runtime System},
+year={2015},
+volume={},
+number={},
+pages={1-8},
+doi={10.1109/SBAC-PAD.2015.33}
+}
+
+@article{CASTRO2016108,
+title = {Seismic wave propagation simulations on low-power and performance-centric manycores},
+journal = {Parallel Computing},
+volume = {54},
+pages = {108-120},
+year = {2016},
+note = {26th International Symposium on Computer Architecture and High Performance Computing},
+issn = {0167-8191},
+doi = {https://doi.org/10.1016/j.parco.2016.01.011},
+url = {https://www.sciencedirect.com/science/article/pii/S0167819116000417},
+author = {Márcio Castro and Emilio Francesquini and Fabrice Dupros and Hideo Aochi and Philippe O.A. Navaux and Jean-François Méhaut},
+keywords = {Seismic wave propagation, MPPA-256, Xeon Phi, HPC, Performance, Energy efficiency},
+abstract = {The large processing requirements of seismic wave propagation simulations make High Performance Computing (HPC) architectures a natural choice for their execution. However, to keep both the current pace of performance improvements and the power consumption under a strict power budget, HPC systems must be more energy efficient than ever. As a response to this need, energy-efficient and low-power processors began to make their way into the market. In this paper we employ a novel low-power processor, the MPPA-256 manycore, to perform seismic wave propagation simulations. It has 256 cores connected by a NoC, no cache-coherence and only a limited amount of on-chip memory. We describe how its particular architectural characteristics influenced our solution for an energy-efficient implementation. As a counterpoint to the low-power MPPA-256 architecture, we employ Xeon Phi, a performance-centric manycore. Although both processors share some architectural similarities, the challenges to implement an efficient seismic wave propagation kernel on these platforms are very different. In this work we compare the performance and energy efficiency of our implementations for these processors to proven and optimized solutions for other hardware platforms such as general-purpose processors and a GPU. Our experimental results show that MPPA-256 has the best energy efficiency, consuming at least 77% less energy than the other evaluated platforms, whereas the performance of our solution for the Xeon Phi is on par with a state-of-the-art solution for GPUs.}
+}
+
+@article{Dupros2010HighperformanceFS,
+  title={High-performance finite-element simulations of seismic wave propagation in three-dimensional nonlinear inelastic geological media},
+  author={Fabrice Dupros and Florent De Martin and Evelyne Foerster and Dimitri Komatitsch and Jean Roman},
+  journal={Parallel Comput.},
+  year={2010},
+  volume={36},
+  pages={308-325}
+}
+
+@article{ABCarticle,
+author = {Nataf, Frederic},
+year = {2013},
+month = {01},
+pages = {},
+title = {Absorbing boundary conditions and perfectly matched layers in wave propagation problems},
+volume = {11},
+isbn = {9783110282283},
+journal = {Radon Series on Computational and Applied Mathematics},
+doi = {10.1515/9783110282283.219}
+}
+
+@inproceedings{StarPU,
+author = {Augonnet, Cédric and Thibault, Samuel and Namyst, Raymond and Wacrenier, Pierre-André},
+year = {2009},
+month = {08},
+pages = {},
+title = {STARPU: A Unified Platform for Task Scheduling on Heterogeneous Multicore Architectures},
+volume = {23},
+isbn = {978-3-642-03868-6},
+journal = {Concurrency and Computation: Practice and Experience},
+doi = {10.1007/978-3-642-03869-3_80}
+}
+
+@article{nesi,
+author = {Leandro Nesi, Lucas and da Silva Serpa, Matheus and Mello Schnorr, Lucas and Navaux, Philippe Olivier Alexandre},
+title = {Task-based parallel strategies for computational fluid dynamic application in heterogeneous CPU/GPU resources},
+journal = {Concurrency and Computation: Practice and Experience},
+volume = {32},
+number = {20},
+pages = {e5772},
+keywords = {task-based programming paradigm, computational fluid dynamics, performance analysis},
+doi = {https://doi.org/10.1002/cpe.5772},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/cpe.5772},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/cpe.5772},
+abstract = {Summary Parallel applications executing in contemporary heterogeneous clusters are complex to code and optimize. The task-based programming model is an alternative to handle the coding complexity. This model consists of splitting the problem domain into tasks with dependencies through a directed acyclic graph, and submit the set of tasks to a runtime scheduler that maps each task dynamically to resources. We consider that computational fluid dynamics applications are typical in scientific computing but not enough exploited by designs that employ the task-based programming model. This article presents task-based parallel strategies for a simple CFD application that targets heterogeneous multi-CPU/multi-GPU computing resources. We design, develop, evaluate, and compare the performance of three parallel strategies (naive, ghost-cells, and arrow) of a task-based heterogeneous (CPU and GPU) application that simulates the flow of an incompressible Newtonian fluid with constant viscosity. All implementations rely on the StarPU runtime, and we use the StarVZ toolkit to conduct comprehensive performance analysis. Results indicate that the ghost cell strategy provides the best speedup (77×) considering the simulation time when the GPU resources still have available memory. However, the arrow strategy achieves better results when the simulation data increases.},
+year = {2020}
+}
