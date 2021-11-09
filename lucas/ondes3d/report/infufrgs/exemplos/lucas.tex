@@ -695,13 +695,49 @@ tarefas garante a ordem de execução necessária.
 
 \chapter{Avaliação experimental}
 
-falar do unpartition!!
+A nova versão desenvolvida foi executada no Parque Computacional de Alto Desempenho (PCAD) da Universidade Federal do Rio Grande do Sul com o
+intuito de comparar seu desempenho em relação à implementação original.
+
 \section{Ambiente de testes}
+
+Para a execução dos testes, foram utilizadas as máquinas \textit{tupi} do PCAD, contando com um processador \textit{Intel Xeon E5-2620} com $16$
+núcleos e $32$ \textit{threads}, $80$GB de memória RAM DDR$4$ e duas placas \textit{NVIDIA GeForce GTX 1080Ti}.
 \section{Resultados}
+
+Apesar do objetivo original ser a comparação da nova implementação com a antiga, não foi possível concluir o desenvolvimento da nova versão utilizando
+a programação baseada em tarefas. Todas as tarefas foram construídas e o algoritmo é executado do início ao fim sem produzir erros de execução. No entanto,
+ao comparar o resultado final obtido, não encontra-se o valor fornecido pela aplicação original.
+
+Diversas investigações foram realizadas e indicam que os erros matemáticos encontram-se no cálculo das contribuições das condições de borda, etapa previamente
+identificada como mais complexa. Devido ao tempo disponível, optou-se por apresentar o estudo desse desenvolvimento independentemente da corretude numérica dos resultados
+devido ao valor científico das ponderações realizadas ao longo da implementação e também da possibilidade de realizar uma análise sobre o paralelismo alcançado
+com as tarefas da maneira proposta.
+
+** analise do paralelismo quando rolar o starvz **
+
 \section{Trabalhos futuros}
 
-\chapter{Conclusão}
+A sequência natural do trabalho apresentado é a correção dos erros numéricos introduzidos na mudança de modelo de programação realizada. Assim que esses resultados
+forem alcançados, diversas melhorias podem ser postas em prática de maneira a acelerar ainda mais a execução da aplicação. Algumas delas são as seguintes:
 
+\begin{itemize}
+\item{Implementação visando arquiteturas heterogêneas:} assim como o trabalho desenvolvido por Martínez et al. \cite{victor}, é possível implementar \textit{kernels}
+  que permitem a execução de tarefas em \textit{GPU}s.
+\item{Implementação visando paralelismo entre iterações:} duplicando as estruturas de dados, é possível manter em memória valores de duas iterações simultaneamente, o que
+  eventualmente possibilitaria uma execução que dispensa a necessidade de barreiras de sincronização entre iterações.
+\item{Implementação de blocos de formato diferente:} em vez de limitar o ladrilhamento ao plano $XY$, a opção de particionar o espaço em todos os eixos permite o
+  emprego de mais parâmetros que, refinados, podem gerar melhores resultados.
+\item{Implementação de tarefas de granularidade menor:} as tarefas implementadas são compostas por diversas etapas menores, frequentemente associadas às diferentes
+  regiões do domínio calculado. A transformação dessas etapas menores em tarefas resulta numa granularidade mais fina, o que pode contribuir para o equilíbrio de carga
+  entre as unidades de execução.
+\end{itemize}
+
+
+
+\chapter{Conclusão}
+falar do equilibrio de carga!!!!
+barreira entre iteraçoes!!!!!!!
+falar do unpartition!!
 % e aqui vai a parte principal
 % 
 % \chapter{Estado da arte}
