@@ -246,8 +246,10 @@ que atingiu a costa japonesa em 2007. Nesse caso, a aplicação conta com as seg
 \item{\textit{VELOCITY}:} composta por tensores que representam a velocidade da onda nas direções X, Y e Z.
 \item{\textit{SOURCE}:} composta pelos dados que descrevem a(s) fonte(s) da onda, como seu hipocentro, a longevidade da fonte, sua orientação e força.
 \item{\textit{MEDIUM}:} composta pelos dados que descrevem o meio por onde a onda se propaga, como sua profundidade.
-\item{\textit{ABSORBING BOUNDARY CONDITION}:} composta por vetores que representam as contribuições das bordas do domínio nos cálculos de tensão e velocidade. Essas bordas são
-  utilizadas para limitar o domínio computacional onde o cálculo é feito gerando o mínimo de interferência nos cálculos realizados. \cite{ABCarticle}. 
+\item{\textit{ABSORBING\_BOUNDARY\_CONDITION}:} composta por vetores que representam as contribuições das bordas do domínio nos cálculos
+  de tensão e velocidade. As contribuições em cada uma dessas grandezas são compostas por nove componentes, representando as influências de
+  cada eixo nos três eixos possíveis (no caso da velocidade) e nos três planos possíveis (no caso da tensão). Essas bordas são utilizadas
+  para limitar o domínio computacional minimizando a interferência de limites artificiais nos cálculos realizados. \cite{ABCarticle}. 
 \end{itemize}
 
 Os cálculos são realizados seguindo um padrão \textit{stencil}, onde o valor atribuído aos tensores que descrevem as grandezas físicas são calculados usando informações
@@ -391,7 +393,7 @@ Posteriormente, será apresentada uma descrição da implementação realizada a
 
 \section{Proposta}\label{sec:proposal}
 
-Os diversos tensores que representam as grandezas utilizadas nas equações elastodinâmicas do problema deverão ser divididos, de forma parametrizável, em blocos de tamanho igual.
+Os diversos tensores que representam as grandezas utilizadas nas equações elastodinâmicas do problema deverão ser divididos, de forma parametrizável, em blocos de tamanho igual, que serão os argumentos de entrada das tarefas implementadas.
 A Figura \ref{fig:cuboids} ilustra o particionamento descrito utilizado pela implementação original, que parte de um arquivo de topologia para discretizar o plano $XY$ em blocos de profundidade
 igual à do domínio.
 
@@ -417,8 +419,7 @@ vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min
     \legend{Fonte: Autor}
 \end{figure}
 
-Na versão aqui proposta, cada etapa será executada tantas vezes quanto houverem blocos. Para isso, será necessário iterar sobre os blocos disponíveis, criando uma tarefa para cada bloco
-de dados, conforme mostra a Figura \ref{fig:new_main_loop}, dispensando a utilização dos \textit{imodes}. Neste momento vale ressaltar que a inserção das tarefas consiste
+Na versão aqui proposta, cada etapa será executada tantas vezes quanto houverem blocos. Para isso, será necessário iterar sobre os blocos disponíveis, criando uma tarefa para cada bloco de dados a ser atualizado, conforme mostra a Figura \ref{fig:new_main_loop}, dispensando a utilização dos \textit{imodes}. Neste momento vale ressaltar que a inserção das tarefas consiste
 simplesmente na criação de uma instância de tarefa com as dependências indicadas e não implica em sua execução imediata. Fica a cargo da biblioteca \textit{StarPU} iniciar a execução
 de cada uma das tarefas disponíveis de maneira assíncrona.
 
@@ -473,30 +474,231 @@ sendo $n$ a coordenada de valor mais negativo. Devido à complexidade em manter 
     \legend{Fonte: Autor}
 \end{figure}
 
-Devido às mudanças de dimensionalidade e limites dos vetores, o acesso à essas variáveis se torna mais complexo. Para contornar esse problema, foram utilizadas macros que calculam o endereço
-desejado a partir das dimensões do vetor acessado e das posições solicitadas.
+Devido às mudanças de dimensionalidade e limites dos vetores, o acesso à essas variáveis se torna mais complexo. Para contornar esse problema, foram utilizadas macros que calculam o endereço desejado a partir das dimensões do vetor acessado e das posições solicitadas, detalhadas na seção \ref{sec:tasks}.
 
-** ipml, phiv e phit **
+\subsubsection{Inicialização das \textit{CPML}}
 
-\subsection{Criação de \textit{buffers}}
+As \textit{ABSORBING\_BOUNDARY\_CONDITION} não representam o domínio completo do
+problema, já que elas tratam unicamente das bordas, onde a propagação da onda deve ser absorvida sem produzir reflexões. Como elas são
+responsáveis por registrar contribuições tanto nos tensores de tensão quanto nos de velocidade, ambos construídos com nove componentes,
+elas exigiriam um espaço enorme de memória para seu armazenamento. No entanto, essas contribuições só são calculadas em regiões muito
+limitadas do domínio, o que faria esses tensores extremamente esparsos. 
 
-*criaçao*
-*filtros*
-*unregister no final*
+A fim de não utilizar memória de maneira desnecessária, as contribuições físicas das \textit{CPML}s são registradas em vetores
+unidimensionais de tamanho igual ao número de elementos nas mesmas. Um tensor chamado \textit{ipml} armazena, para cada coordenada
+do domínio, o seu índice nos vetores das \textit{ABSORBING\_BOUNDARY\_CONDITION}.
 
-\subsection{Transformação em tarefas}
-*leitura dos buffers com tamanho variavel (pontas)*
-*coordenadas locais e globais*
-*loop em ijk diferente*
+Ao dividir o problema em tarefas, no entanto, essas estruturas adicionam novas complexidades. Primeiramente, não é possível aplicar
+o particionamento em blocos da mesma maneira nesses vetores, já que eles possuem dimensões reduzidas. Além disso, a implementação
+original considera que as bordas possuem uma espessura de duas células.
 
-\subsubsection{Acesso aos vizinhos}
-*dados inteiros, blocos inteiros ou celulas fantasma*
-*complexidade por ser stencil de grau 2*
-*opçao de ler dados inteiros escrever em blocos*
+A Figura \ref{fig:ipml} ilustra uma matrix de velocidades $v_x$ e um vetor $phiv_x$,
+que armazena as contribuições das bordas em $v_x$. Considerando que as cores da figura codificam o bloco ao qual cada célula
+pertence, pode-se constatar que não é possível particionar os vetores de maneira convencional, pois as contribuições de um
+mesmo bloco não são necessariamente sequenciais. Naturalmente, ao considerarmos o espaço tridimensional no qual os cálculos são feitos,
+esses fatores se comportam de maneira similar.
+
+\begin{figure}[!htb]
+    \caption{Representação de uma matriz de velocidades e um vetor de contribuições das bordas}
+    \begin{center}
+      \includegraphics[width=28em]{ipml}
+    \end{center}
+    \label{fig:ipml}
+    \legend{Fonte: Autor}
+\end{figure}
+
+O \textit{macro-kernel computeIntermediates}, por exemplo, acessa as contribuições das bordas em modo de escrita. Portanto, caso
+nenhum particionamento seja feito, mesmo que várias tarefas sejam submetidas para tratar diferentes regiões do problema, elas
+não poderão ser executadas em paralelo devido à necessidade de escrever em um mesmo vetor. Por esse motivo, é necessário encontrar
+uma alternativa de particionamento para esses vetores.
+
+A solução implementada para este estudo começa pela transformação da estrutura de dados das condições de borda, conforme mostra
+a Figura \ref{fig:abc}. Os diversos vetores que compunham as contribuições no cálculo de velocidade, por exemplo, foram encapsulados
+em uma nova estrutura \textit{phiv\_t} (respectivamente \textit{phit\_t} no caso da tensão), composta por um endereço de base, o
+tamanho de seus vetores e o deslocamento existente entre seus endereços.
+
+\begin{figure}[!htb]
+  \caption{À esquerda, parte da implementação da estrutura \textit{ABSORBING\_BOUNDARY\_CONDITION} e à direita, parte da
+  nova implementação proposta.}
+    \begin{center} 
+      \includegraphics[width=35em]{abc}
+    \end{center}
+    \label{fig:abc}
+    \legend{Fonte: Autor}
+\end{figure}
+
+A Figura \ref{fig:compute_address} mostra uma \textit{macro} desenvolvida para simplificar o acesso aos vetores utilizando a estrutura
+descrita, onde o acesso a cada uma das componentes é dado calculando a soma do endereço base com o deslocamento referente ao vetor desejado.
+
+
+\begin{figure}[!htb]
+  \caption{\textit{Macro} desenvolvida para construir a nova estrutura proposta.}
+    \begin{center} 
+      \includegraphics[width=35em]{compute_address}
+    \end{center}
+    \label{fig:compute_address}
+    \legend{Fonte: Autor}
+\end{figure}
+
+Finalmente, na estrutura \textit{ABSORBING\_BOUNDARY\_CONDITION}, os conjuntos de vetores $phiv$ e $phit$ foram substituídos por vetores
+dos tipos \textit{phiv\_t} e \textit{phit\_t}, com tamanho igual ao número de blocos do problema. Dessa forma, sendo $lx$ a quantidade
+de blocos de cada linha do domínio, cada bloco ($i$, $j$) encontra em $phiv\_t[lx * i + j]$ o conjunto de vetores associados
+às contribuições das bordas em ($i$, $j$).
+
+Esse particionamento realizado introduziu a necessidade de adaptar o vetor $ipml$, responsável por associar cada coordenada à sua posição
+nos vetores $phiv$ e $phit$. Anteriormente, o valor armazenado era um índice global, utilizado em vetores que representavam o domínio
+completo do problema. Com a nova estrutura, é necessário que esses índices sejam locais, associados aos vetores que pertencem à um bloco
+cada um.
+
+Implementando todas as modificações descritas acima, o particionamento dos vetores das condições de borda proposto permite que cada
+tarefa acesse apenas as posições que lhe são necessárias e o paralelismo entre blocos se torna possível.
+
+\subsection{Criação de \textit{data handles}}
+
+Para que os dados sejam acessados pelas tarefas submetidas na forma de \textit{buffers}, foi necessário encapsulá-los em
+\textit{data handles} implementados pela biblioteca \textit{StarPU} e responsáveis por gerenciar réplicas dos mesmos dados.
+Durante a execução desse projeto foram utilizadas as funções \textit{starpu\_data\_vector\_register},
+\textit{starpu\_data\_matrix\_register} e \textit{starpu\_data\_block\_register} para encapsular vetores unidimensionais,
+matrizes e tensores tridimensionais, respectivamente. Essas funções têm como argumentos o endereço de início e as dimensões dos
+dados envolvidos, valores que posteriormente são acessíveis dentro das tarefas.
+
+A biblioteca \textit{StarPU} oferece funções para realizar o ladrilhamento dos dados contidos em seus \textit{data handles} através
+de filtros chamados \textit{starpu\_data\_filter}, que têm como parâmetros o número de blocos a serem criados e o ponteiro para uma
+função que implementa o particionamento desejado.
+
+No caso desse estudo, os blocos são formados no plano $XY$, mantendo cada um deles com uma altura igual à do domínio. Portanto, foi
+necessário a aplicação de duas funções de particionamento, uma responsável pelo eixo $X$ e outra pelo eixo $Y$. Através da função
+\textit{starpu\_data\_map\_filters}, foi possível executar o ladrilhamento de um conjunto de dados utilizando a composição de
+diferentes funções de particionamento.
+
+Depois de aplicar o filtro nos dados desejados, o acesso aos blocos é realizado através da função \textit{starpu\_data\_get\_sub\_data},
+que tem como argumentos o \textit{data handle} original, o número de dimensões no qual ele foi particionado e os índices do bloco em cada
+uma dessas dimensões. Dessa maneira é possível fornecer para cada tarefa apenas o bloco que lhe é necessário.
+
+Finalizados os cálculos, os dados dos \textit{data handles} podem ser recuperados em suas estruturas originais após
+uma chamada à função \textit{starpu\_data\_unregister}. A Figura \ref{fig:data_cycle} resume o ciclo de vida de uma dessas estruturas ao
+longo da implementação desenvolvida.
+
+\begin{figure}[!htb]
+  \caption{Ciclo de vida de um \textit{data handle}.}
+    \begin{center} 
+      \includegraphics[width=35em]{data_cycle}
+    \end{center}
+    \label{fig:data_cycle}
+    \legend{Fonte: Autor}
+\end{figure}
+
+\subsubsection{Acesso aos vizinhos}\label{sec:neighborhood}
+
+Sendo o \textit{Ondes3D} um \textit{stencil}, a aplicação de um ladrilhamento implica em uma dificuldade especial na gestão de seus
+vizinhos, pois o cálculo dos elementos posicionados nas bordas de um bloco necessita de dados presentes em outros blocos. Para solucionar
+esse problema mantendo o particionamento, é necessário que em cada tarefa, para cada tensor utilizado, sejam enviados não só o bloco
+que lhes pertence, mas também seus quatro vizinhos. É importante ressaltar que os vizinhos são acessados em modo de leitura, permitindo
+que o paralelismo entre as tarefas de uma mesma etapa seja mantido.
+
+No caso da implementação proposta, onde o ladrilhamento ocorre apenas no plano $XY$, um bloco pode possuir de dois a quatro vizinhos
+em função de sua posição no domínio: blocos posicionados em um dos quatro cantos do plano $XY$ possuem apenas dois vizinhos, enquanto
+os demais blocos posicionados nas bordas possuem três e os internos possuem quatro. Por isso, o laço de inserção de tarefas precisa
+avaliar a posição tratada e construir um vetor de blocos contendo os vizinhos que serão utilizados em cada chamada.
+
+No entanto, a implementação das tarefas tornou-se muito complexa ao utilizar essa solução. O cálculo realizado em cada célula ($i$, $j$, $k$) não depende apenas de seus quatro vizinhos diretos, mas também dos quatro vizinhos posicionados a duas células de distância. Desde que o tamanho do bloco seja maior que dois, essa propriedade não interfere na gestão dos vizinhos em si. Porém, dentro de cada tarefa, torna-se
+necessário tratar uma quantidade significativa de casos distintos. São eles:
+
+\begin{itemize}
+\item{Células na primeira ou última linha do bloco:} índices do tipo $i - 1$ e $i - 2$ acessam os blocos vizinhos enquanto índices do tipo $i$ acessam o bloco principal 
+\item{Células na primeira ou última coluna do bloco:} índices do tipo $j - 1$ e $j - 2$ acessam os blocos vizinhos enquanto índices do tipo $j$ acessam o bloco principal
+\item{Células na segunda ou penúltima linha do bloco:} índices do tipo $i - 2$ acessam os blocos vizinhos enquanto índices do tipo $i$ e $i - 1$ acessam o bloco principal
+\item{Células na segunda ou penúltima coluna do bloco:} índices do tipo $j - 2$ acessam os blocos vizinhos enquanto índices do tipo $j$ e $j - 1$ acessam o bloco principal
+\item{Demais células:} todos os índices acessam o bloco principal
+\end{itemize}
+
+Além das possibilidades listadas, as operações realizadas são implementadas em funções que acessam mais de uma célula, criando assim
+ainda mais situações possíveis a serem consideradas. A Figura \ref{fig:neighborhood} ilustra os acessos necessários para parte do cálculo
+da célula ($i$, $j$) do bloco ($l$, $k$) do tensor de velocidade na direção do eixo $z$ na etapa \textit{computeVelocity}.
+
+\begin{figure}[!htb]
+  \caption{Parte do cálculo de $v0->z[i][j][k]$.}
+    \begin{center} 
+      \includegraphics[width=32em]{neighborhood}
+    \end{center}
+    \label{fig:neighborhood}
+    \legend{Fonte: Autor}
+\end{figure}
+
+Mesmo sendo mais eficiente em memória, o emprego da técnica de células fantasma, explicado na seção \ref{sec:proposal}, não diminui
+a complexidade envolvida nesses casos. No entanto, constatou-se que as grandezas cujos acessos podem necessitar de vizinhos não são
+aquelas que estão sendo atualizadas. No exemplo mostrado acima, são os valores de tensão que são consultados para calcular a velocidade
+em uma dada coordenada. Sendo assim, optou-se por fornecer para cada tarefa um bloco, no caso dos dados que serão escritos, e o tensor
+completo, no caso dos dados que serão lidos. Com isso, o paralelismo pode ser mantido, já que as escritas acontecem em dados independentes,
+sem a necessidade de gerenciar leituras em blocos vizinhos.
+
+\subsection{Transformação em tarefas}\label{sec:task}
+
+Cada um dos quatro \textit{macro-kernels} foi escrito seguindo a interface de tarefas \textit{StarPU}. Inicialmente serão abordados
+os aspectos gerais dessa transformação, comuns a todas as etapas do algoritmo. Em seguida, a implementação da tarefa responsável
+pelo cálculo da velocidade será vista em detalhes devido à particularidades nela encontradas.
+
+A implementação de uma tarefa \textit{StarPU} começa pela leitura dos blocos utilizados, fornecidos na forma de \textit{buffers}, através 
+das \textit{macros STARPU\_VECTOR\_GET\_PTR}, \textit{STARPU\_MATRIX\_GET\_PTR} e \textit{STARPU\_BLOCK\_GET\_PTR}. Além disso, é
+necessário consultar as dimensões desses \textit{buffers}; apesar do ladrilhamento separar o espaço em blocos de tamanho igual, é possível
+que as extremidades possuam blocos de tamanho menor caso não seja possível realizar uma divisão inteira.
+
+Os laços internos, que originalmente percorriam uma região especificada na chamada do \textit{macro-kernel}, passam a percorrer o
+tamanho de um bloco. No entanto, ao acessar as estruturas fornecidas apenas para leitura, é necessário realizar uma conversão das
+coordenadas locais em coordenadas globais, já que elas não serão particionadas.
+
+Para percorrer os vetores que eram originalmente acessados por suas coordenadas, três \textit{macros} foram implementadas em função
+de suas dimensionalidades, conforme mostra a Figura \ref{fig:access}. Logo, todos os acessos à vetores foram substituídos por
+chamadas às novas \textit{macros}.
+
+\begin{figure}[!htb]
+  \caption{\textit{Macros} utilizadas para acessar vetores.}
+    \begin{center} 
+      \includegraphics[width=34em]{access}
+    \end{center}
+    \label{fig:access}
+    \legend{Fonte: Autor}
+\end{figure}
+
+\subsubsection{Cálculo de velocidades}
+Apesar da seção \ref{sec:neighborhood} mostrar que cada uma das etapas só precisa acessar vizinhos ao realizar leituras, existe uma
+exceção no cálculo de velocidades. Quando o índice $k$ é igual a $1$ ou $2$, certas operações adicionais são necessárias e estas
+eventualmente envolvem blocos vizinhos onde outras tarefas precisam atualizar dados. No caso em que $k$ é igual a um, lê-se dados
+do bloco seguinte no eixo $X$ e do bloco anterior no eixo $Y$, enquanto no caso em que $k$ é igual a dois, os dados externos pertencem
+ao bloco anterior no eixo $X$ e posterior no eixo $Y$. 
+
+Além da gestão dos vizinhos, a necessidade de consultar dados da mesma estrutura em que se está escrevendo adiciona também novas
+dependências relativas à ordem dos cálculos. Se na aplicação original os vizinhos lidos são sempre aqueles cujas células já
+foram atualizadas, é preciso manter essa mesma ordem na implementação paralela, quando cada bloco efetua seus cálculos independentemente.
+
+O primeiro ponto demonstrado sugere que uma implementação de tarefas incluindo os possíveis vizinhos dos tensores de velocidade
+seria capaz de resolver a questão, mas o segundo ponto mostra que só isso não é suficiente para garantir que o mesmo cálculo será
+realizado. Por isso, a solução encontrada foi particionar a etapa de computação de velocidades em três \textit{kernels} diferentes, sendo
+o primeiro deles responsável pelas células de índice $k$ igual a um, o segundo pelas células de índice $k$ igual a dois e o terceiro pelos
+demais índices.
+
+Em relação à vizinhança, em cada um dos casos especiais apenas um par de tensores de velocidade precisa de seus vizinhos, que conforme
+foi descrito anteriormente, são no máximo dois blocos. Considerando essas particularidades, foi possível implementar essas tarefas de
+maneira que os \textit{kernels} responsáveis pelos casos especiais tenham, cada um deles, apenas dois blocos vizinhos, que são fornecidos
+apenas para leitura. A Figura \ref{fig:kernels_velo} apresenta um resumo da estrutura dessa etapa, onde a ordem de submissão das três
+tarefas garante a ordem de execução necessária.
+
+\begin{figure}[!htb]
+  \caption{Resumo das chamadas de computação de velocidade.}
+    \begin{center} 
+      \includegraphics[width=35em]{kernels_velo}
+    \end{center}
+    \label{fig:kernels_velo}
+    \legend{Fonte: Autor}
+\end{figure}
+
 
 \chapter{Avaliação experimental}
+
+falar do unpartition!!
 \section{Ambiente de testes}
 \section{Resultados}
+\section{Trabalhos futuros}
 
 \chapter{Conclusão}
 
