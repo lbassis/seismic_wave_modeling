@@ -521,6 +521,14 @@ Posteriormente uma descrição da implementação realizada ao longo dessa pesqu
 
 \section{Proposta}\label{sec:proposal}
 
+\todo{Não fica claro ao que tu te refere ``de forma
+  parametrizável''. Veja que isso tu podes elaborar depois então a
+  sugestão é de remover esse aposto. Podes alternativamente, no final
+  desta frase, adicionar outra, informando que o tamanho dos blocos
+  será configurável pelo usuário do programa de maneira a adaptá-lo na
+  parte experimental.}
+\todo{Peraí, a seção diz ``Proposta'' mas aqui tu traz a forma como a
+  versão original discretiza o problema em blocos. Não é a tua versão então?}
 Os diversos tensores que representam as grandezas utilizadas nas equações elastodinâmicas do problema deverão ser divididos, de forma parametrizável, em blocos de tamanho igual, que servirão
 de entrada para as tarefas implementadas. A Figura \ref{fig:cuboids} ilustra o particionamento realizado pela implementação original, que parte de um arquivo de topologia para discretizar o
 plano $XY$ em blocos de profundidade igual à do domínio.
@@ -534,6 +542,12 @@ plano $XY$ em blocos de profundidade igual à do domínio.
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{Aqui novamente fala-se da versão original. Essas descrições da
+  versão original
+  (blocos acima e iterações abaixo) não fariam mais sentido na Sec 3.1
+  Ondes3D?}
+\todo{Quando escreves ``e colunas externas do domínio'' na realidade
+  tu queres dizer do bloco, certo?}
 Em relação ao laço principal de execução, a Figura \ref{fig:main_loop} resume o fluxo da aplicação original. O domínio do problema é dividido em cinco regiões denominadas \textit{imodes},
 sendo quatro delas as linhas e colunas externas do domínio e a quinta os elementos internos. Com exceção da etapa \textit{computeSeisMoment}, cada \textit{macro-kernel} é executado cinco
 vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min}$, $x_{max}$][$y_{min}$, $y_{max}$][$z_{min}$, $z_{max}$].
@@ -547,12 +561,17 @@ vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{Okay, aqui tu começas a descrever a tua proposta.}
+\todo{``assim permitirem'' -> estiverem satisfeitas.}
 Na versão aqui proposta, cada etapa será executada tantas vezes quanto houverem blocos. Para isso, será necessário iterar sobre os blocos existentes, criando uma tarefa para atualizar cada bloco
 de dados, conforme mostra a Figura \ref{fig:new_main_loop}, dispensando a utilização dos \textit{imodes}. Neste momento vale ressaltar que a inserção das tarefas consiste
 simplesmente na criação de uma instância de tarefa com as dependências indicadas e não implica em sua execução imediata. Fica a cargo da biblioteca \textit{StarPU} iniciar a execução
 de cada uma das tarefas disponíveis de maneira assíncrona quando as suas dependências assim permitirem. Internamente, cada tarefa percorrerá apenas o espaço determinado pelo bloco a ser
 atualizado em vez de uma região completa como na versão original.
 
+\todo{Ficou estranho esse ``na verdade''. Queres dizer que o resto não
+  é verdade?}
+\todo{Atenção para o pt-br aí hein, ``de cada tarefa utilizar...''}
 Outro ponto a ser ressaltado é o fato de cada tarefa, na verdade, utilizar diversos blocos, já que as grandezas físicas são implementadas em diferentes estruturas. Por exemplo, o cálculo das
 tensões efetuado na função \textit{computeStress} necessita não apenas do bloco de índice ($i$, $j$) de cada um dos nove componentes de tensão (em modo de escrita), mas também os blocos de
 índice ($i$, $j$) dos três componentes de velocidade, em modo de leitura.
@@ -570,10 +589,18 @@ A utilização de blocos independentes introduz, no entanto, uma dificuldade nas
 elementos de outros blocos. Uma primeira solução, mais simples e menos eficiente, consiste em não utilizar somente um bloco por tarefa, mas sim cinco - o bloco a ser calculado, em
 modo de leitura e escrita, e os seus quatro vizinhos imediatos, em modo de leitura. Essa alternativa, dependendo do contexto em que ela é utilizada, pode representar um custo de memória mais
 elevado do que o necessário.
+\todo{Esta última frase poderia ser complementada dizendo que seria
+  uma estratégia parecida com a que é feita com os imodes certo?}
+\todo{Sobre o aumento do uso de memória, veja que o StarPU e o
+  paralelismo natural do DAG já limitam a memória tendo em vista que
+  no máximo N tarefas estarão executando efetivamente em paralelo
+  sendo N a quantidade de workers.} 
 
 Uma solução mais eficiente é a utilização das chamadas \textit{ghost cells}. Já que é necessário ler apenas as células de uma borda de cada um dos vizinhos, em vez de acessar os quatro
 blocos vizinhos completos, compartilha-se apenas as bordas que serão necessárias. A Figura \ref{fig:ghost_cells} mostra um exemplo de células fantasma em um \textit{stencil} 2D,
 mas o conceito pode ser expandido para três dimensões.
+\todo{OK. Tu explicas enfim células fantasmas, mas tu usas? Faz parte
+  da tua proposta? Ahh, do projeto, okay.} 
 
 \begin{figure}[!htb]
     \caption{Representação do uso de células fantasma}
