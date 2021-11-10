@@ -38,6 +38,7 @@
 % \usepackage{palatino}
 % \usepackage{mathptmx}       % p/ usar fonte Adobe Times nas fórmula
 \usepackage{listings}
+\usepackage{todonotes}
 
 \usepackage[alf,abnt-emphasize=bf]{abntex2cite}	% pacote para usar citações abnt
 
@@ -154,30 +155,55 @@
 
 % introducao
 \chapter{Introdução}
+\todo{``calcula diferenes grandezas físicas'' além do erro
+  ``diferenes'', fica estranho como
+  tradução. Procure por método dos elementos finitos (wikipedia)
+  para uma tradução melhor. Embora }
+\todo{``diversos trabalhos'' -> coloque as citações imediatamente}
+\todo{``alguns deles apresentados no capítulo 2'' -> remover, e
+  questione-se porque somente ``alguns''. Idealmente, fale sobre todos
+  até onde teu (nosso) conhecimento alcança.}
 Uma ferramenta importante para a mitigação dos riscos decorrentes de terremotos é a simulação da propagação de ondas sísmicas \cite{Dupros2010HighperformanceFS}. Esse tipo de aplicação
 calcula diferentes grandezas físicas a partir de múltiplas iterações sobre uma discretização do espaço analisado em três dimensões, o que resulta em tempos de execução elevados. Por essa razão,
 diversos trabalhos, alguns deles apresentados no capítulo \ref{sec:related}, buscam alternativas para acelerar a sua execução, identificando as operações mais custosas e, frequentemente,
 explorando possibilidades de processamento paralelo e distribuído.
 
+\todo{Confirme o que o Ondes3D utiliza, se é MEF ou se é MDF. Para
+  saber a diferença entre eles, encontrei esse trabalho:
+  https://aguassubterraneas.abas.org/asubterraneas/article/view/29636/19134
+  onde no PDF, Pag2, Sec2, primeiro parágrafo, tu tens explicitamente
+  a diferença (assumindo que eles tem a definição correta). Nesse
+  sentido, está correto dizer que usa-se MDF (pois ondes3D tem divisão
+regular), e no parágrafo anterior deve-se atualizar em função disso.}
 A aplicação \textit{Ondes3D} realiza a simulação descrita acima através do método de diferenças finitas e utilizando bibliotecas paralelas para obter tempos de execução menores. O
 paralelismo local, aquele cujas linhas de execução compartilham a mesma memória, é obtido utilizando a biblioteca \textit{OpenMP}, repartindo o cálculo das células que discretizam o
 domínio do cálculo entre diferentes \textit{threads} executadas paralelamente. Além disso, o protocolo \textit{MPI} pode ser usado para repartir o espaço estudado em diferentes regiões,
 sendo cada uma delas fornecida a uma unidade de processamento com seu próprio espaço de endereçamento.
 
+\todo{``sem a possibilidade de entrelaçar a computação de diferentes
+  estruturas'' -> entre diferentes etapas.}
+\todo{ Verificar acentuação em ``concluirem''.}
 Apesar de empregar técnicas que permitem que vários cálculos simultâneos sejam realizados, o paralelismo alcançado pelo \textit{Ondes3D} existe somente dentro de cada uma de suas
 quatro grande etapas, sem a possibilidade de entrelaçar a computação de diferentes estruturas. Dessa maneira, as unidades de processamento que concluirem seus cálculos antes das
 demais precisam aguardar ociosamente até que todas tenham finalizado a etapa atual.
 
+\todo{Isso ``maior quantidade de tarefas melhorando a distribuição da
+  carga'' (por causa do escalonamento) o que desejamos obter. Nossa
+  hipótese. Nota que isso é por verificar. Talvez deixar isso mais claro.}
 O paradigma de programação paralela baseada em tarefas, que consiste em construir pequenos blocos de código que atuam diversas vezes sobre diferentes conjuntos de dados, permite a
 obtenção de uma granularidade mais fina, isto é, de uma quantidade maior de tarefas a serem distribuídas entre as unidades de processamento, reduzindo a possibilidade de haver
 unidades ociosas e, por consequência, acelerando a execução das aplicações que a usam.
 
+\todo{A construção do grafo não é explícita e não é feita. Embora
+  possa-se exportar. O StarPU nunca vê todo o grafo. Talvez
+  simplesmente substituir o verbo ``para construir'' seja suficiente.}
 A biblioteca \textit{StarPU} é uma alternativa atual que implementa a programação baseada em tarefas. Em sua implementação, uma tarefa consiste em uma função cuja especificação
 inclui, além dos dados utilizados, seus modos de acesso: somente leitura, somente escrita ou leitura e escrita. Ao longo do algoritmo, essas tarefas são submetidas à um escalonador
 gerenciado pela biblioteca, que utiliza a ordem de submissão e os modos de acesso descritos por cada uma delas para construir um grafo acíclico direcionado (\textit{Directed Acyclic 
   Graph}, ou \textit{DAG}) representando as dependências existentes entre elas. Esse grafo é utilizado ao longo da execução pela bibliteca para distribuir as tarefas conforme as suas
 dependências e os recursos computacionais disponíveis.
 
+\todo{Frase muito grande, quebrá-la.}
 Este trabalho tem como objetivo estudar e implementar as alterações necessárias para que o algoritmo da aplicação \textit{Ondes3D} seja executado na forma de tarefas gerenciadas
 pela biblioteca \textit{StarPU}, resultando em uma granularidade mais fina e no paralelismo entre etapas graças ao gerenciamento de dependências fornecido pela biblioteca, para
 posteriormente avaliar o grau de paralelismo obtido.
@@ -185,18 +211,31 @@ posteriormente avaliar o grau de paralelismo obtido.
 
 \section{Contribuições}
 
+\todo{Par. de uma frase muito grande. Quebrá-la.}
 O estudo aqui realizado explora algumas das dificuldades envolvidas na implementação do método de diferenças finitas aplicado à simulação de propagação de ondas, como a necessidade
 de alternativas para absorver as ondas quando estas atingem os limites artificiais criados pela discretização do problema, e na elaboração de um algoritmo paralelo capaz de aproveitar
 ao máximo as unidades de processamento disponíveis.
 
+\todo{``Apesar da versão implementada atualmente não ser capaz de
+  simular corretamente todos os fenômenos físicos envolvidos na
+  simulação'' -> complementar informando que isso é conforme os
+  experimentos realizados comparando o resultado das simulações entre
+  a versão de referência e a versão implementada. Talvez seja
+  importante tu tentar descobrir para apontar onde possivelmente
+  encontra-se o equívoco, ou ao menos levantar algumas pistas.}
 A partir do estudo realizado, este trabalho fornece também uma tentativa de implementação do simulador \textit{Ondes3D} utilizando o paradigma de programação baseada em tarefas implementado
 pela biblioteca \textit{StarPU}. Apesar da versão implementada atualmente não ser capaz de simular corretamente todos os fenômenos físicos envolvidos na simulação, a estrutura geral, assim como
 a definição das tarefas que computam as etapas envolvidas no algoritmo e os dados por elas utilizados foram desenvolvidas e servem de base para uma versão correta eventualmente mais
 eficiente que a original.
 
+\todo{Para trabalhos futuros ao invés de ``eventual sequência do
+  algoritmo implementado.''}
 Finalmente, aproveitando as experiências obtidas no desenvolvimento da versão paralela e no estudo de trabalhos similares, algumas propostas de melhorias são sugeridas para uma
 eventual sequência do algoritmo implementado.
 
+
+\todo{Colocar aqui uma section chamada ``Estrutura do texto'' e dentro
+  dela adicionar um único parágrafo onde tu apresentas a estrutura do documento.}
 
 \chapter{Trabalhos relacionados}\label{sec:related}
 
