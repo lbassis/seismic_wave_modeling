@@ -212,6 +212,7 @@ posteriormente avaliar o grau de paralelismo obtido.
 \section{Contribuições}
 
 \todo{Par. de uma frase muito grande. Quebrá-la.}
+\todo{``de ondas'' -> de ondas sísmicas.}
 O estudo aqui realizado explora algumas das dificuldades envolvidas na implementação do método de diferenças finitas aplicado à simulação de propagação de ondas, como a necessidade
 de alternativas para absorver as ondas quando estas atingem os limites artificiais criados pela discretização do problema, e na elaboração de um algoritmo paralelo capaz de aproveitar
 ao máximo as unidades de processamento disponíveis.
@@ -239,37 +240,86 @@ eventual sequência do algoritmo implementado.
 
 \chapter{Trabalhos relacionados}\label{sec:related}
 
+\todo{``são discutidos abaixo'' -> complementar com ``e as diferenças com o presente trabalho são explicitadas.''} 
 A aplicação \textit{Ondes3D} já foi objeto de estudo de outros trabalhos, frequentemente visando um tempo de execução reduzido mas passando também pela busca de um consumo energético 
 inferior. Além disso, outras aplicações também empregaram a programação baseada em tarefas para obter uma aceleração nos cálculos realizados. Alguns desses trabalhos são discutidos abaixo.
 
+\todo{Também informar que embora tu citas Boito et al e seu trabalho
+  de IO, em todos os teus experimentos as atividades de entrada e
+  saída são desconsideradas para que o enfoque seja exclusivamente no
+  tempo de cálculo. Por conta disso, na versão que tu otimizas, não há
+  saída (pois a entrada são os estudos de caso). Podes também dizer
+  que teu trabalho iria beneficiar igualmente pois poderia haver
+  tarefas de IO a serem executadas de maneira assíncrona (que não
+  prendem a continuidade da simulação), embora isso esteja fora do
+  escopo do teu trabalho.}
 Boito et al. \cite{boito} verificaram que mais de $72\%$ do tempo de execução do \textit{Ondes3D} é utilizado em operações de leitura e escrita. Três otimizações diferentes foram
 propostas: incialmente, uma camada de \textit{software} foi criada para centralizar as solicitações de entrada e saída da aplicação. Em um segundo momento, os passos de comunicação entre
 processos foram substituídos por operações de escrita efetuadas diretamente no sistema de arquivos. A terceira implementação passa a utilizar diversos arquivos de saída, o que permite que
 múltiplas operações de escrita aconteçam paralelamente. Apesar dos resultados impressionantes desse trabalho, o estudo aqui proposto não tem como foco as operações de entrada e saída mas
 sim a paralelização dos cálculos das equações elastodinâmicas, o que permitiria em um momento futuro a combinação das duas otimizações para alcançar uma aceleração ainda mais significativa.
 
+\todo{depende da região sendo tratada mas também dos valores da
+  simulação (a onda sísmica em si) tendo portanto um comportamento
+  dinâmico (no tempo) além daquele do espaço já conhecido.}
+\todo{Tesser permite sim usar programação distribuída - ele usam o
+  AMPI, layer MPI sob o Charm++. A vantagem do uso do AMPI é que ele
+  permite a migração de um processo MPI de um computador para outro,
+  resolvendo o problema do desbalanceamento da carga.}
 Tesser et al. \cite{dupros:hal-00797682}, partindo de uma implementação distribuída em que o domínio é dividido em partes menores, perceberam que o tempo de cálculo das equações
 depende da região sendo tratada, causando um desbalanceamento de trabalho entre os processadores utilizados. Ao utilizar uma implementação de \textit{MPI} construída sobre um suporte
 de execução capaz de realizar um balanceamento dinâmico de tarefas, foi possível reduzir o tempo de execução em $23\%$. O presente estudo não considera a utilização de programação
 distribuída, mas a granularidade parametrizável alcançada utilizando o modelo proposto permite uma mitigação dos efeitos de uma distribuição desbalanceada. Quanto maior o número de tarefas
 disponível em um dado momento, menores são as chances de existirem unidades de cálculo ociosas.
 
+\todo{Qual processador (explicitar na primira frase).}
+\todo{Além de não considerado, a forma de paralelização multi-nível
+  deste trabalho é bastante diferente do que tu propões aqui. Veja que
+na delas, é praticamente uma abordagem MPI+OpenMP.}
 Castro et al. \cite{CASTRO2016108} utilizaram um processador de baixa potência para propor uma implementação da aplicação \textit{Ondes3D} com um baixo consumo energético. A partir
 de uma estratégia de ladrilhamento multi-nível, a versão desenvolvida para o processador \textit{MPPA-256} apresentou uma diminuição de $86\%$ do consumo quando comparada à uma
 execução em um processador convencional. No entanto, o consumo energético não é um fator considerado no estudo aqui apresentado.
 
+\todo{Ler o trabalho do Nesi para saber e expliciar aqui qual é a aplicação de dinâmica
+  de fluídos.}
+\todo{Citar o trabalho do StarVZ. Veja ``Origin and Publications''
+  aqui https://github.com/schnorr/starvz}
+\todo{Explicada na Seção (maiuscula).}
+\todo{Talvez explicitar que tu és tu que explicas.... em ``explicada
+  na seção \ref{sec:proposal}''.}
+\todo{77x em relação à versão com tarefas mais simples. Podes usar
+  isso como argumento dizendo que dá para se ter ganhos com
+  otimizações posteriores.}
 Nesi et al. \cite{nesi} realizaram três implementações diferentes de uma aplicação de dinâmica de fluídos utilizando programação baseada em tarefas através da biblioteca \textit{StarPU}.
 Além de incluir tarefas voltadas para \textit{GPU}s, o traço de execução resultante foi avaliado e refinado utilizando o conjunto de ferramentas \textit{StarVZ}. Através do emprego da técnica de
 células fantasma no gerenciamento dos vizinhos, explicada na seção \ref{sec:proposal}, foi possível alcançar uma aceleração de $77$x em relação à versão original da aplicação estudada.
 
+\todo{Qual a aplicação!?!? Dizer que aqui voltaste a falar do Ondes3D
+  (pois o parágrafo anterior não o era)}
+\todo{Optaram por descartar ... revisar pt-br. Podes dizer que na tua
+  versão tu não faz esse descarte.}
+\todo{Performance é uma palavra que não existe em pt-br, usar
+  ``desempenho''.}
+\todo{Nota que o ganho de desempenho relatado é contra uma versão que
+  faz mais coisa (se em dúvidas, confirma isso no trabalho do Victor).}
 Martínez et al. \cite{victor} propuseram uma implementação utilizando a biblioteca \textit{StarPU}, baseada em tarefas e considerando arquiteturas heterogêneas compostas por
 \textit{CPU}s e \textit{GPU}s. De um certo modo essa proposta vai além da pesquisa aqui apresentada, onde não existe uma implementação voltada para \textit{GPU}. No entanto, Martínez et al.
 optaram por descartas as interações com as bordas do domínio devido a complexidade introduzida pelo uso delas. A melhor performance foi alcançada utilizando quatro \textit{CPU}s e oito
 \textit{GPU}s, uma aceleração de $25$x em relação à versão original utilizando doze \textit{CPU}s.
 
+\todo{entre \textbf{o} trabalho desenvolvido e descrito neste
+  documento...}
+\todo{Ao invés de escrever Nesi et al. e...  citar os trabalhos com \\cite} 
 A Tabela \ref{tbl:related_works} resume as diferenças entre os trabalho desenvolvido e os estudos citados acima. Os projetos desenvolvidos por Nesi et al. e Martínez et al. são
 os que mais se assemelham ao aqui desenvolvido, apesar do primeiro tratar de uma aplicação diferente e o segundo ignorar uma parcela da simulação.
 
+\todo{Empregar os pacotes booktabs e tabularx (colocar a última coluna
+  com X). Não usar linhas verticais na
+  tabela. Sobre booktabs, veja
+https://nhigham.com/2019/11/19/better-latex-tables-with-booktabs/
+Sobre tabularx, force que a largura da tabela ocupe toda a largura
+disponível no documento (respeitando as margens habituais).}
+\todo{Substituir ``Dinâmica de fluídos'' pelo nome da aplicação.}
 \begin{table}[htb!]
     \caption{Trabalhos relacionados}
     \begin{center}
