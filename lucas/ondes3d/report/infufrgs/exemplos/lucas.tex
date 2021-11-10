@@ -363,10 +363,19 @@ seguintes estruturas de dados:
   para limitar o domínio computacional minimizando a interferência de limites artificiais nos cálculos realizados. \cite{ABCarticle}. 
 \end{itemize}
 
+\todo{Achei que ficou estranha a passagem ``é armazenada em uma
+  estrutura a parte que possui múltiplos tensores'' talvez porque a
+  frase ficou muito muito grande.}
+\todo{Lembra que seção deve ser referenciada em maiúsculo. Lembrando
+  novamente então.}
 Uma peculiaridade a ser observada nessa aplicação é que, em vez de existir um grande tensor com diversos atributos descrevendo as grandezas físicas que ali atuam, cada grandeza
 é armazenada em uma estrutura a parte que possui múltiplos tensores representando as diferentes orientações possíveis. Essa característica trará implicações no gerenciamento de blocos
 vizinhos após a operação de ladrilhamento, explicadas em mais detalhes na seção \ref{sec:neighborhood}.
 
+\todo{Mencionar que cada iteração é um passo de tempo, um delta,
+  especificado em arquivo. O delta de tempo se me recordo bem é de
+  0.1s, então em uma iteração é simulada a prop. da onda em 0.1s
+  naquele meio. Isso pode ajudar a entender o que são as iterações.}
 Os cálculos são realizados ao longo de um número pré-determinado de iterações, durante as quais todas as células que compõem o espaço discretizado do problema são atualizadas uma a uma. Esse
 padrão de algoritmo, chamado de \textit{stencil}, calcula os valores armazenados em cada célula a partir de valores de células vizinhas, sendo o conceito de vizinhança variável. A Figura
 \ref{fig:stencil} ilustra um \textit{stencil} 2D com quatro vizinhos em que o valor da célula ($i$, $j$) envolve os dados das células ($i$, $j-1$), ($i-1$, $j$), ($i+1$, $j$) e ($i$, $j+1$).
@@ -394,6 +403,7 @@ Com exceção da atualização das fontes da onda, que acontece em um domínio r
 para obter um paralelismo interno. Já que essas etapas realizam cálculos dentro de um laço triplo, iterando sobre as coordenadas nos eixos $X$, $Y$ e $Z$, a biblioteca \textit{OpenMP},
 através da diretiva citada anteriormente, cria \textit{threads} capazes de tratar diferentes coordenadas simultaneamente.
 
+\todo{a solução atual em OpenMP}
 Teoricamente, a partir do momento que a tensão, por exemplo, de uma célula é calculada, já é possível iniciar o cálculo de sua velocidade. No entanto, como a diretiva descrita acima 
 é utilizada dentro da função responsável pelo cálculo de tensão de todas as células do domínio, é necessário que todas elas sejam calculadas para que o algoritmo possa iniciar a fase de
 cálculo de velocidades. Dessa maneira, apesar da solução atual alcançar uma aceleração graças ao paralelismo introduzido, a quantidade de operações que podem ser executadas simultaneamente
@@ -415,6 +425,7 @@ Apesar da eficiência do novo técnico desenvolvido, o coeficiente de reflexão 
 isto é, com um angulo de incidência diferente de $90$°, o que torna essa técnica inadequada quando, por exemplo, existem fontes de ondas muito próximas dos limites do domínio. Roden e
 Gedney \cite{CPML} propuseram um novo método chamado \textit{Convolutional Perfect Matched Layers}, que utiliza uma convolução recursiva para atenuar a reflexão de ondas de incidência rasante.
 
+\todo{A aplicação Ondes3D \textbf{implementa} as duas ...}
 A aplicação \textit{Ondes3D} utiliza ambas as técnicas acima descritas em diferentes experimentos. No caso do experimento de \textit{Chuetsu-Oki}, utilizado por esse trabalho, a técnica
 empregada é a das \textit{CPML}s.
 
@@ -468,6 +479,7 @@ os ponteiros registrados como \textit{cl\_args}.
 
 \subsection{Matrizes \textit{ladrilhadas}}
 
+\todo{performance -> desempenho}
 Uma estratégia recorrente na programação de alta performance é o ladrilhamento de matrizes - no caso desse estudo, de tensores. Essa técnica consiste, conforme ilustra a Figura \ref{fig:tiled_matrix},
 na divisão de uma matriz em sub-matrizes (tipicamente chamadas de blocos) de menor tamanho, indexadas pela sua posição em relação à matriz original.
 
