@@ -766,13 +766,11 @@ tarefas garante a ordem de execução necessária.
 
 
 \chapter{Avaliação experimental}\label{sec:exp}
-
 A nova versão desenvolvida foi executada no Parque Computacional de Alto Desempenho (PCAD) da Universidade Federal do Rio Grande do Sul com o
 intuito de comparar seu desempenho em relação à implementação original.
 
 \section{Ambiente de testes}
- // usar tambem cei e blaise
-Para a execução dos testes, foram utilizadas as máquinas \textit{tupi} do PCAD, contando com um processador \textit{Intel Xeon E5-2620} com $8$
+Para a execução dos testes, a máquina \textit{tupi2} do PCAD foi utilizada, contando com um processador \textit{Intel Xeon E5-2620} com $8$
 núcleos, $80$GB de memória RAM DDR$4$.
 \section{Resultados}
 
@@ -785,14 +783,42 @@ identificada como mais complexa. Devido ao tempo disponível, optou-se por apres
 devido ao valor científico das ponderações realizadas ao longo da implementação e também da possibilidade de realizar uma análise sobre o paralelismo alcançado
 com as tarefas da maneira proposta.
 
-** analise do paralelismo quando rolar o starvz **
+Em relação ao paralelismo alcançado, a Figura \ref{fig:dag} mostra o DAG construído pela biblioteca \textit{StarPU} na execução de uma iteração do algoritmo, utilizando
+blocos de dimensões $100$x$100$ no domínio [$-150$, $150$],[$-150$, $150$],[$-150$, $1$], dividido portanto em nove blocos. Os nodos do grafo mostrado representam as tarefas,
+enquanto as setas indicam as dependências entre elas. Analisando a figura, percebe-se que, apesar das dependências entre a tarefa \textit{computeSeisMoment} e as três responsáveis
+pelos cálculos de velocidade estarem corretas, a computação das contribuições das condições de borda e da tensão estão ambas desconexas das demais. Dessa maneira, existe um paralelismo
+indevido entre essas tarefas, que passam a serem consideradas executáveis simultaneamente, resultando em uma execução errônea.
+
+\begin{figure}[!htb]
+  \caption{Grafo de dependências entre as tarefas.}
+    \begin{center} 
+      \includegraphics[width=36em]{dag}
+    \end{center}
+    \label{fig:dag}
+    \legend{Fonte: Autor}
+\end{figure}
+
+A falha na definição das dependências das tarefas tornou dispensável a execução de mais testes, já que não seria possível comparar os resultados obtidos com a aplicação original. Acredita-se
+na possibilidade das operações de reconstrução de tensores já ladrilhados ter alguma influência na construção indevida do DAG, porém o ocorrido exige investigações mais profundas.
 
 \chapter{Conclusão}\label{sec:conclusion}
 
-relembra o contexto
-digo o que fiz
-quais foram os resultados
-obstaculos
+A complexidade da simulação da propagação de ondas sísmicas através do método de diferenças finitas motiva a elaboração de diversos trabalhos que buscam otimizar sua execução de diferentes
+maneiras. Uma alternativa identificada foi a exploração das dependências entre os dados envolvidos para introduzir um nível de paralelismo superior ao da aplicação original.
+Essa exploração é possível graças ao emprego do paradigma de programação baseado em tarefas, implementado pela biblioteca \textit{StarPU}.
+
+O trabalho aqui descrito realiza um estudo aprofundado das estruturas envolvidas no algoritmo original e das técnicas necessárias para alcançar o modelo de tarefas. A partir da operação
+de ladrilhamento, responsável pela criação de blocos de dados independentes, foi apresentado um projeto com o objetivo de implementar tarefas que calculam os dados de cada um desses blocos.
+A implementação proposta permite a parametrização do tamanho dos blocos, de maneira que a divisão deles seja adequada à arquitetura onde a aplicação será executada, e considera as condições de absorção
+das bordas, um aspecto não abordado por outros trabalhos similares.
+
+Apesar da conclusão de uma implementação geral, os resultados obtidos não foram os esperados. Erros numéricos foram encontrados em uma das etapas do cálculo e, analisando a aplicação finalizada,
+foram detectadas inconsistências entre as dependências. No entanto, acredita-se que os estudos elaborados e uma parcela significativa da implementação realizada possam ser aproveitados para a
+construção de uma versão mais eficiente do \textit{Ondes3D}.
+
+O gerenciamento de vizinhos e o particionamento das contribuições fornecidas pelas condições de borda foram os maiores obstáculos na elaboração desse estudo. Acredita-se que as propostas
+do projeto apresentem soluções satisfatórias para esses problemas, mas o desenvolvimento efetivo das possibilidades mais promissoras exige uma reestruturação maior do código, alterando dados
+internos das estruturas de dados utilizadas e dividindo os \textit{macro-kernels} em tarefas menores e mais específicas.
 
 A sequência natural do trabalho apresentado é a correção dos erros numéricos introduzidos na mudança de modelo de programação realizada. Assim que esses resultados
 forem alcançados, diversas melhorias podem ser postas em prática de maneira a acelerar ainda mais a execução da aplicação. Algumas delas são listadas abaixo:
@@ -822,9 +848,6 @@ forem alcançados, diversas melhorias podem ser postas em prática de maneira a 
 % \chapter{Prova de que a minha contribuição é válida}
 % \chapter{Conclusão}
 
-tupi pequena
-cei media
-blaise grande
 % referências
 % aqui será usado o environment padrao `thebibliography'; porém, sugere-se
 % seriamente o uso de BibTeX e do estilo abnt.bst (veja na página do
