@@ -32,12 +32,14 @@
 
 % Necessário para incluir figuras
 \usepackage{graphicx}         % pacote para importar figuras
+\usepackage{tabularx}
 \graphicspath{ {./figures/} }
 
 \usepackage{times}            % pacote para usar fonte Adobe Times
 % \usepackage{palatino}
 % \usepackage{mathptmx}       % p/ usar fonte Adobe Times nas fórmula
 \usepackage{listings}
+\usepackage{todonotes}
 
 \usepackage[alf,abnt-emphasize=bf]{abntex2cite}	% pacote para usar citações abnt
 
@@ -154,9 +156,9 @@
 % introducao
 \chapter{Introdução}
 Uma ferramenta importante para a mitigação dos riscos decorrentes de terremotos é a simulação da propagação de ondas sísmicas \cite{Dupros2010HighperformanceFS}. Esse tipo de aplicação
-calcula diferentes grandezas físicas a partir de múltiplas iterações sobre uma discretização do espaço analisado em três dimensões, o que resulta em tempos de execução elevados. Por essa razão,
-diversos trabalhos, alguns deles apresentados no capítulo \ref{sec:related}, buscam alternativas para acelerar a sua execução, identificando as operações mais custosas e, frequentemente,
-explorando possibilidades de processamento paralelo e distribuído.
+simula fenômenos físicos com base na aproximação de derivadas por diferenças finitas, iterando sobre uma discretização do espaço analisado em três dimensões, o que resulta em tempos
+de execução elevados. Por essa razão, diversos trabalhos \cite{boito, dupros:hal-00797682, victor}, apresentados no capítulo \ref{sec:related}, buscam alternativas para acelerar a sua
+execução, identificando as operações mais custosas e, frequentemente, explorando possibilidades de processamento paralelo e distribuído.
 
 A aplicação \textit{Ondes3D} realiza a simulação descrita acima através do método de diferenças finitas e utilizando bibliotecas paralelas para obter tempos de execução menores. O
 paralelismo local, aquele cujas linhas de execução compartilham a mesma memória, é obtido utilizando a biblioteca \textit{OpenMP}, repartindo o cálculo das células que discretizam o
@@ -164,93 +166,100 @@ domínio do cálculo entre diferentes \textit{threads} executadas paralelamente.
 sendo cada uma delas fornecida a uma unidade de processamento com seu próprio espaço de endereçamento.
 
 Apesar de empregar técnicas que permitem que vários cálculos simultâneos sejam realizados, o paralelismo alcançado pelo \textit{Ondes3D} existe somente dentro de cada uma de suas
-quatro grande etapas, sem a possibilidade de entrelaçar a computação de diferentes estruturas. Dessa maneira, as unidades de processamento que concluirem seus cálculos antes das
-demais precisam aguardar ociosamente até que todas tenham finalizado a etapa atual.
+quatro grande etapas, sem a possibilidade de entrelaçar a computação das estruturas envolvidas em diferentes etapas. Dessa maneira, as unidades de processamento que concluírem seus
+cálculos antes das demais precisam aguardar ociosamente até que todas tenham finalizado a etapa atual.
 
 O paradigma de programação paralela baseada em tarefas, que consiste em construir pequenos blocos de código que atuam diversas vezes sobre diferentes conjuntos de dados, permite a
-obtenção de uma granularidade mais fina, isto é, de uma quantidade maior de tarefas a serem distribuídas entre as unidades de processamento, reduzindo a possibilidade de haver
-unidades ociosas e, por consequência, acelerando a execução das aplicações que a usam.
+obtenção de uma granularidade mais fina, isto é, de uma quantidade maior de tarefas a serem distribuídas entre as unidades de processamento. Através dessa técnica, espera-se
+reduzir a possibilidade de haver unidades ociosas, resultando em um ganho de velocidade na execução das aplicações que empregam-na.
 
 A biblioteca \textit{StarPU} é uma alternativa atual que implementa a programação baseada em tarefas. Em sua implementação, uma tarefa consiste em uma função cuja especificação
 inclui, além dos dados utilizados, seus modos de acesso: somente leitura, somente escrita ou leitura e escrita. Ao longo do algoritmo, essas tarefas são submetidas à um escalonador
-gerenciado pela biblioteca, que utiliza a ordem de submissão e os modos de acesso descritos por cada uma delas para construir um grafo acíclico direcionado (\textit{Directed Acyclic 
-  Graph}, ou \textit{DAG}) representando as dependências existentes entre elas. Esse grafo é utilizado ao longo da execução pela bibliteca para distribuir as tarefas conforme as suas
-dependências e os recursos computacionais disponíveis.
+gerenciado pela biblioteca, que utiliza a ordem de submissão e os modos de acesso descritos por cada uma delas para deduzir as dependências existentes. Ao longo da execução, a bibliteca
+distribui as tarefas conforme as suas dependências e os recursos computacionais disponíveis.
 
 Este trabalho tem como objetivo estudar e implementar as alterações necessárias para que o algoritmo da aplicação \textit{Ondes3D} seja executado na forma de tarefas gerenciadas
-pela biblioteca \textit{StarPU}, resultando em uma granularidade mais fina e no paralelismo entre etapas graças ao gerenciamento de dependências fornecido pela biblioteca, para
-posteriormente avaliar o grau de paralelismo obtido.
+pela biblioteca \textit{StarPU}. Com isso, espera-se obter uma granularidade mais fina assim como um paralelismo entre etapas graças ao gerenciamento de dependências realizado pela biblioteca.
+Ao final da implementação, a ferramenta \textit{StarVZ} será utilizada para avaliar o grau de paralelismo obtido.
 
 
 \section{Contribuições}
 
-O estudo aqui realizado explora algumas das dificuldades envolvidas na implementação do método de diferenças finitas aplicado à simulação de propagação de ondas, como a necessidade
-de alternativas para absorver as ondas quando estas atingem os limites artificiais criados pela discretização do problema, e na elaboração de um algoritmo paralelo capaz de aproveitar
-ao máximo as unidades de processamento disponíveis.
+O estudo aqui realizado explora algumas das dificuldades envolvidas na implementação do método de diferenças finitas aplicado à simulação de propagação de ondas sísmicas. No contexto matemático,
+busca-se por alternativas para absorver as ondas quando estas atingem os limites artificiais criados pela discretização do problema. Em relação à computação, o objetivo é elaborar um algoritmo
+paralelo capaz de aproveitar ao máximo as unidades de processamento disponíveis.
 
 A partir do estudo realizado, este trabalho fornece também uma tentativa de implementação do simulador \textit{Ondes3D} utilizando o paradigma de programação baseada em tarefas implementado
-pela biblioteca \textit{StarPU}. Apesar da versão implementada atualmente não ser capaz de simular corretamente todos os fenômenos físicos envolvidos na simulação, a estrutura geral, assim como
+pela biblioteca \textit{StarPU}. A versão implementada atualmente não é capaz de produzir os mesmos resultados numéricos que a versão original. No entanto,  a estrutura geral, assim como
 a definição das tarefas que computam as etapas envolvidas no algoritmo e os dados por elas utilizados foram desenvolvidas e servem de base para uma versão correta eventualmente mais
 eficiente que a original.
 
-Finalmente, aproveitando as experiências obtidas no desenvolvimento da versão paralela e no estudo de trabalhos similares, algumas propostas de melhorias são sugeridas para uma
-eventual sequência do algoritmo implementado.
+Finalmente, aproveitando as experiências obtidas no desenvolvimento da versão paralela e no estudo de trabalhos similares, algumas propostas de melhorias são sugeridas para trabalhos futuros.
 
+\section{Estrutura do texto}
+
+O restante do trabalho é dividido da seguinte maneira: o capítulo \ref{sec:related} apresenta estudos realizados buscando acelerar a execução da aplicação estudada e similares; o capítulo
+\ref{sec:theory} introduz os conhecimentos necessários para o entendimento da aplicação e de como deseja-se otimizá-la; o capítulo \ref{sec:project} apresenta a estrutura geral planejada e
+a implementação desenvolvida; o capítulo \ref{sec:exp} descreve os experimentos realizados e o capítulo \ref{sec:conclusion} finaliza com as conclusões sobre esse estudo. 
 
 \chapter{Trabalhos relacionados}\label{sec:related}
 
 A aplicação \textit{Ondes3D} já foi objeto de estudo de outros trabalhos, frequentemente visando um tempo de execução reduzido mas passando também pela busca de um consumo energético 
-inferior. Além disso, outras aplicações também empregaram a programação baseada em tarefas para obter uma aceleração nos cálculos realizados. Alguns desses trabalhos são discutidos abaixo.
+inferior. Além disso, outras aplicações também empregaram a programação baseada em tarefas para obter uma aceleração nos cálculos realizados. Alguns desses trabalhos são discutidos abaixo e
+suas diferenças em relação ao trabalho apresentado são explicitadas.
 
 Boito et al. \cite{boito} verificaram que mais de $72\%$ do tempo de execução do \textit{Ondes3D} é utilizado em operações de leitura e escrita. Três otimizações diferentes foram
 propostas: incialmente, uma camada de \textit{software} foi criada para centralizar as solicitações de entrada e saída da aplicação. Em um segundo momento, os passos de comunicação entre
 processos foram substituídos por operações de escrita efetuadas diretamente no sistema de arquivos. A terceira implementação passa a utilizar diversos arquivos de saída, o que permite que
-múltiplas operações de escrita aconteçam paralelamente. Apesar dos resultados impressionantes desse trabalho, o estudo aqui proposto não tem como foco as operações de entrada e saída mas
-sim a paralelização dos cálculos das equações elastodinâmicas, o que permitiria em um momento futuro a combinação das duas otimizações para alcançar uma aceleração ainda mais significativa.
+múltiplas operações de escrita aconteçam paralelamente. Apesar dos resultados impressionantes desse trabalho, o estudo aqui proposto desconsidera as operações de entrada e saída para focar-se
+na paralelização dos cálculos das equações elastodinâmicas. No entanto, é possível que a busca pelo paralelismo também influencie no tempo utilizado em entradas e saídas ao encontrar aquelas
+que podem ser executadas de maneira assíncrona. 
 
 Tesser et al. \cite{dupros:hal-00797682}, partindo de uma implementação distribuída em que o domínio é dividido em partes menores, perceberam que o tempo de cálculo das equações
-depende da região sendo tratada, causando um desbalanceamento de trabalho entre os processadores utilizados. Ao utilizar uma implementação de \textit{MPI} construída sobre um suporte
-de execução capaz de realizar um balanceamento dinâmico de tarefas, foi possível reduzir o tempo de execução em $23\%$. O presente estudo não considera a utilização de programação
-distribuída, mas a granularidade parametrizável alcançada utilizando o modelo proposto permite uma mitigação dos efeitos de uma distribuição desbalanceada. Quanto maior o número de tarefas
-disponível em um dado momento, menores são as chances de existirem unidades de cálculo ociosas.
+depende da região sendo tratada e dos valores da simulação, o que causa um desbalanceamento de trabalho entre os processadores utilizados. Ao utilizar uma implementação de \textit{MPI} construída sobre um suporte de execução capaz de realizar um balanceamento dinâmico de tarefas, foi possível reduzir o tempo de execução em $23\%$, graças a capacidade da biblioteca utilizada de migrar processos entre diferentes processadores.
 
-Castro et al. \cite{CASTRO2016108} utilizaram um processador de baixa potência para propor uma implementação da aplicação \textit{Ondes3D} com um baixo consumo energético. A partir
-de uma estratégia de ladrilhamento multi-nível, a versão desenvolvida para o processador \textit{MPPA-256} apresentou uma diminuição de $86\%$ do consumo quando comparada à uma
+Castro et al. \cite{CASTRO2016108} utilizaram o processador de baixa potência (\textit{MPPA-256}) para propor uma implementação da aplicação \textit{Ondes3D} com um baixo consumo energético. A partir
+de uma estratégia de ladrilhamento multi-nível, onde os blocos são reparticionados para tornarem-se bidimensionais, a versão desenvolvida para esse processador apresentou uma diminuição de $86\%$ do consumo quando comparada à uma
 execução em um processador convencional. No entanto, o consumo energético não é um fator considerado no estudo aqui apresentado.
 
-Nesi et al. \cite{nesi} realizaram três implementações diferentes de uma aplicação de dinâmica de fluídos utilizando programação baseada em tarefas através da biblioteca \textit{StarPU}.
-Além de incluir tarefas voltadas para \textit{GPU}s, o traço de execução resultante foi avaliado e refinado utilizando o conjunto de ferramentas \textit{StarVZ}. Através do emprego da técnica de
-células fantasma no gerenciamento dos vizinhos, explicada na seção \ref{sec:proposal}, foi possível alcançar uma aceleração de $77$x em relação à versão original da aplicação estudada.
+%\todo{77x em relação à versão com tarefas mais simples. Podes usar
+%  isso como argumento dizendo que dá para se ter ganhos com
+%  otimizações posteriores.}
 
-Martínez et al. \cite{victor} propuseram uma implementação utilizando a biblioteca \textit{StarPU}, baseada em tarefas e considerando arquiteturas heterogêneas compostas por
+% o artigo diz the experiments conducted registered a maximum speedup of 77× compared to the simulation time of the serial version
+
+Nesi et al. \cite{nesi} realizaram três implementações diferentes de uma aplicação de dinâmica de fluídos utilizando programação baseada em tarefas através da biblioteca \textit{StarPU}. Essa aplicação utiliza o método de diferenças finitas, assim como o \textit{Ondes3D}, para simular o fluxo de um fluído Newtoniano incompressível com viscosidade constante. Além de desenvolver tarefas voltadas para \textit{GPU}s, o traço de execução resultante foi avaliado e refinado utilizando o conjunto de ferramentas \textit{StarVZ} \cite{starvz1, starvz2, starvz3}. Através do emprego da técnica de células fantasma no gerenciamento dos vizinhos, apresentada e explicada na Seção \ref{sec:proposal}, foi possível alcançar uma aceleração de $77$x em relação à versão original da aplicação estudada.
+
+Martínez et al. \cite{victor} propuseram uma implementação do \textit{Ondes3D} utilizando a biblioteca \textit{StarPU}, baseada em tarefas e considerando arquiteturas heterogêneas compostas por
 \textit{CPU}s e \textit{GPU}s. De um certo modo essa proposta vai além da pesquisa aqui apresentada, onde não existe uma implementação voltada para \textit{GPU}. No entanto, Martínez et al.
-optaram por descartas as interações com as bordas do domínio devido a complexidade introduzida pelo uso delas. A melhor performance foi alcançada utilizando quatro \textit{CPU}s e oito
-\textit{GPU}s, uma aceleração de $25$x em relação à versão original utilizando doze \textit{CPU}s.
+optaram por descartar as interações com as bordas do domínio devido a complexidade introduzida pelo uso delas, uma simplificação não realizada no trabalho aqui apresentado e que não foi considerada nas comparações de velocidade. O melhor desempenho foi obtido utilizando quatro \textit{CPU}s e oito
+\textit{GPU}s, apresentando uma aceleração de $25$x em relação à versão original utilizando doze \textit{CPU}s.
 
-A Tabela \ref{tbl:related_works} resume as diferenças entre os trabalho desenvolvido e os estudos citados acima. Os projetos desenvolvidos por Nesi et al. e Martínez et al. são
+A Tabela \ref{tbl:related_works} resume as diferenças entre o trabalho desenvolvido e descrito neste documento e os estudos citados acima. Os projetos desenvolvidos por Nesi et al. e Martínez et al. são
 os que mais se assemelham ao aqui desenvolvido, apesar do primeiro tratar de uma aplicação diferente e o segundo ignorar uma parcela da simulação.
 
+\todo{Substituir ``Dinâmica de fluídos'' pelo nome da aplicação. - aguardando resposta do nesi porque nao achei no artigo}
 \begin{table}[htb!]
     \caption{Trabalhos relacionados}
     \begin{center}
-        \begin{tabular}{l|l|p{60mm}}
+        \begin{tabularx}{\textwidth}{l l X}
             \textit{Trabalho} & \textit{Aplicação} & \textit{Contexto} \\
             \hline
             \hline
-            Boito et al.    & \textit{Ondes3D} & Otimização de operações de entrada e saída \\
-            Tesser et al.   & \textit{Ondes3D} & Balanceamento dinâmico de carga             \\
-            Martínez et al. & \textit{Ondes3D} & Implementação baseada em tarefas em arquiteturas heterogêneas sem condições de borda             \\
-            Castro et al.   & \textit{Ondes3D} & Otimização de consumo energético             \\
-            Nesi et al.     & Dinâmica de fluídos & Implementação baseada em tarefas em arquiteturas heterogêneas \\
+            \cite{boito}    & \textit{Ondes3D} & Otimização de operações de entrada e saída \\
+            \cite{dupros:hal-00797682}   & \textit{Ondes3D} & Balanceamento dinâmico de carga             \\
+            \cite{victor} & \textit{Ondes3D} & Implementação baseada em tarefas em arquiteturas heterogêneas sem condições de borda             \\
+            \cite{CASTRO2016108}   & \textit{Ondes3D} & Otimização de consumo energético             \\
+            \cite{nesi}     & Dinâmica de fluídos & Implementação baseada em tarefas em arquiteturas heterogêneas \\
             Este trabalho   & \textit{Ondes3D} & Implementação baseada em tarefas             \\
             \hline
-        \end{tabular}
+        \end{tabularx}
     \end{center}
     \legend{Fonte: Autor}
     \label{tbl:related_works}
 \end{table}
 
-\chapter{Fundamentação teórica}
+\chapter{Fundamentação teórica}\label{sec:theory}
 Para a elaboração desse estudo, primeiramente é necessário compreender o que é a aplicação utilizada. A partir desse conhecimento, é possível tratar do modelo de programação
 baseada em tarefas e como ela é implementada na biblioteca \textit{StarPU}. Finalmente, é necessário explicar o método de divisão das estruturas de dados usadas, conhecido como
 ladrilhamento ou \textit{tiling}, que permite que as tarefas atuem sobre dados independentes, possibilitando o paralelismo entre elas.
@@ -273,10 +282,19 @@ seguintes estruturas de dados:
   para limitar o domínio computacional minimizando a interferência de limites artificiais nos cálculos realizados. \cite{ABCarticle}. 
 \end{itemize}
 
+\todo{Achei que ficou estranha a passagem ``é armazenada em uma
+  estrutura a parte que possui múltiplos tensores'' talvez porque a
+  frase ficou muito muito grande.}
+\todo{Lembra que seção deve ser referenciada em maiúsculo. Lembrando
+  novamente então.}
 Uma peculiaridade a ser observada nessa aplicação é que, em vez de existir um grande tensor com diversos atributos descrevendo as grandezas físicas que ali atuam, cada grandeza
 é armazenada em uma estrutura a parte que possui múltiplos tensores representando as diferentes orientações possíveis. Essa característica trará implicações no gerenciamento de blocos
 vizinhos após a operação de ladrilhamento, explicadas em mais detalhes na seção \ref{sec:neighborhood}.
 
+\todo{Mencionar que cada iteração é um passo de tempo, um delta,
+  especificado em arquivo. O delta de tempo se me recordo bem é de
+  0.1s, então em uma iteração é simulada a prop. da onda em 0.1s
+  naquele meio. Isso pode ajudar a entender o que são as iterações.}
 Os cálculos são realizados ao longo de um número pré-determinado de iterações, durante as quais todas as células que compõem o espaço discretizado do problema são atualizadas uma a uma. Esse
 padrão de algoritmo, chamado de \textit{stencil}, calcula os valores armazenados em cada célula a partir de valores de células vizinhas, sendo o conceito de vizinhança variável. A Figura
 \ref{fig:stencil} ilustra um \textit{stencil} 2D com quatro vizinhos em que o valor da célula ($i$, $j$) envolve os dados das células ($i$, $j-1$), ($i-1$, $j$), ($i+1$, $j$) e ($i$, $j+1$).
@@ -304,6 +322,7 @@ Com exceção da atualização das fontes da onda, que acontece em um domínio r
 para obter um paralelismo interno. Já que essas etapas realizam cálculos dentro de um laço triplo, iterando sobre as coordenadas nos eixos $X$, $Y$ e $Z$, a biblioteca \textit{OpenMP},
 através da diretiva citada anteriormente, cria \textit{threads} capazes de tratar diferentes coordenadas simultaneamente.
 
+\todo{a solução atual em OpenMP}
 Teoricamente, a partir do momento que a tensão, por exemplo, de uma célula é calculada, já é possível iniciar o cálculo de sua velocidade. No entanto, como a diretiva descrita acima 
 é utilizada dentro da função responsável pelo cálculo de tensão de todas as células do domínio, é necessário que todas elas sejam calculadas para que o algoritmo possa iniciar a fase de
 cálculo de velocidades. Dessa maneira, apesar da solução atual alcançar uma aceleração graças ao paralelismo introduzido, a quantidade de operações que podem ser executadas simultaneamente
@@ -325,6 +344,7 @@ Apesar da eficiência do novo técnico desenvolvido, o coeficiente de reflexão 
 isto é, com um angulo de incidência diferente de $90$°, o que torna essa técnica inadequada quando, por exemplo, existem fontes de ondas muito próximas dos limites do domínio. Roden e
 Gedney \cite{CPML} propuseram um novo método chamado \textit{Convolutional Perfect Matched Layers}, que utiliza uma convolução recursiva para atenuar a reflexão de ondas de incidência rasante.
 
+\todo{A aplicação Ondes3D \textbf{implementa} as duas ...}
 A aplicação \textit{Ondes3D} utiliza ambas as técnicas acima descritas em diferentes experimentos. No caso do experimento de \textit{Chuetsu-Oki}, utilizado por esse trabalho, a técnica
 empregada é a das \textit{CPML}s.
 
@@ -378,6 +398,7 @@ os ponteiros registrados como \textit{cl\_args}.
 
 \subsection{Matrizes \textit{ladrilhadas}}
 
+\todo{performance -> desempenho}
 Uma estratégia recorrente na programação de alta performance é o ladrilhamento de matrizes - no caso desse estudo, de tensores. Essa técnica consiste, conforme ilustra a Figura \ref{fig:tiled_matrix},
 na divisão de uma matriz em sub-matrizes (tipicamente chamadas de blocos) de menor tamanho, indexadas pela sua posição em relação à matriz original.
 
@@ -413,12 +434,20 @@ acessos de memória ao realizar pequenas multiplicações bloco a bloco, é poss
 Apesar dos blocos das matrizes $A$ e $B$ serem acessados por diversas tarefas, nenhuma operação de escrita é efetuada sobre eles, o que possibilita que um número qualquer de tarefas acessem-nos
 simultaneamente sem gerar incoerências. Os blocos da matriz $C$, onde as escritas são realizadas, são acessados cada um deles por uma única tarefa, possibilitando o paralelismo descrito anteriormente.
 
-\chapter{Projeto e implementação}
+\chapter{Projeto e implementação}\label{sec:project}
 Neste capítulo serão apresentadas as alterações necessárias para que a aplicação \textit{Ondes3D} seja paralelizável na forma de tarefas gerenciadas pela biblioteca \textit{StarPU}.
 Posteriormente uma descrição da implementação realizada ao longo dessa pesquisa será detalhada.
 
 \section{Proposta}\label{sec:proposal}
 
+\todo{Não fica claro ao que tu te refere ``de forma
+  parametrizável''. Veja que isso tu podes elaborar depois então a
+  sugestão é de remover esse aposto. Podes alternativamente, no final
+  desta frase, adicionar outra, informando que o tamanho dos blocos
+  será configurável pelo usuário do programa de maneira a adaptá-lo na
+  parte experimental.}
+\todo{Peraí, a seção diz ``Proposta'' mas aqui tu traz a forma como a
+  versão original discretiza o problema em blocos. Não é a tua versão então?}
 Os diversos tensores que representam as grandezas utilizadas nas equações elastodinâmicas do problema deverão ser divididos, de forma parametrizável, em blocos de tamanho igual, que servirão
 de entrada para as tarefas implementadas. A Figura \ref{fig:cuboids} ilustra o particionamento realizado pela implementação original, que parte de um arquivo de topologia para discretizar o
 plano $XY$ em blocos de profundidade igual à do domínio.
@@ -432,6 +461,12 @@ plano $XY$ em blocos de profundidade igual à do domínio.
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{Aqui novamente fala-se da versão original. Essas descrições da
+  versão original
+  (blocos acima e iterações abaixo) não fariam mais sentido na Sec 3.1
+  Ondes3D?}
+\todo{Quando escreves ``e colunas externas do domínio'' na realidade
+  tu queres dizer do bloco, certo?}
 Em relação ao laço principal de execução, a Figura \ref{fig:main_loop} resume o fluxo da aplicação original. O domínio do problema é dividido em cinco regiões denominadas \textit{imodes},
 sendo quatro delas as linhas e colunas externas do domínio e a quinta os elementos internos. Com exceção da etapa \textit{computeSeisMoment}, cada \textit{macro-kernel} é executado cinco
 vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min}$, $x_{max}$][$y_{min}$, $y_{max}$][$z_{min}$, $z_{max}$].
@@ -445,12 +480,17 @@ vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{Okay, aqui tu começas a descrever a tua proposta.}
+\todo{``assim permitirem'' -> estiverem satisfeitas.}
 Na versão aqui proposta, cada etapa será executada tantas vezes quanto houverem blocos. Para isso, será necessário iterar sobre os blocos existentes, criando uma tarefa para atualizar cada bloco
 de dados, conforme mostra a Figura \ref{fig:new_main_loop}, dispensando a utilização dos \textit{imodes}. Neste momento vale ressaltar que a inserção das tarefas consiste
 simplesmente na criação de uma instância de tarefa com as dependências indicadas e não implica em sua execução imediata. Fica a cargo da biblioteca \textit{StarPU} iniciar a execução
 de cada uma das tarefas disponíveis de maneira assíncrona quando as suas dependências assim permitirem. Internamente, cada tarefa percorrerá apenas o espaço determinado pelo bloco a ser
 atualizado em vez de uma região completa como na versão original.
 
+\todo{Ficou estranho esse ``na verdade''. Queres dizer que o resto não
+  é verdade?}
+\todo{Atenção para o pt-br aí hein, ``de cada tarefa utilizar...''}
 Outro ponto a ser ressaltado é o fato de cada tarefa, na verdade, utilizar diversos blocos, já que as grandezas físicas são implementadas em diferentes estruturas. Por exemplo, o cálculo das
 tensões efetuado na função \textit{computeStress} necessita não apenas do bloco de índice ($i$, $j$) de cada um dos nove componentes de tensão (em modo de escrita), mas também os blocos de
 índice ($i$, $j$) dos três componentes de velocidade, em modo de leitura.
@@ -468,10 +508,18 @@ A utilização de blocos independentes introduz, no entanto, uma dificuldade nas
 elementos de outros blocos. Uma primeira solução, mais simples e menos eficiente, consiste em não utilizar somente um bloco por tarefa, mas sim cinco - o bloco a ser calculado, em
 modo de leitura e escrita, e os seus quatro vizinhos imediatos, em modo de leitura. Essa alternativa, dependendo do contexto em que ela é utilizada, pode representar um custo de memória mais
 elevado do que o necessário.
+\todo{Esta última frase poderia ser complementada dizendo que seria
+  uma estratégia parecida com a que é feita com os imodes certo?}
+\todo{Sobre o aumento do uso de memória, veja que o StarPU e o
+  paralelismo natural do DAG já limitam a memória tendo em vista que
+  no máximo N tarefas estarão executando efetivamente em paralelo
+  sendo N a quantidade de workers.} 
 
 Uma solução mais eficiente é a utilização das chamadas \textit{ghost cells}. Já que é necessário ler apenas as células de uma borda de cada um dos vizinhos, em vez de acessar os quatro
 blocos vizinhos completos, compartilha-se apenas as bordas que serão necessárias. A Figura \ref{fig:ghost_cells} mostra um exemplo de células fantasma em um \textit{stencil} 2D,
 mas o conceito pode ser expandido para três dimensões.
+\todo{OK. Tu explicas enfim células fantasmas, mas tu usas? Faz parte
+  da tua proposta? Ahh, do projeto, okay.} 
 
 \begin{figure}[!htb]
     \caption{Representação do uso de células fantasma}
@@ -743,7 +791,7 @@ tarefas garante a ordem de execução necessária.
 \end{figure}
 
 
-\chapter{Avaliação experimental}
+\chapter{Avaliação experimental}\label{sec:exp}
 
 A nova versão desenvolvida foi executada no Parque Computacional de Alto Desempenho (PCAD) da Universidade Federal do Rio Grande do Sul com o
 intuito de comparar seu desempenho em relação à implementação original.
@@ -765,7 +813,7 @@ com as tarefas da maneira proposta.
 
 ** analise do paralelismo quando rolar o starvz **
 
-\chapter{Conclusão}
+\chapter{Conclusão}\label{sec:conclusion}
 
 relembra o contexto
 digo o que fiz
