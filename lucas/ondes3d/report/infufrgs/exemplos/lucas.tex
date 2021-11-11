@@ -226,7 +226,7 @@ execução em um processador convencional. No entanto, o consumo energético nã
 %  isso como argumento dizendo que dá para se ter ganhos com
 %  otimizações posteriores.}
 
-% o artigo diz the experiments conducted registered a maximum speedup of 77× compared to the simulation time of the serial version
+% lucas: o artigo diz the experiments conducted registered a maximum speedup of 77× compared to the simulation time of the serial version
 
 Nesi et al. \cite{nesi} realizaram três implementações diferentes de uma aplicação de dinâmica de fluídos utilizando programação baseada em tarefas através da biblioteca \textit{StarPU}. Essa aplicação utiliza o método de diferenças finitas, assim como o \textit{Ondes3D}, para simular o fluxo de um fluído Newtoniano incompressível com viscosidade constante. Além de desenvolver tarefas voltadas para \textit{GPU}s, o traço de execução resultante foi avaliado e refinado utilizando o conjunto de ferramentas \textit{StarVZ} \cite{starvz1, starvz2, starvz3}. Através do emprego da técnica de células fantasma no gerenciamento dos vizinhos, apresentada e explicada na Seção \ref{sec:proposal}, foi possível alcançar uma aceleração de $77$x em relação à versão original da aplicação estudada.
 
@@ -238,7 +238,6 @@ optaram por descartar as interações com as bordas do domínio devido a complex
 A Tabela \ref{tbl:related_works} resume as diferenças entre o trabalho desenvolvido e descrito neste documento e os estudos citados acima. Os projetos desenvolvidos por Nesi et al. e Martínez et al. são
 os que mais se assemelham ao aqui desenvolvido, apesar do primeiro tratar de uma aplicação diferente e o segundo ignorar uma parcela da simulação.
 
-\todo{Substituir ``Dinâmica de fluídos'' pelo nome da aplicação. - aguardando resposta do nesi porque nao achei no artigo}
 \begin{table}[htb!]
     \caption{Trabalhos relacionados}
     \begin{center}
@@ -312,6 +311,22 @@ As estruturas descritas anteriormente são atualizadas iterativamente passando p
 Com exceção da atualização das fontes da onda, que acontece em um domínio reduzido, os \textit{macro-kernels} descritos acima utilizam a diretiva \textit{omp parallel for}
 para obter um paralelismo interno. Já que essas etapas realizam cálculos dentro de um laço triplo, iterando sobre as coordenadas nos eixos $X$, $Y$ e $Z$, a biblioteca \textit{OpenMP},
 através da diretiva citada anteriormente, cria \textit{threads} capazes de tratar diferentes coordenadas simultaneamente.
+
+%\todo{Quando escreves ``e colunas externas do domínio'' na realidade
+%  tu queres dizer do bloco, certo?}
+% lucas: nao, os quatro primeiros imodes sao as bordas do dominio inteiro mesmo
+Em relação ao laço principal de execução, a Figura \ref{fig:main_loop} resume o fluxo da aplicação. O domínio do problema é dividido em cinco regiões denominadas \textit{imodes},
+sendo quatro delas as linhas e colunas limítrofes do domínio e a quinta os elementos internos. Com exceção da etapa \textit{computeSeisMoment}, cada \textit{macro-kernel} é executado cinco
+vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min}$, $x_{max}$][$y_{min}$, $y_{max}$][$z_{min}$, $z_{max}$].
+
+\begin{figure}[!htb]
+    \caption{Laço principal da aplicação original}
+    \begin{center}
+      \includegraphics[width=30em]{main_loop}
+    \end{center}
+    \label{fig:main_loop}
+    \legend{Fonte: Autor}
+\end{figure}
 
 Teoricamente, a partir do momento que a tensão, por exemplo, de uma célula é calculada, já é possível iniciar o cálculo de sua velocidade. No entanto, como a diretiva descrita acima 
 é utilizada dentro da função responsável pelo cálculo de tensão de todas as células do domínio, é necessário que todas elas sejam calculadas para que o algoritmo possa iniciar a fase de
@@ -428,17 +443,9 @@ Posteriormente uma descrição da implementação realizada ao longo dessa pesqu
 
 \section{Proposta}\label{sec:proposal}
 
-\todo{Não fica claro ao que tu te refere ``de forma
-  parametrizável''. Veja que isso tu podes elaborar depois então a
-  sugestão é de remover esse aposto. Podes alternativamente, no final
-  desta frase, adicionar outra, informando que o tamanho dos blocos
-  será configurável pelo usuário do programa de maneira a adaptá-lo na
-  parte experimental.}
-\todo{Peraí, a seção diz ``Proposta'' mas aqui tu traz a forma como a
-  versão original discretiza o problema em blocos. Não é a tua versão então?}
 Os diversos tensores que representam as grandezas utilizadas nas equações elastodinâmicas do problema deverão ser divididos, de forma parametrizável, em blocos de tamanho igual, que servirão
-de entrada para as tarefas implementadas. A Figura \ref{fig:cuboids} ilustra o particionamento realizado pela implementação original, que parte de um arquivo de topologia para discretizar o
-plano $XY$ em blocos de profundidade igual à do domínio.
+de entrada para as tarefas implementadas. A Figura \ref{fig:cuboids} ilustra o particionamento realizado pela implementação original, que parte de um arquivo de topologia para discretizar o plano $XY$ em blocos de profundidade igual à do domínio. Apesar de manter o formato de
+discretização apenas no plano $XY$, o projeto aqui proposto tem como entradas as demais dimensões dos blocos, facilitando a execução de experimentos para adequar o particionamento à arquitetura onde a aplicação é executada.
 
 \begin{figure}[!htb]
     \caption{Representação do espaço particionado em nove blocos}
@@ -449,37 +456,13 @@ plano $XY$ em blocos de profundidade igual à do domínio.
     \legend{Fonte: Autor}
 \end{figure}
 
-\todo{Aqui novamente fala-se da versão original. Essas descrições da
-  versão original
-  (blocos acima e iterações abaixo) não fariam mais sentido na Sec 3.1
-  Ondes3D?}
-\todo{Quando escreves ``e colunas externas do domínio'' na realidade
-  tu queres dizer do bloco, certo?}
-Em relação ao laço principal de execução, a Figura \ref{fig:main_loop} resume o fluxo da aplicação original. O domínio do problema é dividido em cinco regiões denominadas \textit{imodes},
-sendo quatro delas as linhas e colunas externas do domínio e a quinta os elementos internos. Com exceção da etapa \textit{computeSeisMoment}, cada \textit{macro-kernel} é executado cinco
-vezes, uma em cada região. Internamente, cada etapa percorre o espaço [$x_{min}$, $x_{max}$][$y_{min}$, $y_{max}$][$z_{min}$, $z_{max}$].
-
-\begin{figure}[!htb]
-    \caption{Laço principal da aplicação original}
-    \begin{center}
-      \includegraphics[width=30em]{main_loop}
-    \end{center}
-    \label{fig:main_loop}
-    \legend{Fonte: Autor}
-\end{figure}
-
-\todo{Okay, aqui tu começas a descrever a tua proposta.}
-\todo{``assim permitirem'' -> estiverem satisfeitas.}
 Na versão aqui proposta, cada etapa será executada tantas vezes quanto houverem blocos. Para isso, será necessário iterar sobre os blocos existentes, criando uma tarefa para atualizar cada bloco
 de dados, conforme mostra a Figura \ref{fig:new_main_loop}, dispensando a utilização dos \textit{imodes}. Neste momento vale ressaltar que a inserção das tarefas consiste
 simplesmente na criação de uma instância de tarefa com as dependências indicadas e não implica em sua execução imediata. Fica a cargo da biblioteca \textit{StarPU} iniciar a execução
-de cada uma das tarefas disponíveis de maneira assíncrona quando as suas dependências assim permitirem. Internamente, cada tarefa percorrerá apenas o espaço determinado pelo bloco a ser
+de cada uma das tarefas disponíveis de maneira assíncrona quando as suas dependências estiverem satisfeitas. Internamente, cada tarefa percorrerá apenas o espaço determinado pelo bloco a ser
 atualizado em vez de uma região completa como na versão original.
 
-\todo{Ficou estranho esse ``na verdade''. Queres dizer que o resto não
-  é verdade?}
-\todo{Atenção para o pt-br aí hein, ``de cada tarefa utilizar...''}
-Outro ponto a ser ressaltado é o fato de cada tarefa, na verdade, utilizar diversos blocos, já que as grandezas físicas são implementadas em diferentes estruturas. Por exemplo, o cálculo das
+Outro ponto a ser ressaltado é o fato de cada tarefa utilizar diversos blocos, já que as grandezas físicas são implementadas em diferentes estruturas. Por exemplo, o cálculo das
 tensões efetuado na função \textit{computeStress} necessita não apenas do bloco de índice ($i$, $j$) de cada um dos nove componentes de tensão (em modo de escrita), mas também os blocos de
 índice ($i$, $j$) dos três componentes de velocidade, em modo de leitura.
 
@@ -494,20 +477,15 @@ tensões efetuado na função \textit{computeStress} necessita não apenas do bl
 
 A utilização de blocos independentes introduz, no entanto, uma dificuldade nas aplicações do tipo \textit{stencil}: os elementos nas bordas de cada um dos blocos terão como vizinhos
 elementos de outros blocos. Uma primeira solução, mais simples e menos eficiente, consiste em não utilizar somente um bloco por tarefa, mas sim cinco - o bloco a ser calculado, em
-modo de leitura e escrita, e os seus quatro vizinhos imediatos, em modo de leitura. Essa alternativa, dependendo do contexto em que ela é utilizada, pode representar um custo de memória mais
-elevado do que o necessário.
-\todo{Esta última frase poderia ser complementada dizendo que seria
-  uma estratégia parecida com a que é feita com os imodes certo?}
-\todo{Sobre o aumento do uso de memória, veja que o StarPU e o
-  paralelismo natural do DAG já limitam a memória tendo em vista que
-  no máximo N tarefas estarão executando efetivamente em paralelo
-  sendo N a quantidade de workers.} 
+modo de leitura e escrita, e os seus quatro vizinhos imediatos, em modo de leitura.
+%\todo{Esta última frase poderia ser complementada dizendo que seria
+%  uma estratégia parecida com a que é feita com os imodes certo?}
+% lucas: a nao ser que eu tenha entendido errado, a unica funçao dos imodes em chuetsu-oki é calcular as bordas antes do miolo.
+% nao vi relaçao nenhuma com a gestao dos vizinhos
 
 Uma solução mais eficiente é a utilização das chamadas \textit{ghost cells}. Já que é necessário ler apenas as células de uma borda de cada um dos vizinhos, em vez de acessar os quatro
 blocos vizinhos completos, compartilha-se apenas as bordas que serão necessárias. A Figura \ref{fig:ghost_cells} mostra um exemplo de células fantasma em um \textit{stencil} 2D,
 mas o conceito pode ser expandido para três dimensões.
-\todo{OK. Tu explicas enfim células fantasmas, mas tu usas? Faz parte
-  da tua proposta? Ahh, do projeto, okay.} 
 
 \begin{figure}[!htb]
     \caption{Representação do uso de células fantasma}
@@ -520,27 +498,18 @@ mas o conceito pode ser expandido para três dimensões.
 
 \section{Implementação}
 
-\todo{Começa direto falando das dificuldades... quais dificuldades?
-  Ainda não chegamos no drama delas. Talvez possa ser mais positivo,
-  falando as possibilidades ao invés das dificuldades.}
-\todo{A fim de -> Com o objetivo de}
-A fim de explorar as dificuldades da implementação em forma de tarefas e de analisar o nível de paralelismo alcançável utilizando esse paradigma, uma versão da aplicação \textit{Ondes3D} foi
+Com o objetivo de explorar as possibilidades da implementação em forma de tarefas e de analisar o nível de paralelismo alcançável utilizando esse paradigma, uma versão da aplicação \textit{Ondes3D} foi
 desenvolvida utilizando a biblioteca \textit{StarPU}. As subseções seguintes detalham o processo de implementação realizado.
 
 \subsection{Inicialização}
 
-\todo{Na frase que começa por ``No entanto,'', senti que faltou a
-  dualidade logo antes de ``e as funções''. Minha sugestão é trocar o
-  ``e'' por um ``mas'', indicando a contrariedade existente.}
 A inicialização dos dados na nova versão desenvolvida precisa considerar a necessidade de particioná-los em blocos, o que traz a tona a primeira modificação a ser realizada. A biblioteca
 \textit{StarPU} fornece funções que realizam essa operação de ladrilhamento a partir do número de blocos desejado, o que garante um particionamento eficaz e funcional. No entanto, os tensores
-utilizados pela versão original são implementados como vetores multidimensionais, o que facilita o acesso aos dados utilizados, e as funções de particionamento da biblioteca \textit{StarPU} exigem
+utilizados pela versão original são implementados como vetores multidimensionais, o que facilita o acesso aos dados utilizados, mas as funções de particionamento da biblioteca \textit{StarPU} exigem
 vetores unidimensionais como entrada. Portanto, o primeiro passo para adaptar o algoritmo desenvolvido de maneira a melhor aproveitar as funcionalidades oferecidas pela biblioteca foi a transformação 
 de seus vetores multidimensionais em vetores unidimensionais de tamanho equivalente.
 
-\todo{tratando -> tratando-se}
-\todo{figura -> Figura}
-Ainda tratando de vetores, a aplicação original realizava um acesso a partir de suas coordenadas, mesmo se elas possuíssem valores negativos. A figura \ref{fig:negative_index} mostra a
+Ainda tratando-se de vetores, a aplicação original realizava um acesso a partir de suas coordenadas, mesmo se elas possuíssem valores negativos. A Figura \ref{fig:negative_index} mostra a
 técnica utilizada para alcançar esse efeito. Os ponteiros que endereçavam essas estruturas apontavam não para a primeira posição alocada, como normalmente é feito, mas para o n-ésimo elemento,
 onde $n$ é a coordenada de valor mais negativo. Devido à complexidade em manter essa implementação utilizando vetores unidimensionais, optou-se por empregar um endereçamento convencional.
 
@@ -553,20 +522,22 @@ onde $n$ é a coordenada de valor mais negativo. Devido à complexidade em mante
     \legend{Fonte: Autor}
 \end{figure}
 
-\todo{link quebrado em \ref{sec:tasks}. Corrigir.}
-\todo{seção -> Seção}
-\todo{Penso que esta parte ficou incompleta tendo em vista que a
-  ref. para a seção com mais detalhes não está correta. Faltaram
-  portanto os detalhes. Aonde
-  exatamente aquela ref está apontando para?}
-Devido às mudanças de dimensionalidade e limites dos vetores, o acesso à essas variáveis se torna mais complexo. Para contornar esse problema, foram utilizadas \textit{macros} que calculam
-o endereço desejado a partir das dimensões do vetor acessado e das posições solicitadas, detalhadas na seção \ref{sec:tasks}.
+Devido às mudanças de dimensionalidade e limites dos vetores, o acesso à essas variáveis se torna mais complexo. Para contornar esse problema,
+foram utilizadas três \textit{macros}, mostradas na Figura \ref{fig:access}, que calculam o índice buscado em função das dimensões do vetor dado.
+Logo, todos os acessos à vetores foram substituídos por chamadas às novas \textit{macros}.
+
+\begin{figure}[!htb]
+  \caption{\textit{Macros} utilizadas para acessar vetores.}
+    \begin{center} 
+      \includegraphics[width=34em]{access}
+    \end{center}
+    \label{fig:access}
+    \legend{Fonte: Autor}
+\end{figure}
 
 \subsubsection{Inicialização das \textit{CPML}}
 
-\todo{Já tinha ``sentido'' isso antes: será que não daria para ter uma
-  tradução para as condições de absorção nas bordas?}
-As \textit{ABSORBING\_BOUNDARY\_CONDITION} não representam o domínio completo do
+A estrutura das condições de absorção das bordas não representa o domínio completo do
 problema, já que elas tratam unicamente das bordas, onde a propagação da onda deve ser absorvida sem produzir reflexões. Como elas são
 responsáveis por registrar contribuições tanto nos tensores de tensão quanto nos de velocidade, ambos construídos com nove componentes,
 armazená-las em tensores de tamanho igual ao do domínio exigiria um espaço de memória enorme e esparso, já que elas são calculadas somente
@@ -574,7 +545,7 @@ em regiões muito limitadas do domínio.
 
 A fim de não utilizar memória de maneira desnecessária, as contribuições físicas das \textit{CPML}s são registradas em vetores
 unidimensionais de tamanho igual ao número de elementos nas mesmas. Um tensor chamado \textit{ipml} armazena, para cada coordenada
-do domínio, o índice onde se encontram suas contribuições nos vetores das \textit{ABSORBING\_BOUNDARY\_CONDITION}s. No caso de coordenadas
+do domínio, o índice onde se encontram suas contribuições nos vetores das condições de absorção das bordas. No caso de coordenadas
 internas, esse índice tem valor $-1$, indicando que a célula em questão não precisa considerar contribuição alguma. 
 
 Ao dividir o problema em tarefas, no entanto, essas estruturas adicionam novas complexidades. Primeiramente, não é possível aplicar
@@ -582,12 +553,12 @@ o particionamento em blocos da mesma maneira nesses vetores, já que eles possue
 nas bordas. Além disso, faz-se necessário encontrar uma maneira de, mesmo após particioná-las, associar corretamente as coordenadas das células
 aos seus índices no vetor $ipml$.
 
-\todo{o vetor phivx é uma matriz.}
-\todo{Não ficou claro para mim como phivx é construído a partir de
-  vx. Pensei em uma serialização linha a linha mas daí chega-se a duas
-  células cinzas na terceira linha, mas não deveriam ser três?}
+%\todo{Não ficou claro para mim como phivx é construído a partir de
+%  vx. Pensei em uma serialização linha a linha mas daí chega-se a duas
+%  células cinzas na terceira linha, mas não deveriam ser três?}
+% lucas: nao, porque sao só as bordas. acho que faltou eu dizer que são bordas de espessura 2
 Outra dificuldade encontrada no particionamento dessas estruturas é mostrada na Figura \ref{fig:ipml}, que ilustra uma matriz de velocidades $v_x$
-e um vetor $phiv_x$, que armazena as contribuições das bordas em $v_x$. Considerando que as cores da figura codificam o bloco ao qual cada célula
+e a matriz $phiv_x$, que armazena as contribuições das bordas, com espessura de duas células, em $v_x$. Considerando que as cores da figura codificam o bloco ao qual cada célula
 pertence, pode-se constatar que não é possível particionar os vetores de maneira convencional, pois as contribuições de um
 mesmo bloco não são necessariamente sequenciais. Naturalmente, ao considerarmos o espaço tridimensional no qual os cálculos são feitos,
 esses fatores se comportam de maneira similar.
@@ -607,14 +578,9 @@ nenhum particionamento seja feito, mesmo que várias tarefas sejam submetidas pa
 não poderão ser executadas em paralelo devido à necessidade de escrever em um mesmo vetor. Por esse motivo, é necessário encontrar
 uma alternativa de particionamento para esses vetores.
 
-\todo{Creio que  \textit{phiv\_t} está repetido duas vezes. A na
-  figura temos  \textit{phiv\_s} ao invés de \textit{phit\_t} conforme
-  mencionado no texto.}
 A solução implementada para este estudo começa pela transformação da estrutura de dados das condições de borda, conforme mostra
 a Figura \ref{fig:abc}. Os diversos vetores que compunham as contribuições no cálculo de velocidade, por exemplo, foram encapsulados
-em uma nova estrutura \textit{phiv\_t} (respectivamente \textit{phit\_t} no caso da tensão), composta por um endereço de base, pelo
-tamanho de seus vetores e pelo deslocamento existente entre seus endereços.
-
+em uma nova estrutura \textit{phiv\_s} (respectivamente \textit{phit\_s} no caso da tensão). 
 \begin{figure}[!htb]
   \caption{À esquerda, parte da implementação da estrutura de condições de borda e, à direita, parte da
   nova implementação proposta.}
@@ -625,14 +591,9 @@ tamanho de seus vetores e pelo deslocamento existente entre seus endereços.
     \legend{Fonte: Autor}
 \end{figure}
 
-\todo{Ao ler até aqui, tenho o feeling que o texto está bem técnico
-  com esses detalhes (na linha do que tu falaste que é um trabalho de
-  implementação técnica). Acho que para dá para aliviar nessa
-  densidade técnica, tentando descrever melhor os elementos da figura,
-como por exemplo o porque de 2* 3* 4*...}
-\todo{Parágrafo só tem uma frase.}
-A Figura \ref{fig:compute_address} mostra uma \textit{macro} desenvolvida para simplificar o acesso aos vetores utilizando a estrutura
-descrita, onde o acesso a cada uma das componentes é dado calculando a soma do endereço base com o deslocamento associado ao vetor desejado.
+Essa nova estrutura armazena todos os vetores de maneira contígua em um único ponteiro e utiliza seus tamanhos para acessá-los
+individualmente. A Figura \ref{fig:compute_address} mostra uma \textit{macro} desenvolvida para simplificar o acesso aos vetores utilizando a estrutura
+descrita. Multiplicando o índice do vetor desejado pelo tamanho, comum a todas as componentes, tem-se o deslocamento necessário para encontrá-lo.
 
 \begin{figure}[!htb]
   \caption{\textit{Macro} desenvolvida para construir a nova estrutura proposta.}
@@ -648,11 +609,9 @@ dos tipos \textit{phiv\_t} e \textit{phit\_t}, com tamanho igual ao número de b
 de blocos de cada linha do domínio, cada bloco ($i$, $j$) encontra em $phiv\_t[lx * i + j]$ o conjunto de vetores associados
 às contribuições das bordas em ($i$, $j$).
 
-\todo{Acho que não tem crase em ``à um bloco cada um''}
 Esse particionamento realizado introduziu a necessidade de adaptar o vetor $ipml$, responsável por associar cada coordenada à sua posição
 nos vetores $phiv$ e $phit$. Anteriormente, o valor armazenado era um índice global, utilizado em vetores que representavam o domínio
-completo do problema. Com a nova estrutura, é necessário que esses índices sejam locais, associados aos vetores que pertencem à um bloco
-cada um.
+completo do problema. Com a nova estrutura, é necessário que esses índices sejam locais, associados aos vetores que pertencem cada um a um bloco.
 
 Implementando todas as modificações descritas acima, o particionamento dos vetores das condições de borda proposto permite que cada
 tarefa acesse apenas as posições que lhe são necessárias e o paralelismo entre blocos se torna possível.
@@ -666,7 +625,21 @@ Durante a execução desse projeto foram utilizadas as funções \textit{starpu\
 matrizes e tensores tridimensionais, respectivamente. Essas funções têm como argumentos o endereço de início e as dimensões dos
 dados, valores que posteriormente são acessíveis dentro das tarefas.
 
-A biblioteca \textit{StarPU} oferece funções para realizar o ladrilhamento dos dados contidos em seus \textit{data handles} através
+A biblioteca \textit{StarPU} oferece funções para realizar o ladrilhamento dos dados contidos em seus \textit{data handles}, para acessar
+os blocos particionados e para reconstruir a estrutura original dos dados. A Figura \ref{fig:data_cycle} resume o ciclo de vida de um dos
+\textit{data handles} utilizados ao longo da implementação desenvolvida.
+
+\begin{figure}[!htb]
+  \caption{Ciclo de vida de um \textit{data handle}.}
+    \begin{center} 
+      \includegraphics[width=35em]{data_cycle}
+    \end{center}
+    \label{fig:data_cycle}
+    \legend{Fonte: Autor}
+\end{figure}
+
+
+A operação de ladrilhamento dos dados é implementada pela aplicação de
 de filtros chamados \textit{starpu\_data\_filter}, que têm como parâmetros o número de blocos a serem criados e o ponteiro para uma
 função que implementa o particionamento desejado.
 
@@ -679,26 +652,10 @@ Depois de aplicar o filtro nos dados desejados, o acesso aos blocos é realizado
 que tem como argumentos o \textit{data handle} original, o número de dimensões no qual ele foi particionado e os índices do bloco em cada
 uma dessas dimensões. Dessa maneira é possível fornecer para cada tarefa apenas os bloco que lhe são necessários.
 
-\todo{Usar mais a Figura 4.9 para explicar tendo em vista que a sua
-  menção aparece apenas no final.}
 Finalizados os cálculos, os dados dos \textit{data handles} podem ser recuperados em suas estruturas originais após
-uma chamada à função \textit{starpu\_data\_unregister}. A Figura \ref{fig:data_cycle} resume o ciclo de vida de uma dessas estruturas ao
-longo da implementação desenvolvida.
+uma chamada à função \textit{starpu\_data\_unregister}.
 
-\begin{figure}[!htb]
-  \caption{Ciclo de vida de um \textit{data handle}.}
-    \begin{center} 
-      \includegraphics[width=35em]{data_cycle}
-    \end{center}
-    \label{fig:data_cycle}
-    \legend{Fonte: Autor}
-\end{figure}
-
-
-\subsubsection{Acesso aos vizinhos}\label{sec:neighborhood}
-\todo{Minha sugestão é remover a numeração desta subsubsection (porque
-  ela é única, não há outra subsubsection). Para
-  tal basta usar * depois de subsubsection antes do \{.}
+\subsubsection*{Acesso aos vizinhos}\label{sec:neighborhood}
 
 Sendo o \textit{Ondes3D} um \textit{stencil}, a aplicação de um ladrilhamento implica em uma dificuldade introduzida na gestão de seus
 vizinhos, pois o cálculo dos elementos posicionados nas bordas de um bloco necessita de dados presentes em outros blocos. Para solucionar
@@ -737,16 +694,16 @@ da célula ($i$, $j$) do bloco ($l$, $k$) do tensor de velocidade na direção d
     \legend{Fonte: Autor}
 \end{figure}
 
-\todo{seção -> Seção}
-Mesmo sendo mais eficiente em memória, o emprego da técnica de células fantasma, explicado na seção \ref{sec:proposal}, não diminui
+Mesmo sendo mais eficiente em memória, o emprego da técnica de células fantasma, explicado na Seção \ref{sec:proposal}, não diminui
 a complexidade envolvida nesses casos. No entanto, constatou-se que os tensores cujos cálculos podem necessitar de blocos vizinhos não são
 aqueles que estão sendo atualizados. No exemplo mostrado acima, são os valores de tensão que são consultados para calcular a velocidade
 em uma dada coordenada. Sendo assim, optou-se por fornecer para cada tarefa um bloco, no caso dos dados que serão escritos, e o tensor
 completo, no caso dos dados que serão lidos. Com isso, o paralelismo pode ser mantido, já que as escritas acontecem em dados independentes,
 sem a necessidade de gerenciar leituras em blocos vizinhos.
 
-\todo{Isso inviabiliza então a execução de duas macro-fases mais ou
-  menos ao mesmo tempo quando todas as condições estão reunidas?}
+%\todo{Isso inviabiliza então a execução de duas macro-fases mais ou
+%  menos ao mesmo tempo quando todas as condições estão reunidas?}
+% lucas: sim
 Em contrapartida, conforme descrito anteriormente, um \textit{data handle} particionado não pode mais ser acessado da maneira original. Para isso, é necessário
 utilizar a função \textit{starpu\_data\_unpartition}, que desfaz a operação de ladrilhamento anteriormente realizada. Essa operação exige a criação de um ponto
 de sincronismo entre as tarefas para garantir que o \textit{data handle} foi reconstruído a partir de seus blocos atualizados na iteração atual, resultando na
@@ -763,36 +720,20 @@ das \textit{macros STARPU\_VECTOR\_GET\_PTR}, \textit{STARPU\_MATRIX\_GET\_PTR} 
 necessário consultar as dimensões desses \textit{buffers}; apesar do ladrilhamento separar o espaço em blocos de tamanho igual, é possível
 que as extremidades possuam blocos de tamanho menor caso não seja possível realizar uma divisão inteira.
 
-Os laços internos, que originalmente percorriam uma região especificada na chamada do \textit{macro-kernel}, passam a percorrer o
-tamanho de um bloco. No entanto, ao acessar as estruturas fornecidas apenas para leitura, é necessário realizar uma conversão das
-coordenadas locais em coordenadas globais, já que elas não serão particionadas. A relação entre as coordenadas globais e locais é dada
+No caso da etapa \textit{computeSeisMoment}, como a função se concentra em uma área muito limitada do problema, nenhum particionamento é utilizado e
+as alterações a serem feitas se resumem à adequação dos acessos aos vetores, que agora passam a utilizar as \textit{macros} citadas anteriormente.
+
+Os laços internos das etapas \textit{computeIntermediates}, \textit{computeStress} e \textit{computeVelocity}, que originalmente percorriam uma região especificada na chamada do \textit{macro-kernel}, passam a percorrer o tamanho de um bloco. No entanto, ao acessar as estruturas fornecidas apenas para leitura, é necessário realizar uma conversão das
+coordenadas locais em coordenadas globais, já que elas não estarão particionadas. A relação entre as coordenadas globais e locais é dada
 pelas seguintes equações, onde $block\_size$ é o tamanho do bloco (aqui considerado quadrado), $i_{block}$ é o índice do bloco no eixo $x$
 e $j_{block}$ é o índice do bloco no eixo $y$:
 
 \[ i_{global} = block\_size * i_{block} + i_{local} \]
 \[ j_{global} = block\_size * j_{block} + j_{local} \]
 
+\subsubsection*{Cálculo de velocidades}
 
-Para percorrer os vetores que eram originalmente acessados por suas coordenadas, três \textit{macros} foram implementadas em função
-de suas dimensionalidades, conforme mostra a Figura \ref{fig:access}. Logo, todos os acessos à vetores foram substituídos por
-chamadas às novas \textit{macros}.
-
-\begin{figure}[!htb]
-  \caption{\textit{Macros} utilizadas para acessar vetores.}
-    \begin{center} 
-      \includegraphics[width=34em]{access}
-    \end{center}
-    \label{fig:access}
-    \legend{Fonte: Autor}
-\end{figure}
-
-\subsubsection{Cálculo de velocidades}
-\todo{Minha sugestão é remover a numeração desta subsubsection (porque
-  ela é única, não há outra subsubsection). Para
-  tal basta usar * depois de subsubsection antes do \{.}
-
-\todo{seção -> Seção. Yes!}
-Apesar da seção \ref{sec:neighborhood} mostrar que cada uma das etapas só precisa acessar blocos vizinhos de estruturas em modo somente leitura, existe
+Apesar da Seção \ref{sec:neighborhood} mostrar que cada uma das etapas só precisa acessar blocos vizinhos de estruturas em modo somente leitura, existe
 uma exceção no cálculo de velocidade. Quando o índice $k$ é igual a $1$ ou $2$, certas operações adicionais são necessárias e estas
 eventualmente envolvem blocos vizinhos onde outras tarefas precisam atualizar dados. No caso em que $k$ é igual a um, lê-se dados
 do bloco seguinte no eixo $X$ e do bloco anterior no eixo $Y$, enquanto no caso em que $k$ é igual a dois, os dados externos pertencem
