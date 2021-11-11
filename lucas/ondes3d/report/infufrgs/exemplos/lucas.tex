@@ -532,17 +532,26 @@ mas o conceito pode ser expandido para três dimensões.
 
 \section{Implementação}
 
+\todo{Começa direto falando das dificuldades... quais dificuldades?
+  Ainda não chegamos no drama delas. Talvez possa ser mais positivo,
+  falando as possibilidades ao invés das dificuldades.}
+\todo{A fim de -> Com o objetivo de}
 A fim de explorar as dificuldades da implementação em forma de tarefas e de analisar o nível de paralelismo alcançável utilizando esse paradigma, uma versão da aplicação \textit{Ondes3D} foi
 desenvolvida utilizando a biblioteca \textit{StarPU}. As subseções seguintes detalham o processo de implementação realizado.
 
 \subsection{Inicialização}
 
+\todo{Na frase que começa por ``No entanto,'', senti que faltou a
+  dualidade logo antes de ``e as funções''. Minha sugestão é trocar o
+  ``e'' por um ``mas'', indicando a contrariedade existente.}
 A inicialização dos dados na nova versão desenvolvida precisa considerar a necessidade de particioná-los em blocos, o que traz a tona a primeira modificação a ser realizada. A biblioteca
 \textit{StarPU} fornece funções que realizam essa operação de ladrilhamento a partir do número de blocos desejado, o que garante um particionamento eficaz e funcional. No entanto, os tensores
 utilizados pela versão original são implementados como vetores multidimensionais, o que facilita o acesso aos dados utilizados, e as funções de particionamento da biblioteca \textit{StarPU} exigem
 vetores unidimensionais como entrada. Portanto, o primeiro passo para adaptar o algoritmo desenvolvido de maneira a melhor aproveitar as funcionalidades oferecidas pela biblioteca foi a transformação 
 de seus vetores multidimensionais em vetores unidimensionais de tamanho equivalente.
 
+\todo{tratando -> tratando-se}
+\todo{figura -> Figura}
 Ainda tratando de vetores, a aplicação original realizava um acesso a partir de suas coordenadas, mesmo se elas possuíssem valores negativos. A figura \ref{fig:negative_index} mostra a
 técnica utilizada para alcançar esse efeito. Os ponteiros que endereçavam essas estruturas apontavam não para a primeira posição alocada, como normalmente é feito, mas para o n-ésimo elemento,
 onde $n$ é a coordenada de valor mais negativo. Devido à complexidade em manter essa implementação utilizando vetores unidimensionais, optou-se por empregar um endereçamento convencional.
@@ -556,11 +565,19 @@ onde $n$ é a coordenada de valor mais negativo. Devido à complexidade em mante
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{link quebrado em \ref{sec:tasks}. Corrigir.}
+\todo{seção -> Seção}
+\todo{Penso que esta parte ficou incompleta tendo em vista que a
+  ref. para a seção com mais detalhes não está correta. Faltaram
+  portanto os detalhes. Aonde
+  exatamente aquela ref está apontando para?}
 Devido às mudanças de dimensionalidade e limites dos vetores, o acesso à essas variáveis se torna mais complexo. Para contornar esse problema, foram utilizadas \textit{macros} que calculam
 o endereço desejado a partir das dimensões do vetor acessado e das posições solicitadas, detalhadas na seção \ref{sec:tasks}.
 
 \subsubsection{Inicialização das \textit{CPML}}
 
+\todo{Já tinha ``sentido'' isso antes: será que não daria para ter uma
+  tradução para as condições de absorção nas bordas?}
 As \textit{ABSORBING\_BOUNDARY\_CONDITION} não representam o domínio completo do
 problema, já que elas tratam unicamente das bordas, onde a propagação da onda deve ser absorvida sem produzir reflexões. Como elas são
 responsáveis por registrar contribuições tanto nos tensores de tensão quanto nos de velocidade, ambos construídos com nove componentes,
@@ -577,6 +594,10 @@ o particionamento em blocos da mesma maneira nesses vetores, já que eles possue
 nas bordas. Além disso, faz-se necessário encontrar uma maneira de, mesmo após particioná-las, associar corretamente as coordenadas das células
 aos seus índices no vetor $ipml$.
 
+\todo{o vetor phivx é uma matriz.}
+\todo{Não ficou claro para mim como phivx é construído a partir de
+  vx. Pensei em uma serialização linha a linha mas daí chega-se a duas
+  células cinzas na terceira linha, mas não deveriam ser três?}
 Outra dificuldade encontrada no particionamento dessas estruturas é mostrada na Figura \ref{fig:ipml}, que ilustra uma matriz de velocidades $v_x$
 e um vetor $phiv_x$, que armazena as contribuições das bordas em $v_x$. Considerando que as cores da figura codificam o bloco ao qual cada célula
 pertence, pode-se constatar que não é possível particionar os vetores de maneira convencional, pois as contribuições de um
@@ -598,6 +619,9 @@ nenhum particionamento seja feito, mesmo que várias tarefas sejam submetidas pa
 não poderão ser executadas em paralelo devido à necessidade de escrever em um mesmo vetor. Por esse motivo, é necessário encontrar
 uma alternativa de particionamento para esses vetores.
 
+\todo{Creio que  \textit{phiv\_t} está repetido duas vezes. A na
+  figura temos  \textit{phiv\_s} ao invés de \textit{phit\_t} conforme
+  mencionado no texto.}
 A solução implementada para este estudo começa pela transformação da estrutura de dados das condições de borda, conforme mostra
 a Figura \ref{fig:abc}. Os diversos vetores que compunham as contribuições no cálculo de velocidade, por exemplo, foram encapsulados
 em uma nova estrutura \textit{phiv\_t} (respectivamente \textit{phit\_t} no caso da tensão), composta por um endereço de base, pelo
@@ -613,6 +637,12 @@ tamanho de seus vetores e pelo deslocamento existente entre seus endereços.
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{Ao ler até aqui, tenho o feeling que o texto está bem técnico
+  com esses detalhes (na linha do que tu falaste que é um trabalho de
+  implementação técnica). Acho que para dá para aliviar nessa
+  densidade técnica, tentando descrever melhor os elementos da figura,
+como por exemplo o porque de 2* 3* 4*...}
+\todo{Parágrafo só tem uma frase.}
 A Figura \ref{fig:compute_address} mostra uma \textit{macro} desenvolvida para simplificar o acesso aos vetores utilizando a estrutura
 descrita, onde o acesso a cada uma das componentes é dado calculando a soma do endereço base com o deslocamento associado ao vetor desejado.
 
@@ -630,6 +660,7 @@ dos tipos \textit{phiv\_t} e \textit{phit\_t}, com tamanho igual ao número de b
 de blocos de cada linha do domínio, cada bloco ($i$, $j$) encontra em $phiv\_t[lx * i + j]$ o conjunto de vetores associados
 às contribuições das bordas em ($i$, $j$).
 
+\todo{Acho que não tem crase em ``à um bloco cada um''}
 Esse particionamento realizado introduziu a necessidade de adaptar o vetor $ipml$, responsável por associar cada coordenada à sua posição
 nos vetores $phiv$ e $phit$. Anteriormente, o valor armazenado era um índice global, utilizado em vetores que representavam o domínio
 completo do problema. Com a nova estrutura, é necessário que esses índices sejam locais, associados aos vetores que pertencem à um bloco
@@ -660,6 +691,8 @@ Depois de aplicar o filtro nos dados desejados, o acesso aos blocos é realizado
 que tem como argumentos o \textit{data handle} original, o número de dimensões no qual ele foi particionado e os índices do bloco em cada
 uma dessas dimensões. Dessa maneira é possível fornecer para cada tarefa apenas os bloco que lhe são necessários.
 
+\todo{Usar mais a Figura 4.9 para explicar tendo em vista que a sua
+  menção aparece apenas no final.}
 Finalizados os cálculos, os dados dos \textit{data handles} podem ser recuperados em suas estruturas originais após
 uma chamada à função \textit{starpu\_data\_unregister}. A Figura \ref{fig:data_cycle} resume o ciclo de vida de uma dessas estruturas ao
 longo da implementação desenvolvida.
@@ -673,7 +706,11 @@ longo da implementação desenvolvida.
     \legend{Fonte: Autor}
 \end{figure}
 
+
 \subsubsection{Acesso aos vizinhos}\label{sec:neighborhood}
+\todo{Minha sugestão é remover a numeração desta subsubsection (porque
+  ela é única, não há outra subsubsection). Para
+  tal basta usar * depois de subsubsection antes do \{.}
 
 Sendo o \textit{Ondes3D} um \textit{stencil}, a aplicação de um ladrilhamento implica em uma dificuldade introduzida na gestão de seus
 vizinhos, pois o cálculo dos elementos posicionados nas bordas de um bloco necessita de dados presentes em outros blocos. Para solucionar
@@ -712,6 +749,7 @@ da célula ($i$, $j$) do bloco ($l$, $k$) do tensor de velocidade na direção d
     \legend{Fonte: Autor}
 \end{figure}
 
+\todo{seção -> Seção}
 Mesmo sendo mais eficiente em memória, o emprego da técnica de células fantasma, explicado na seção \ref{sec:proposal}, não diminui
 a complexidade envolvida nesses casos. No entanto, constatou-se que os tensores cujos cálculos podem necessitar de blocos vizinhos não são
 aqueles que estão sendo atualizados. No exemplo mostrado acima, são os valores de tensão que são consultados para calcular a velocidade
@@ -719,6 +757,8 @@ em uma dada coordenada. Sendo assim, optou-se por fornecer para cada tarefa um b
 completo, no caso dos dados que serão lidos. Com isso, o paralelismo pode ser mantido, já que as escritas acontecem em dados independentes,
 sem a necessidade de gerenciar leituras em blocos vizinhos.
 
+\todo{Isso inviabiliza então a execução de duas macro-fases mais ou
+  menos ao mesmo tempo quando todas as condições estão reunidas?}
 Em contrapartida, conforme descrito anteriormente, um \textit{data handle} particionado não pode mais ser acessado da maneira original. Para isso, é necessário
 utilizar a função \textit{starpu\_data\_unpartition}, que desfaz a operação de ladrilhamento anteriormente realizada. Essa operação exige a criação de um ponto
 de sincronismo entre as tarefas para garantir que o \textit{data handle} foi reconstruído a partir de seus blocos atualizados na iteração atual, resultando na
@@ -759,6 +799,11 @@ chamadas às novas \textit{macros}.
 \end{figure}
 
 \subsubsection{Cálculo de velocidades}
+\todo{Minha sugestão é remover a numeração desta subsubsection (porque
+  ela é única, não há outra subsubsection). Para
+  tal basta usar * depois de subsubsection antes do \{.}
+
+\todo{seção -> Seção. Yes!}
 Apesar da seção \ref{sec:neighborhood} mostrar que cada uma das etapas só precisa acessar blocos vizinhos de estruturas em modo somente leitura, existe
 uma exceção no cálculo de velocidade. Quando o índice $k$ é igual a $1$ ou $2$, certas operações adicionais são necessárias e estas
 eventualmente envolvem blocos vizinhos onde outras tarefas precisam atualizar dados. No caso em que $k$ é igual a um, lê-se dados
