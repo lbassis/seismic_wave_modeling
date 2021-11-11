@@ -770,10 +770,14 @@ A nova versão desenvolvida foi executada no Parque Computacional de Alto Desemp
 intuito de comparar seu desempenho em relação à implementação original.
 
 \section{Ambiente de testes}
+\todo{Entendi que devido ao problema no DAG, abandonaste a ideia de
+  usar as outras máquinas.}
 Para a execução dos testes, a máquina \textit{tupi2} do PCAD foi utilizada, contando com um processador \textit{Intel Xeon E5-2620} com $8$
 núcleos, $80$GB de memória RAM DDR$4$.
 \section{Resultados}
 
+\todo{Ao comparar os resultados numéricos! (ou seja a simulação física
+em si)}
 Apesar do objetivo original ser a comparação da nova implementação com a antiga, não foi possível concluir o desenvolvimento da nova versão utilizando
 a programação baseada em tarefas. Todas as tarefas foram construídas e o algoritmo é executado do início ao fim sem produzir erros de execução. No entanto,
 ao comparar o resultado final obtido, não encontra-se o valor fornecido pela aplicação original.
@@ -783,6 +787,9 @@ identificada como mais complexa. Devido ao tempo disponível, optou-se por apres
 devido ao valor científico das ponderações realizadas ao longo da implementação e também da possibilidade de realizar uma análise sobre o paralelismo alcançado
 com as tarefas da maneira proposta.
 
+\todo{``nodos'' é uma palavra que inexiste em pt-br, usar nós.}
+\todo{Explicar as setas como uma dependência de quem produz o dado
+  para quem o consome.}
 Em relação ao paralelismo alcançado, a Figura \ref{fig:dag} mostra o DAG construído pela biblioteca \textit{StarPU} na execução de uma iteração do algoritmo, utilizando
 blocos de dimensões $100$x$100$ no domínio [$-150$, $150$],[$-150$, $150$],[$-150$, $1$], dividido portanto em nove blocos. Os nodos do grafo mostrado representam as tarefas,
 enquanto as setas indicam as dependências entre elas. Analisando a figura, percebe-se que, apesar das dependências entre a tarefa \textit{computeSeisMoment} e as três responsáveis
@@ -800,6 +807,12 @@ indevido entre essas tarefas, que passam a serem consideradas executáveis simul
 
 A falha na definição das dependências das tarefas tornou dispensável a execução de mais testes, já que não seria possível comparar os resultados obtidos com a aplicação original. Acredita-se
 na possibilidade das operações de reconstrução de tensores já ladrilhados ter alguma influência na construção indevida do DAG, porém o ocorrido exige investigações mais profundas.
+\todo{Achei que esse capítulo de resultados ficou demasiado
+  pequeno. Talvez pudesse estendê-lo de alguma forma, mas sinceramente
+  nesta altura (deadline amanhã) penso ser difícil. Uma possibilidade
+  é tu tentar explicar exatamente onde está o erro, e descrevê-lo. Não
+  sei bem como a banca vai receber e interpretar este tipo de
+  resultado. Mas bom, é o que temos}
 
 \chapter{Conclusão}\label{sec:conclusion}
 
