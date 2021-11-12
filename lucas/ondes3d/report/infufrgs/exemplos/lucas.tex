@@ -1,3 +1,18 @@
+%email:
+%começar agradecendo
+%em anexo segue o documento
+%to a disposiçao pra sanar duvidas se assim desejarem
+%peço que confirmem que receberam o pdf
+%
+%+ msg pro setor academico
+%
+%
+%3min intro
+%5min fundamentaçao teorica (deixar claras as dificuldades)
+%
+%10min implementaçao tentando ser mais abstrato
+%
+%2min conclusao terminando num tom positivo
 % 
 % exemplo genérico de uso da classe iiufrgs.cls
 % $Id: iiufrgs.tex,v 1.1.1.1 2005/01/18 23:54:42 avila Exp $
@@ -198,9 +213,9 @@ Finalmente, aproveitando as experiências obtidas no desenvolvimento da versão 
 
 \section{Estrutura do texto}
 
-O restante do trabalho é dividido da seguinte maneira: o capítulo \ref{sec:related} apresenta estudos realizados buscando acelerar a execução da aplicação estudada e similares; o capítulo
-\ref{sec:theory} introduz os conhecimentos necessários para o entendimento da aplicação e de como deseja-se otimizá-la; o capítulo \ref{sec:project} apresenta a estrutura geral planejada e
-a implementação desenvolvida; o capítulo \ref{sec:exp} descreve os experimentos realizados e o capítulo \ref{sec:conclusion} finaliza com as conclusões sobre esse estudo. 
+O restante do trabalho é dividido da seguinte maneira: o Capítulo \ref{sec:related} apresenta estudos realizados buscando acelerar a execução da aplicação estudada e similares; o Capítulo
+\ref{sec:theory} introduz os conhecimentos necessários para o entendimento da aplicação e de como deseja-se otimizá-la; o Capítulo \ref{sec:project} apresenta a estrutura geral planejada e
+a implementação desenvolvida; o Capítulo \ref{sec:exp} descreve os experimentos realizados e o Capítulo \ref{sec:conclusion} finaliza com as conclusões sobre esse estudo. 
 
 \chapter{Trabalhos relacionados}\label{sec:related}
 
@@ -302,7 +317,7 @@ Apesar da aplicação estudada usar coordenadas nos eixos X, Y e Z, o mesmo conc
 As estruturas descritas anteriormente são atualizadas iterativamente passando por quatro grandes etapas, também chamadas de \textit{macro-kernels}. São elas:
 
 \begin{itemize}
-\item{\textit{computeSeisMoment}:} etapa em que as fontes da onda são atualizadas.
+\item{\textit{computeSeisMoment}:} etapa em que o momento sísmico é calculado, atualizando as fontes da onda.
 \item{\textit{computeIntermediates}:} etapa em que as contribuições das bordas do domínio são atualizadas a partir dos tensores de velocidade.
 \item{\textit{computeStress}:} etapa em que os tensores de tensão nos diferentes planos são atualizados a partir dos tensores de velocidade e das condições de borda.
 \item{\textit{computeVelocity}:} etapa em que os tensores de velocidade são atualizados a partir dos tensores de velocidade e das condições de borda.
@@ -535,7 +550,7 @@ Logo, todos os acessos à vetores foram substituídos por chamadas às novas \te
     \legend{Fonte: Autor}
 \end{figure}
 
-\subsubsection{Inicialização das \textit{CPML}}
+\subsubsection*{Inicialização das \textit{CPML}}
 
 A estrutura das condições de absorção das bordas não representa o domínio completo do
 problema, já que elas tratam unicamente das bordas, onde a propagação da onda deve ser absorvida sem produzir reflexões. Como elas são
@@ -767,52 +782,47 @@ tarefas garante a ordem de execução necessária.
 
 \chapter{Avaliação experimental}\label{sec:exp}
 A nova versão desenvolvida foi executada no Parque Computacional de Alto Desempenho (PCAD) da Universidade Federal do Rio Grande do Sul com o
-intuito de comparar seu desempenho em relação à implementação original.
+intuito de analisar o paralelismo adquirido e comparar seu desempenho em relação à implementação original.
 
 \section{Ambiente de testes}
-\todo{Entendi que devido ao problema no DAG, abandonaste a ideia de
-  usar as outras máquinas.}
 Para a execução dos testes, a máquina \textit{tupi2} do PCAD foi utilizada, contando com um processador \textit{Intel Xeon E5-2620} com $8$
 núcleos, $80$GB de memória RAM DDR$4$.
 \section{Resultados}
 
-\todo{Ao comparar os resultados numéricos! (ou seja a simulação física
-em si)}
-Apesar do objetivo original ser a comparação da nova implementação com a antiga, não foi possível concluir o desenvolvimento da nova versão utilizando
-a programação baseada em tarefas. Todas as tarefas foram construídas e o algoritmo é executado do início ao fim sem produzir erros de execução. No entanto,
-ao comparar o resultado final obtido, não encontra-se o valor fornecido pela aplicação original.
+Apesar do grande interesse desse estudo em realizar uma comparação da nova implementação com a antiga, não foi possível concluir o desenvolvimento da nova versão utilizando
+a programação baseada em tarefas. Todas as tarefas foram construídas e o algoritmo é executado do início ao fim sem produzir erros de execução, porém ao comparar os resultado
+numéricos obtidos não encontra-se o mesmo resultado fornecido pela aplicação original.
 
-Diversas investigações foram realizadas e indicam que os erros matemáticos encontram-se no cálculo das contribuições das condições de borda, etapa previamente
-identificada como mais complexa. Devido ao tempo disponível, optou-se por apresentar o estudo desse desenvolvimento independentemente da corretude numérica dos resultados
-devido ao valor científico das ponderações realizadas ao longo da implementação e também da possibilidade de realizar uma análise sobre o paralelismo alcançado
-com as tarefas da maneira proposta.
+As investigações realizadas indicam que os erros matemáticos encontram-se no cálculo das contribuições das condições de borda, etapa previamente identificada como
+a mais complexa. Por algum motivo ainda não identificado, o tensor de mapeamento $ipml$ é consultado durante o cálculo de células que não se encontram nas bordas, fornecendo
+então o valor $-1$. Com isso, ao buscar as contribuições das bordas para essas células, uma posição de memória indevida é acessada e o valor obtido é incorreto. No entanto
+uma análise mais profunda é necessária para detectar se o erro encontra-se no tensor $ipml$ ou nos vetores por ele mapeados.
 
-\todo{``nodos'' é uma palavra que inexiste em pt-br, usar nós.}
-\todo{Explicar as setas como uma dependência de quem produz o dado
-  para quem o consome.}
-Em relação ao paralelismo alcançado, a Figura \ref{fig:dag} mostra o DAG construído pela biblioteca \textit{StarPU} na execução de uma iteração do algoritmo, utilizando
-blocos de dimensões $100$x$100$ no domínio [$-150$, $150$],[$-150$, $150$],[$-150$, $1$], dividido portanto em nove blocos. Os nodos do grafo mostrado representam as tarefas,
-enquanto as setas indicam as dependências entre elas. Analisando a figura, percebe-se que, apesar das dependências entre a tarefa \textit{computeSeisMoment} e as três responsáveis
+%Diversas investigações foram realizadas e indicam que os erros matemáticos encontram-se no cálculo das contribuições das condições de borda, etapa previamente
+%identificada como a mais complexa. Devido ao tempo disponível, optou-se por apresentar o estudo desse desenvolvimento independentemente da corretude numérica dos resultados
+%devido ao valor científico das ponderações realizadas ao longo da implementação e também da possibilidade de realizar uma análise sobre o paralelismo alcançado
+%com as tarefas da maneira proposta.
+
+Em relação ao paralelismo alcançado, a Figura \ref{fig:dag} mostra o DAG construído pela biblioteca \textit{StarPU} na execução de duas iterações do algoritmo, utilizando
+blocos de dimensões $150$x$150$ no domínio [$-150$, $150$],[$-150$, $150$],[$-150$, $0$], dividido portanto em quatro blocos. Os vértices do grafo mostrado representam as tarefas,
+enquanto as arestas indicam as dependências entre elas - uma seta apontando de $A$ para $B$ indica que $B$ consome os dados produzidos por $A$ . Analisando a figura, percebe-se que, apesar das dependências entre a tarefa \textit{computeSeisMoment} e as três responsáveis
 pelos cálculos de velocidade estarem corretas, a computação das contribuições das condições de borda e da tensão estão ambas desconexas das demais. Dessa maneira, existe um paralelismo
 indevido entre essas tarefas, que passam a serem consideradas executáveis simultaneamente, resultando em uma execução errônea.
 
 \begin{figure}[!htb]
   \caption{Grafo de dependências entre as tarefas.}
     \begin{center} 
-      \includegraphics[width=36em]{dag}
+      \includegraphics[width=36em]{2it}
     \end{center}
     \label{fig:dag}
     \legend{Fonte: Autor}
 \end{figure}
 
-A falha na definição das dependências das tarefas tornou dispensável a execução de mais testes, já que não seria possível comparar os resultados obtidos com a aplicação original. Acredita-se
-na possibilidade das operações de reconstrução de tensores já ladrilhados ter alguma influência na construção indevida do DAG, porém o ocorrido exige investigações mais profundas.
-\todo{Achei que esse capítulo de resultados ficou demasiado
-  pequeno. Talvez pudesse estendê-lo de alguma forma, mas sinceramente
-  nesta altura (deadline amanhã) penso ser difícil. Uma possibilidade
-  é tu tentar explicar exatamente onde está o erro, e descrevê-lo. Não
-  sei bem como a banca vai receber e interpretar este tipo de
-  resultado. Mas bom, é o que temos}
+A falha na definição das dependências das tarefas tornou dispensável a execução de mais testes, já que não seria possível comparar os resultados obtidos com a aplicação original. O fato
+das dependências entre as tarefas de computação do momento sísmico e de velocidade demonstrarem estar corretas sugere que existe alguma particularidade no tratamento das tarefas incorretamente
+escalonadas. Por esse motivo, acredita-se que as operações de partição e reconstrução, necessárias na execução dessas duas etapas, sejam a causa das inconsistências encontradas. Sendo assim,
+é necessário um estudo mais profundo da implementação dessas operações fornecida pela biblioteca \textit{StarPU} para confirmar essas suspeitas.
+
 
 \chapter{Conclusão}\label{sec:conclusion}
 
@@ -822,19 +832,19 @@ Essa exploração é possível graças ao emprego do paradigma de programação 
 
 O trabalho aqui descrito realiza um estudo aprofundado das estruturas envolvidas no algoritmo original e das técnicas necessárias para alcançar o modelo de tarefas. A partir da operação
 de ladrilhamento, responsável pela criação de blocos de dados independentes, foi apresentado um projeto com o objetivo de implementar tarefas que calculam os dados de cada um desses blocos.
-A implementação proposta permite a parametrização do tamanho dos blocos, de maneira que a divisão deles seja adequada à arquitetura onde a aplicação será executada, e considera as condições de absorção
-das bordas, um aspecto não abordado por outros trabalhos similares.
+A implementação proposta permite a parametrização do tamanho dos blocos, de maneira que a divisão deles seja adequada à arquitetura onde a aplicação será executada. Além disso, ela considera
+as condições de absorção das bordas, um aspecto não abordado por outros trabalhos similares.
 
 Apesar da conclusão de uma implementação geral, os resultados obtidos não foram os esperados. Erros numéricos foram encontrados em uma das etapas do cálculo e, analisando a aplicação finalizada,
-foram detectadas inconsistências entre as dependências. No entanto, acredita-se que os estudos elaborados e uma parcela significativa da implementação realizada possam ser aproveitados para a
-construção de uma versão mais eficiente do \textit{Ondes3D}.
+foram detectadas inconsistências entre as dependências. Independentemente desses resultados, os estudos elaborados a respeito do funcionamento da aplicação servem de base para a elaboração de
+novos trabalhos similares. A implementação do projeto sugerido, incluindo soluções abordadas mas não implementadas, como a utilização de células fantasma, também serve de base para uma versão final numericamente correta, com potencial para ultrapassar o desempenho da aplicação original.
 
 O gerenciamento de vizinhos e o particionamento das contribuições fornecidas pelas condições de borda foram os maiores obstáculos na elaboração desse estudo. Acredita-se que as propostas
 do projeto apresentem soluções satisfatórias para esses problemas, mas o desenvolvimento efetivo das possibilidades mais promissoras exige uma reestruturação maior do código, alterando dados
 internos das estruturas de dados utilizadas e dividindo os \textit{macro-kernels} em tarefas menores e mais específicas.
 
 A sequência natural do trabalho apresentado é a correção dos erros numéricos introduzidos na mudança de modelo de programação realizada. Assim que esses resultados
-forem alcançados, diversas melhorias podem ser postas em prática de maneira a acelerar ainda mais a execução da aplicação. Algumas delas são listadas abaixo:
+forem alcançados, outras melhorias podem ser postas em prática de maneira a acelerar ainda mais a execução da aplicação. Algumas delas são listadas abaixo:
 
 \begin{itemize}
 \item{Implementação visando arquiteturas heterogêneas:} assim como o trabalho desenvolvido por Martínez et al. \cite{victor}, é possível implementar \textit{kernels}
